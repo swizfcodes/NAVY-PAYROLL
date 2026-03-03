@@ -1,5 +1,7 @@
 <!-- ================================================
-  EMAIL PAGE — pages/email.html
+  EMAIL PAGE — Standalone file
+  Save as: pages/email.html
+  Loaded dynamically by user-dashboard.js
 ================================================ -->
 <style>
   .email-wrap {
@@ -840,6 +842,20 @@
     height: 15px;
   }
 
+  .email-read-attach-chip.already-downloaded {
+    border-color: rgba(245, 200, 66, 0.2);
+    background: rgba(245, 200, 66, 0.04);
+  }
+
+  .email-read-attach-downloaded {
+    font-size: 10px;
+    font-weight: 700;
+    color: #f5c842;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
   .email-attach-error {
     font-size: 12px;
     color: #ff8080;
@@ -1611,7 +1627,7 @@
             document.getElementById('read-date').textContent = formatDate(msg.sent_at);
             document.getElementById('read-body').textContent = msg.body;
             if (msg.to_email) { emailVal.textContent = msg.to_email; emailRow.style.display = 'flex'; }
-            renderReadAttachments(msg.attachments || []);
+            fetchAndRenderAttachments(msg.id);
             // Populate status bar
             renderReadStatusBar(msg);
           });
@@ -1628,7 +1644,7 @@
             document.getElementById('read-body').textContent = msg.body;
             if (msg.from_email) { emailVal.textContent = msg.from_email; emailRow.style.display = 'flex'; }
             currentReplyTo = { user_id: msg.from_user_id, full_name: msg.from_name };
-            renderReadAttachments(msg.attachments || []);
+            fetchAndRenderAttachments(msg.id);
             document.querySelectorAll('.email-row').forEach(function (row) {
               if ((row.getAttribute('onclick') || '').includes('(' + id + ','))
                 row.classList.remove('unread');
@@ -1638,24 +1654,39 @@
       document.getElementById('readModal').classList.add('open');
     };
 
-    function renderReadAttachments(list) {
+    function renderReadAttachments(list, mailId) {
       var wrap = document.getElementById('read-attachments');
       if (!list || list.length === 0) { wrap.innerHTML = ''; return; }
+
       var html = '<div class="email-read-attachments">' +
         '<div class="email-read-attach-label">📎 Attachments (' + list.length + ')</div>' +
         '<div class="email-read-attach-list">';
+
       list.forEach(function (a) {
         var previewable = isPreviewable(a.mime_type);
         var actionLabel = previewable ? 'View' : 'Download';
-        html += '<button class="email-read-attach-chip" ' +
-          'onclick="openAttachment(' + a.id + ',\'' + escHtml(a.filename) + '\',\'' + escHtml(a.mime_type) + '\')">' +
+
+        // If already downloaded, show "Downloaded" badge with date
+        var downloadedBadge = '';
+        if (a.downloaded_at && !previewable) {
+          var dlDate = new Date(a.downloaded_at.includes('T') ? a.downloaded_at : a.downloaded_at.replace(' ', 'T') + 'Z');
+          var dlLabel = dlDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+          downloadedBadge = '<span class="email-read-attach-downloaded" title="Downloaded ' + dlLabel + '">✓ ' + dlLabel + '</span>';
+          actionLabel = 'Open again';
+        }
+
+        html += '<button class="email-read-attach-chip' + (a.downloaded_at ? ' already-downloaded' : '') + '" ' +
+          'id="attach-chip-' + a.id + '" ' +
+          'onclick="openAttachment(' + a.id + ',\'' + escHtml(a.filename) + '\',\'' + escHtml(a.mime_type) + '\',' + (!previewable && !!a.downloaded_at) + ')">' +
           '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="' + mimeIcon(a.mime_type) + '"/></svg>' +
           '<span class="email-read-attach-chip-name">' + escHtml(a.filename) + '</span>' +
           '<span class="email-read-attach-chip-size">' + formatBytes(a.file_size) + '</span>' +
+          downloadedBadge +
           '<span class="email-read-attach-action">' + actionLabel + '</span>' +
           '</button>';
       });
+
       html += '</div></div>';
       wrap.innerHTML = html;
     }
@@ -1668,9 +1699,23 @@
 
     // Fetches the file with auth token then either:
     //   - opens the lightbox preview (images + PDFs)
-    //   - triggers a save-to-disk download (Word, Excel, unknown)
-    window.openAttachment = function (id, filename, mime) {
-      var chip = event && event.currentTarget;
+    window.openAttachment = function (id, filename, mime, alreadyDownloaded) {
+      // For non-previewable files (Word, Excel), warn before re-downloading
+      if (!isPreviewable(mime) && alreadyDownloaded) {
+        DashAlertModal.confirm(
+          '📁 You already downloaded "' + filename + '". It may still be in your Downloads folder. Download again?',
+          function () { _fetchAndDownload(id, filename, mime); },
+          null,
+          'Download',   // ← button label
+          false         // ← false = gold button, not red          
+        );
+        return;
+      }
+      _fetchAndDownload(id, filename, mime);
+    };
+
+    function _fetchAndDownload(id, filename, mime) {
+      var chip = document.getElementById('attach-chip-' + id);
       if (chip) { chip.style.opacity = '0.6'; chip.style.pointerEvents = 'none'; }
 
       fetch('/messages/attachment/' + id, {
@@ -1681,16 +1726,34 @@
           return r.blob();
         })
         .then(function (blob) {
-          // Always use the actual blob mime for safety
           var resolvedMime = blob.type || mime;
           var blobUrl = URL.createObjectURL(blob);
 
           if (isPreviewable(resolvedMime)) {
             showAttPreview(blobUrl, filename, resolvedMime, id, mime);
           } else {
-            // Non-previewable — trigger download immediately
             triggerDownload(blobUrl, filename);
             setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 10000);
+
+            // Mark chip as downloaded immediately without waiting for page reload
+            if (chip) {
+              chip.classList.add('already-downloaded');
+              var actionEl = chip.querySelector('.email-read-attach-action');
+              if (actionEl) actionEl.textContent = 'Open again';
+              // Inject downloaded badge
+              var sizeEl = chip.querySelector('.email-read-attach-chip-size');
+              if (sizeEl && !chip.querySelector('.email-read-attach-downloaded')) {
+                var today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                var badge = document.createElement('span');
+                badge.className = 'email-read-attach-downloaded';
+                badge.title = 'Downloaded ' + today;
+                badge.textContent = '✓ ' + today;
+                sizeEl.insertAdjacentElement('afterend', badge);
+              }
+              // Update onclick to pass alreadyDownloaded = true from now on
+              chip.setAttribute('onclick',
+                'openAttachment(' + id + ',\'' + escHtml(filename) + '\',\'' + escHtml(mime) + '\',true)');
+            }
           }
         })
         .catch(function (err) {
@@ -1700,7 +1763,21 @@
         .finally(function () {
           if (chip) { chip.style.opacity = ''; chip.style.pointerEvents = ''; }
         });
-    };
+    }
+
+    function fetchAndRenderAttachments(mailId) {
+      fetch('/messages/attachment-status/' + mailId, {
+        headers: { 'Authorization': 'Bearer ' + TOKEN }
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          renderReadAttachments(data.attachments || [], mailId);
+        })
+        .catch(function () {
+          // Fallback — render without download status
+          renderReadAttachments([], mailId);
+        });
+    }
 
     // Keep a reference to the current blob URL so we can revoke it on close
     var _previewBlobUrl = null;

@@ -48,9 +48,9 @@ function formatDisplayName(name) {
 var displayName = formatDisplayName(fullName);
 
 var userDisplayEl = document.getElementById("user-display-name");
-var headerNameEl  = document.getElementById("header-username-text");
+var headerNameEl = document.getElementById("header-username-text");
 if (userDisplayEl) userDisplayEl.textContent = displayName;
-if (headerNameEl)  headerNameEl.textContent  = fullName;
+if (headerNameEl) headerNameEl.textContent = fullName;
 
 // ══════════════════════════════════════════════════════════
 // TIME-BASED GREETING
@@ -60,60 +60,156 @@ function applyGreeting() {
 
   var greetings = {
     midnight: [
-      { icon: "🌌", tag: "Midnight",     sub: "Burning the midnight oil, Officer." },
-      { icon: "🌙", tag: "Still Awake?", sub: "Don't forget to get some rest." },
-      { icon: "⭐", tag: "Late Night",   sub: "Rest up, tomorrow needs you sharp." },
-      { icon: "🔭", tag: "Mid-Watch",    sub: "Keep a sharp lookout. The fleet sleeps soundly on your watch." },
-      { icon: "🔦", tag: "Night Ops",    sub: "Precision and focus, even in the dark." }
+      {
+        icon: "🌌",
+        tag: "Midnight",
+        sub: "Burning the midnight oil, Officer.",
+      },
+      {
+        icon: "🌙",
+        tag: "Still Awake?",
+        sub: "Don't forget to get some rest.",
+      },
+      {
+        icon: "⭐",
+        tag: "Late Night",
+        sub: "Rest up, tomorrow needs you sharp.",
+      },
+      {
+        icon: "🔭",
+        tag: "Mid-Watch",
+        sub: "Keep a sharp lookout. The fleet sleeps soundly on your watch.",
+      },
+      {
+        icon: "🔦",
+        tag: "Night Ops",
+        sub: "Precision and focus, even in the dark.",
+      },
     ],
     morning: [
-      { icon: "🌅", tag: "Good Morning",  sub: "Duty begins with a clear mind." },
-      { icon: "☀️", tag: "Good Morning",  sub: "Hope your morning is off to a great start." },
-      { icon: "☕", tag: "Rise & Shine",  sub: "A good cup of coffee and a great day ahead." },
-      { icon: "🌤️", tag: "Good Morning", sub: "The early bird is already ahead of the game." },
-      { icon: "⚓", tag: "Anchor's Aweigh", sub: "New day, new objectives. Let's make headway." },
-      { icon: "🚢", tag: "Full Speed Ahead", sub: "Set the pace for the crew today, Officer." },
-      { icon: "🌞", tag: "Almost Noon",   sub: "Keep the momentum going." },
-      { icon: "☕", tag: "Coffee Hour",   sub: "Halfway to the afternoon, you're doing great." },
+      {
+        icon: "🌅",
+        tag: "Good Morning",
+        sub: "Duty begins with a clear mind.",
+      },
+      {
+        icon: "☀️",
+        tag: "Good Morning",
+        sub: "Hope your morning is off to a great start.",
+      },
+      {
+        icon: "☕",
+        tag: "Rise & Shine",
+        sub: "A good cup of coffee and a great day ahead.",
+      },
+      {
+        icon: "🌤️",
+        tag: "Good Morning",
+        sub: "The early bird is already ahead of the game.",
+      },
+      {
+        icon: "⚓",
+        tag: "Anchor's Aweigh",
+        sub: "New day, new objectives. Let's make headway.",
+      },
+      {
+        icon: "🚢",
+        tag: "Full Speed Ahead",
+        sub: "Set the pace for the crew today, Officer.",
+      },
+      { icon: "🌞", tag: "Almost Noon", sub: "Keep the momentum going." },
+      {
+        icon: "☕",
+        tag: "Coffee Hour",
+        sub: "Halfway to the afternoon, you're doing great.",
+      },
     ],
     afternoon: [
-      { icon: "🌤️", tag: "Good Afternoon",  sub: "A productive afternoon makes for a great evening." },
-      { icon: "⚓",  tag: "Good Afternoon",  sub: "Steady as the ship goes." },
-      { icon: "🌞", tag: "Sunny Afternoon", sub: "Keep pushing... the finish line is in sight." },
-      { icon: "🧭", tag: "Steady Course",   sub: "Your leadership is the compass of this unit." },
-      { icon: "🌊", tag: "Smooth Sailing",  sub: "You've got the helm. Keep the momentum high." },
-      { icon: "🌇", tag: "Good Afternoon",  sub: "Almost there... finish strong." },
+      {
+        icon: "🌤️",
+        tag: "Good Afternoon",
+        sub: "A productive afternoon makes for a great evening.",
+      },
+      { icon: "⚓", tag: "Good Afternoon", sub: "Steady as the ship goes." },
+      {
+        icon: "🌞",
+        tag: "Sunny Afternoon",
+        sub: "Keep pushing... the finish line is in sight.",
+      },
+      {
+        icon: "🧭",
+        tag: "Steady Course",
+        sub: "Your leadership is the compass of this unit.",
+      },
+      {
+        icon: "🌊",
+        tag: "Smooth Sailing",
+        sub: "You've got the helm. Keep the momentum high.",
+      },
+      {
+        icon: "🌇",
+        tag: "Good Afternoon",
+        sub: "Almost there... finish strong.",
+      },
     ],
     evening: [
-      { icon: "🌆", tag: "Good Evening", sub: "Time to wind down after a solid day." },
+      {
+        icon: "🌆",
+        tag: "Good Evening",
+        sub: "Time to wind down after a solid day.",
+      },
       { icon: "🌙", tag: "Good Evening", sub: "Rest well — you've earned it." },
-      { icon: "🌃", tag: "Wonderful Evening, Officer", sub: "Hope the day treated you well." },
-      { icon: "🎖️", tag: "Mission Success", sub: "Another day of service in the books. Well done." },
-      { icon: "🕯️", tag: "Safe Harbor",   sub: "The day's work is done. Time to recharge." }
+      {
+        icon: "🌃",
+        tag: "Wonderful Evening, Officer",
+        sub: "Hope the day treated you well.",
+      },
+      {
+        icon: "🎖️",
+        tag: "Mission Success",
+        sub: "Another day of service in the books. Well done.",
+      },
+      {
+        icon: "🕯️",
+        tag: "Safe Harbor",
+        sub: "The day's work is done. Time to recharge.",
+      },
     ],
     night: [
-      { icon: "🌙", tag: "Good Night", sub: "Rest up, tomorrow needs you sharp." },
-      { icon: "⭐", tag: "Slient Night", sub: "Don't forget to get some rest." },
+      {
+        icon: "🌙",
+        tag: "Good Night",
+        sub: "Rest up, tomorrow needs you sharp.",
+      },
+      {
+        icon: "⭐",
+        tag: "Slient Night",
+        sub: "Don't forget to get some rest.",
+      },
       { icon: "🌌", tag: "Good Night", sub: "Time for bed, a new day awaits." },
-      { icon: "🔕", tag: "Silence on Deck", sub: "Even the best engines need a cooldown. Sleep well." }
+      {
+        icon: "🔕",
+        tag: "Silence on Deck",
+        sub: "Even the best engines need a cooldown. Sleep well.",
+      },
     ],
   };
 
   var pool;
-  if (hour >= 0 && hour < 4)        pool = greetings.midnight;
-  else if (hour >= 4 && hour < 12)  pool = greetings.morning;
+  if (hour >= 0 && hour < 4) pool = greetings.midnight;
+  else if (hour >= 4 && hour < 12) pool = greetings.morning;
   else if (hour >= 12 && hour < 16) pool = greetings.afternoon;
   else if (hour >= 16 && hour < 21) pool = greetings.evening;
-  else                               pool = greetings.night;
+  else pool = greetings.night;
 
   var pick = pool[Math.floor(Math.random() * pool.length)];
 
   var iconEl = document.getElementById("greeting-icon");
   var textEl = document.getElementById("greeting-text");
-  var subEl  = document.getElementById("greeting-sub");
+  var subEl = document.getElementById("greeting-sub");
   if (iconEl) iconEl.textContent = pick.icon;
   if (textEl) textEl.textContent = pick.tag;
-  if (subEl)  subEl.textContent  = pick.sub;
+  if (subEl) subEl.textContent = pick.sub;
 }
 
 applyGreeting();
@@ -122,7 +218,7 @@ setInterval(applyGreeting, 60 * 1000);
 // ══════════════════════════════════════════════════════════
 // HEADER: logo ↔ username swap
 // ══════════════════════════════════════════════════════════
-var headerLogo     = document.getElementById("header-logo");
+var headerLogo = document.getElementById("header-logo");
 var headerUsername = document.getElementById("header-username");
 
 function updateHeaderSlot(pageId) {
@@ -140,12 +236,16 @@ function updateHeaderSlot(pageId) {
 // PAGE SWITCHER
 // ══════════════════════════════════════════════════════════
 function showPage(id) {
-  document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
-  document.querySelectorAll("nav a").forEach((a) => a.classList.remove("active"));
+  document
+    .querySelectorAll(".page")
+    .forEach((p) => p.classList.remove("active"));
+  document
+    .querySelectorAll("nav a")
+    .forEach((a) => a.classList.remove("active"));
 
-  var pg  = document.getElementById("page-" + id);
+  var pg = document.getElementById("page-" + id);
   var nav = document.getElementById("nav-" + id);
-  if (pg)  pg.classList.add("active");
+  if (pg) pg.classList.add("active");
   if (nav) nav.classList.add("active");
 
   updateHeaderSlot(id);
@@ -231,7 +331,7 @@ function loadEmailPage() {
 // GLOBAL EMAIL BADGE + VIBRATE — runs on every page, always
 // ══════════════════════════════════════════════════════════
 var _globalLastUnread = -1;
-var _globalPollTimer  = null;
+var _globalPollTimer = null;
 
 function vibrateEmailTargets() {
   var navEmail = document.getElementById("nav-email");
@@ -239,9 +339,13 @@ function vibrateEmailTargets() {
     navEmail.classList.remove("nav-vibrate");
     void navEmail.offsetWidth;
     navEmail.classList.add("nav-vibrate");
-    navEmail.addEventListener("animationend", function () {
-      navEmail.classList.remove("nav-vibrate");
-    }, { once: true });
+    navEmail.addEventListener(
+      "animationend",
+      function () {
+        navEmail.classList.remove("nav-vibrate");
+      },
+      { once: true },
+    );
   }
 
   var emailBtn = document.querySelector('button[data-page="email"]');
@@ -249,9 +353,13 @@ function vibrateEmailTargets() {
     emailBtn.classList.remove("nav-vibrate");
     void emailBtn.offsetWidth;
     emailBtn.classList.add("nav-vibrate");
-    emailBtn.addEventListener("animationend", function () {
-      emailBtn.classList.remove("nav-vibrate");
-    }, { once: true });
+    emailBtn.addEventListener(
+      "animationend",
+      function () {
+        emailBtn.classList.remove("nav-vibrate");
+      },
+      { once: true },
+    );
   }
 }
 
@@ -387,14 +495,20 @@ const DashAlertModal = {
       .addEventListener("click", () => this.close());
   },
 
-  confirm(message, onConfirm, onCancel) {
+  confirm(
+    message,
+    onConfirm,
+    onCancel,
+    confirmLabel = "Delete",
+    confirmDanger = true,
+  ) {
     document.getElementById("dashAlertMsg").textContent = message;
-    const okBtn   = document.getElementById("dashAlertOk");
+    const okBtn = document.getElementById("dashAlertOk");
     const wrapper = okBtn.parentNode;
 
-    okBtn.textContent       = "Delete";
-    okBtn.style.background  = "#e74c3c";
-    okBtn.style.color       = "#fff";
+    okBtn.textContent = confirmLabel;
+    okBtn.style.background = confirmDanger ? "#e74c3c" : "#f5c842";
+    okBtn.style.color = confirmDanger ? "#fff" : "#0d1f35";
     okBtn.style.marginRight = "12px";
     okBtn.onclick = () => {
       this.close();
@@ -415,29 +529,29 @@ const DashAlertModal = {
         if (onCancel) onCancel();
       });
     }
-    cancelBtn.textContent   = "Cancel";
+    cancelBtn.textContent = "Cancel";
     cancelBtn.style.display = "inline-block";
 
-    this.modal.style.opacity       = "1";
+    this.modal.style.opacity = "1";
     this.modal.style.pointerEvents = "all";
   },
 
   show(message) {
     document.getElementById("dashAlertMsg").textContent = message;
-    const okBtn     = document.getElementById("dashAlertOk");
+    const okBtn = document.getElementById("dashAlertOk");
     const cancelBtn = document.getElementById("dashAlertCancel");
-    okBtn.textContent       = "OK";
-    okBtn.style.background  = "#f5c842";
-    okBtn.style.color       = "#0d1f35";
+    okBtn.textContent = "OK";
+    okBtn.style.background = "#f5c842";
+    okBtn.style.color = "#0d1f35";
     okBtn.style.marginRight = "0";
     okBtn.onclick = () => this.close();
     if (cancelBtn) cancelBtn.style.display = "none";
-    this.modal.style.opacity       = "1";
+    this.modal.style.opacity = "1";
     this.modal.style.pointerEvents = "all";
   },
 
   close() {
-    this.modal.style.opacity       = "0";
+    this.modal.style.opacity = "0";
     this.modal.style.pointerEvents = "none";
   },
 };
@@ -492,24 +606,24 @@ function confirmLogout() {
     document.body.appendChild(overlay);
 
     // Hover effects
-    var cancelBtn  = document.getElementById("logoutCancelBtn");
+    var cancelBtn = document.getElementById("logoutCancelBtn");
     var confirmBtn = document.getElementById("logoutConfirmBtn");
 
     cancelBtn.addEventListener("mouseenter", function () {
-      this.style.background      = "rgba(255,255,255,0.06)";
-      this.style.borderColor     = "rgba(200,220,255,0.4)";
-      this.style.color           = "#fff";
+      this.style.background = "rgba(255,255,255,0.06)";
+      this.style.borderColor = "rgba(200,220,255,0.4)";
+      this.style.color = "#fff";
     });
     cancelBtn.addEventListener("mouseleave", function () {
-      this.style.background      = "transparent";
-      this.style.borderColor     = "rgba(200,220,255,0.2)";
-      this.style.color           = "rgba(200,220,255,0.7)";
+      this.style.background = "transparent";
+      this.style.borderColor = "rgba(200,220,255,0.2)";
+      this.style.color = "rgba(200,220,255,0.7)";
     });
     confirmBtn.addEventListener("mouseenter", function () {
-      this.style.background      = "#c0392b";
+      this.style.background = "#c0392b";
     });
     confirmBtn.addEventListener("mouseleave", function () {
-      this.style.background      = "#e74c3c";
+      this.style.background = "#e74c3c";
     });
 
     // Close on Cancel
@@ -524,20 +638,22 @@ function confirmLogout() {
 
     // Confirm logout
     confirmBtn.addEventListener("click", function () {
-      _closeLogoutModal(overlay);
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Logging out...";
+      //_closeLogoutModal(overlay);
       logout();
     });
   }
 
   // Show
-  overlay.style.opacity       = "1";
+  overlay.style.opacity = "1";
   overlay.style.pointerEvents = "all";
   var box = document.getElementById("logoutConfirmBox");
   if (box) box.style.transform = "translateY(0)";
 }
 
 function _closeLogoutModal(overlay) {
-  overlay.style.opacity       = "0";
+  overlay.style.opacity = "0";
   overlay.style.pointerEvents = "none";
   var box = document.getElementById("logoutConfirmBox");
   if (box) box.style.transform = "translateY(12px)";
