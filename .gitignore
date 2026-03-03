@@ -69,9 +69,3 @@ temp
 cert.pem
 key.pem
 check-db-health.js
-public/photos/android-chrome-192x192.png
-public/photos/apple-touch-icon.png
-public/photos/android-chrome-512x512.png
-public/photos/favicon-16x16.png
-public/photos/favicon-32x32.png
-public/photos/site.webmanifest
