@@ -118,6 +118,7 @@
 
 <script>
 // Current Personnel Management Script
+const auth = window.authService;
 const API_BASE = '/personnel';
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -549,7 +550,7 @@ class PersonnelManager {
 
   async apiRequest(url, options = {}) {
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         ...options,
         headers: { ...API_HEADERS, ...options.headers }
       });
@@ -640,7 +641,7 @@ class PersonnelManager {
       if (filters.search) params.append('q', filters.search);
       if (filters.rank) params.append('rank', filters.rank);
 
-      const response = await fetch(`/personnel/employees-current/search?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`/personnel/employees-current/search?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -951,7 +952,7 @@ class PersonnelManager {
         if (rank) queryParams.push(`rank=${encodeURIComponent(rank)}`);
         queryParams.push(`page=${this.currentPage}`, `limit=10`);
 
-        const response = await fetch(
+        const response = await auth.fetchWithAuth(
           `/personnel/employees-current/search?${queryParams.join('&')}`,
           {
             method: 'GET',
@@ -1108,7 +1109,7 @@ class PersonnelManager {
 
   async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
-      const response = await fetch(`/reference/${endpoint}`, {
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -1140,7 +1141,7 @@ class PersonnelManager {
     const endpoints = ['title'];
     await Promise.all(endpoints.map(async endpoint => {
       try {
-        const res = await fetch(`/reference/${endpoint}`, {
+        const res = await auth.fetchWithAuth(`/reference/${endpoint}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`

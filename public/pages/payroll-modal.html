@@ -170,8 +170,6 @@
   var classesLoaded = false;
 
   // ── Expose openPayrollModal globally ─────────
-  // user-dashboard.js calls this from the payroll nav click
-  // and from the logout return auto-open check
   window.openPayrollModal = function() {
     modal.classList.add('open');
     if (!classesLoaded) loadPayrollClasses();
@@ -181,6 +179,7 @@
     modal.classList.remove('open');
     selectEl.value       = '';
     confirmBtn.disabled  = true;
+    confirmBtn.textContent = 'Continue to Payroll';
   }
 
   // Enable confirm only when a class is chosen
@@ -190,9 +189,11 @@
 
   cancelBtn.addEventListener('click', closePayrollModal);
 
-  // Close on backdrop click
+  // Close on backdrop click (only when not loading)
   modal.addEventListener('click', function(e) {
-    if (e.target === modal) closePayrollModal();
+    if (e.target === modal && confirmBtn.textContent !== 'Please wait...') {
+      closePayrollModal();
+    }
   });
 
   // ── On confirm: call /api/users/login ─────────
@@ -215,8 +216,12 @@
     var uid = decryptVal(encUid);
     var pwd = decryptVal(encPwd);
 
-    confirmBtn.disabled     = true;
-    confirmBtn.textContent  = 'Please wait...';
+    confirmBtn.disabled    = true;
+    confirmBtn.textContent = 'Please wait...';
+
+    // Lock the select and cancel button during loading
+    selectEl.disabled  = true;
+    cancelBtn.disabled = true;
 
     try {
       const res  = await fetch('/api/users/login', {
@@ -228,9 +233,6 @@
       const data = await res.json();
 
       if (res.ok) {
-        // Keep _pid and _ppwd in sessionStorage intentionally —
-        // logout.js preserves them so modal works on next return
-
         // Save everything exactly like Login 2
         localStorage.setItem('token',         data.token);
         localStorage.setItem('user_id',       data.user.user_id);
@@ -239,15 +241,22 @@
         localStorage.setItem('class',         data.user.primary_class);
         localStorage.setItem('current_class', data.user.current_class);
 
-        closePayrollModal();
+        // ── Modal stays open with "Please wait..." as the loading indicator ──
+        // closePayrollModal() intentionally NOT called here — the redirect
+        // will navigate away, so there is no need to close the modal first.
         window.location.href = '/dashboard.html';
       } else {
+        // On failure: restore everything so the user can try again
+        selectEl.disabled      = false;
+        cancelBtn.disabled     = false;
         confirmBtn.disabled    = false;
         confirmBtn.textContent = 'Continue to Payroll';
         DashAlertModal.show(data.error || 'Login failed. Please try again.');
       }
     } catch (err) {
       console.error('Modal login error:', err);
+      selectEl.disabled      = false;
+      cancelBtn.disabled     = false;
       confirmBtn.disabled    = false;
       confirmBtn.textContent = 'Continue to Payroll';
       DashAlertModal.show('Server not responding. Please try again.');

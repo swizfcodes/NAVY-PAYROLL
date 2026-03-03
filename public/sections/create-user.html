@@ -138,30 +138,29 @@
     <div id="successSpinner" class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
     <span id="successMessage" class="text-gray-700">Processing...</span>
   </div>
+</div>
 
-  <!-- Alert Modal -->
-  <div id="alertModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
-    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-    <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 z-10">
-      <div class="flex items-start mb-4">
-        <div id="alert-icon" class="flex-shrink-0 mr-3"></div>
-        <div class="flex-1">
-          <h3 id="alert-title" class="text-lg font-semibold mb-2"></h3>
-          <p id="alert-message" class="text-gray-700"></p>
-        </div>
+<!-- Alert Modal -->
+<div id="alertModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
+  <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+  <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 z-10">
+    <div class="flex items-start mb-4">
+      <div id="alert-icon" class="flex-shrink-0 mr-3"></div>
+      <div class="flex-1">
+        <h3 id="alert-title" class="text-lg font-semibold mb-2"></h3>
+        <p id="alert-message" class="text-gray-700"></p>
       </div>
-      <div class="flex justify-end gap-3 mt-6">
-        <button id="alert-cancel-btn"
-          class="hidden px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
-        <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
-      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button id="alert-cancel-btn"
+        class="hidden px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+      <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
     </div>
   </div>
 </div>
 
 <script>
-  const isLocal = window.location.hostname === 'localhost';
-  const BASE_URL = isLocal ? 'http://localhost:5500' : 'https://hicad.ng';
+  const auth = window.authService;
 
   // Alert Modal System
   const AlertModal = {
@@ -318,7 +317,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch("/roles", {
+      const res = await auth.fetchWithAuth("/roles", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -369,7 +368,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch("/db_classes", {
+      const res = await auth.fetchWithAuth("/db_classes", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -483,6 +482,8 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
 
+    let result = {};
+
     try {
       const token = localStorage.getItem("token");
 
@@ -497,7 +498,7 @@
         return;
       }
 
-      const response = await fetch(`${BASE_URL}/api/users`, {
+      const response = await auth.fetchWithAuth(`/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -506,7 +507,8 @@
         body: JSON.stringify(userData)
       });
 
-      const result = await response.json();
+      result = await response.json();
+      console.log('Response status:', response.status, 'Result:', result); 
 
       if (response.ok) {
         showSuccess('Creating User...\nID: ' + result.user_id);

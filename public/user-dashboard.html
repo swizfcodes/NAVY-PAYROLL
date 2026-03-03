@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Navy Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       font-family: 'DM Sans', system-ui, sans-serif;
@@ -21,12 +28,14 @@
     /* ── HEADER ── */
     header {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       height: 68px;
       background: rgba(13, 31, 53, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -49,6 +58,7 @@
       transform: translateY(0);
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
+
     .header-logo.hidden-slot {
       opacity: 0;
       pointer-events: none;
@@ -67,19 +77,22 @@
       pointer-events: none;
       position: absolute;
     }
+
     .header-username.visible-slot {
       opacity: 1;
       transform: translateY(0);
       pointer-events: all;
       position: relative;
     }
+
     .header-username-label {
       font-size: 10px;
       font-weight: 600;
-      color: rgba(200,220,255,0.35);
+      color: rgba(200, 220, 255, 0.35);
       text-transform: uppercase;
       letter-spacing: 0.12em;
     }
+
     .header-username-name {
       font-family: 'Cormorant Garamond', Georgia, serif;
       font-size: 18px;
@@ -108,19 +121,32 @@
       position: relative;
       padding-bottom: 2px;
     }
+
     nav a::after {
       content: '';
       position: absolute;
-      bottom: -4px; left: 0; right: 0;
+      bottom: -4px;
+      left: 0;
+      right: 0;
       height: 1px;
       background: #7eb8f7;
       opacity: 0;
       transform: scaleX(0);
       transition: opacity 0.25s, transform 0.25s;
     }
-    nav a:hover { color: rgba(220, 235, 255, 0.9); }
-    nav a.active { color: #ffffff; }
-    nav a.active::after { opacity: 1; transform: scaleX(1); }
+
+    nav a:hover {
+      color: rgba(220, 235, 255, 0.9);
+    }
+
+    nav a.active {
+      color: #ffffff;
+    }
+
+    nav a.active::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
 
     /* ── PAGES ── */
     .page {
@@ -135,6 +161,7 @@
       transform: translateY(16px);
       transition: opacity 0.45s ease, transform 0.45s ease;
     }
+
     .page.active {
       opacity: 1;
       pointer-events: all;
@@ -149,16 +176,15 @@
       align-items: flex-start;
       justify-content: center;
     }
+
     .home-bg::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to bottom,
-        rgba(8, 20, 40, 0.78) 0%,
-        rgba(8, 20, 40, 0.55) 45%,
-        rgba(8, 20, 40, 0.20) 100%
-      );
+      background: linear-gradient(to bottom,
+          rgba(8, 20, 40, 0.78) 0%,
+          rgba(8, 20, 40, 0.55) 45%,
+          rgba(8, 20, 40, 0.20) 100%);
     }
 
     .home-content {
@@ -182,6 +208,7 @@
       justify-content: center;
       gap: 10px;
     }
+
     .welcome-tag-icon {
       font-size: 18px;
       letter-spacing: 0;
@@ -195,10 +222,14 @@
       line-height: 1.0;
       margin-bottom: 20px;
       letter-spacing: -1px;
-      text-shadow: 0 4px 40px rgba(0,0,0,0.6);
+      text-shadow: 0 4px 40px rgba(0, 0, 0, 0.6);
       animation: fadeUp 0.6s 0.2s both;
     }
-    .welcome-name span { font-weight: 700; color: #ffffff; }
+
+    .welcome-name span {
+      font-weight: 700;
+      color: #ffffff;
+    }
 
     .welcome-sub {
       font-size: 30px;
@@ -226,8 +257,15 @@
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .btn {
@@ -242,118 +280,403 @@
       outline: none;
       letter-spacing: 0.8px;
     }
+
     .btn-primary {
       background: #ffffff;
       color: #0d1f35;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
+
     .btn-primary:hover {
       background: #f5c842;
       color: #0d1f35;
-      box-shadow: 0 6px 24px rgba(245,200,66,0.45);
+      box-shadow: 0 6px 24px rgba(245, 200, 66, 0.45);
       transform: translateY(-2px);
     }
+
     .btn-ghost {
-      background: rgba(255,255,255,0.18);
+      background: rgba(255, 255, 255, 0.18);
       color: #ffffff;
-      border: 1.5px solid rgba(255,255,255,0.50);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border: 1.5px solid rgba(255, 255, 255, 0.50);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
+
     .btn-ghost:hover {
       background: #f5c842;
       color: #0d1f35;
       border-color: #f5c842;
-      box-shadow: 0 6px 24px rgba(245,200,66,0.45);
+      box-shadow: 0 6px 24px rgba(245, 200, 66, 0.45);
       transform: translateY(-2px);
     }
 
     /* ── INNER PAGES ── */
-    .inner-page { background: #0d1f35; }
+    .inner-page {
+      background: #0d1f35;
+    }
+
     .page-label {
       font-size: 28px;
       font-weight: 600;
-      color: rgba(150,185,255,0.18);
+      color: rgba(150, 185, 255, 0.18);
       letter-spacing: 3px;
     }
 
     /* ── Nav vibrate for new mail (from email.html fix) ── */
     @keyframes navVibrate {
-      0%,100% { transform: translateX(0) rotate(0deg); }
-      15%     { transform: translateX(-3px) rotate(-5deg); }
-      30%     { transform: translateX(3px)  rotate(5deg); }
-      45%     { transform: translateX(-2px) rotate(-3deg); }
-      60%     { transform: translateX(2px)  rotate(3deg); }
-      75%     { transform: translateX(-1px) rotate(-1deg); }
-      90%     { transform: translateX(1px)  rotate(1deg); }
+
+      0%,
+      100% {
+        transform: translateX(0) rotate(0deg);
+      }
+
+      15% {
+        transform: translateX(-3px) rotate(-5deg);
+      }
+
+      30% {
+        transform: translateX(3px) rotate(5deg);
+      }
+
+      45% {
+        transform: translateX(-2px) rotate(-3deg);
+      }
+
+      60% {
+        transform: translateX(2px) rotate(3deg);
+      }
+
+      75% {
+        transform: translateX(-1px) rotate(-1deg);
+      }
+
+      90% {
+        transform: translateX(1px) rotate(1deg);
+      }
     }
+
     .nav-vibrate {
       animation: navVibrate 0.65s ease-in-out;
       display: inline-block;
     }
+
+    /* ── Attachment preview lightbox ── */
+    .att-preview-overlay {
+      position: fixed;
+      top: 68px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(4, 12, 28, 0.82);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      /* just needs to beat page divs, not header */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .att-preview-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Fullscreen — NOW works because we're a sibling of header */
+    .att-preview-overlay.fullscreen-mode {
+      top: 0;
+      padding: 0;
+      z-index: 9999;
+      /* beats header z-index:100 easily */
+    }
+
+    .att-preview-box {
+      background: #0f2340;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 16px;
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 860px;
+      height: calc(100vh - 68px - 48px);
+      overflow: hidden;
+      transform: translateY(12px);
+      transition: transform 0.25s ease;
+      position: relative;
+    }
+
+    .att-preview-overlay.open .att-preview-box {
+      transform: translateY(0);
+    }
+
+    /* Fullscreen box */
+    .att-preview-overlay.fullscreen-mode .att-preview-box {
+      max-width: 100%;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: none;
+    }
+
+    /* Header — always visible in normal mode */
+    .att-preview-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      flex-shrink: 0;
+      background: #0f2340;
+      z-index: 1;
+    }
+
+    /* Header — hidden in fullscreen, fades on hover */
+    .att-preview-overlay.fullscreen-mode .att-preview-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      background: linear-gradient(rgba(15, 35, 64, 0.97), transparent);
+      border-bottom: none;
+      padding-bottom: 40px;
+    }
+
+    .att-preview-overlay.fullscreen-mode .att-preview-bar.fs-bar-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .att-preview-filename {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55%;
+    }
+
+    .att-preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .att-preview-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .att-preview-download {
+      background: #f5c842;
+      color: #0d1f35;
+    }
+
+    .att-preview-download:hover {
+      background: #ffd95a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(245, 200, 66, 0.3);
+    }
+
+    .att-preview-expand,
+    .att-preview-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: rgba(200, 220, 255, 0.7);
+    }
+
+    .att-preview-expand:hover,
+    .att-preview-close:hover {
+      background: rgba(255, 255, 255, 0.11);
+      color: #fff;
+    }
+
+    /* Content area */
+    .att-preview-content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0a1a2e;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .att-preview-overlay.fullscreen-mode .att-preview-content {
+      height: 100%;
+      padding: 0;
+    }
+
+    .att-preview-content img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .att-preview-content iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      display: block;
+    }
+
+    /* ESC hint */
+    .att-preview-esc-hint {
+      position: absolute;
+      bottom: 20px;
+      right: 24px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: rgba(200, 220, 255, 0.55);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .att-preview-esc-hint.visible {
+      display: flex;
+    }
+
+    .att-preview-overlay.fullscreen-mode .att-preview-esc-hint.fs-bar-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .att-preview-esc-hint kbd {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 11px;
+      color: rgba(200, 220, 255, 0.8);
+    }
   </style>
 </head>
+
 <body>
 
-<!-- HEADER -->
-<header>
-  <div class="header-left">
-    <!-- Logo: visible on home page -->
-    <img src="photos/logo.png" alt="Navy Pays logo" class="header-logo" id="header-logo">
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <!-- Logo: visible on home page -->
+      <img src="photos/logo.png" alt="Navy Pays logo" class="header-logo" id="header-logo">
 
-    <!-- User name: visible on inner pages -->
-    <div class="header-username" id="header-username">
-      <span class="header-username-label">Signed in as</span>
-      <span class="header-username-name" id="header-username-text"></span>
+      <!-- User name: visible on inner pages -->
+      <div class="header-username" id="header-username">
+        <span class="header-username-label">Signed in as</span>
+        <span class="header-username-name" id="header-username-text"></span>
+      </div>
+    </div>
+
+    <nav>
+      <a class="active" id="nav-home" data-page="home">Home</a>
+      <a id="nav-payroll" data-page="payroll">Payroll</a>
+      <a id="nav-payslip" data-page="payslip">Payslip</a>
+      <a id="nav-email" data-page="email">
+        Email
+        <span id="nav-mail-badge"
+          style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-left:2px;vertical-align:middle;display:none"></span>
+      </a>
+      <a id="nav-logout" data-page="logout">Logout</a>
+    </nav>
+  </header>
+
+  <!-- HOME -->
+  <div class="page home-bg active" id="page-home">
+    <div class="home-content">
+      <!-- time-based greeting injected by JS -->
+      <p class="welcome-tag" id="greeting-tag">
+        <span class="welcome-tag-icon" id="greeting-icon">☀️</span>
+        <span id="greeting-text">Good Morning</span>
+      </p>
+
+      <!-- Real name from localStorage -->
+      <h1 class="welcome-name" id="welcome-name">
+        Welcome, <span id="user-display-name">...</span>
+      </h1>
+
+      <!-- Pleasant time-based sub-line -->
+      <p class="welcome-sub" id="greeting-sub">Hope your morning is off to a great start.</p>
+
+      <div class="divider"></div>
+      <div class="quick-actions">
+        <button class="btn btn-primary" data-page="email">My Email</button>
+        <button class="btn btn-ghost" data-page="payslip">My Payslip</button>
+      </div>
     </div>
   </div>
 
-  <nav>
-    <a class="active" id="nav-home"    data-page="home">Home</a>
-    <a id="nav-payroll"  data-page="payroll">Payroll</a>
-    <a id="nav-payslip"  data-page="payslip">Payslip</a>
-    <a id="nav-email"    data-page="email">
-      Email
-      <span id="nav-mail-badge" style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-left:2px;vertical-align:middle;display:none"></span>
-    </a>
-    <a id="nav-logout" data-page="logout">Logout</a>
-  </nav>
-</header>
+  <!-- PAYSLIP -->
+  <div class="page inner-page" id="page-payslip">
+    <p class="page-label">PAYSLIP — COMING SOON</p>
+  </div>
 
-<!-- HOME -->
-<div class="page home-bg active" id="page-home">
-  <div class="home-content">
-    <!-- time-based greeting injected by JS -->
-    <p class="welcome-tag" id="greeting-tag">
-      <span class="welcome-tag-icon" id="greeting-icon">☀️</span>
-      <span id="greeting-text">Good Morning</span>
-    </p>
+  <!-- EMAIL -->
+  <div class="page inner-page" id="page-email">
+    <p class="page-label">EMAIL — COMING SOON</p>
+  </div>
 
-    <!-- Real name from localStorage -->
-    <h1 class="welcome-name" id="welcome-name">
-      Welcome, <span id="user-display-name">...</span>
-    </h1>
+  <script src="script/user-dashboard.js"></script>
 
-    <!-- Pleasant time-based sub-line -->
-    <p class="welcome-sub" id="greeting-sub">Hope your morning is off to a great start.</p>
-
-    <div class="divider"></div>
-    <div class="quick-actions">
-      <button class="btn btn-primary" data-page="email">My Email</button>
-      <button class="btn btn-ghost"   data-page="payslip">My Payslip</button>
+  <!-- ATTACHMENT PREVIEW LIGHTBOX — body level so it can cover the header -->
+  <div class="att-preview-overlay" id="attPreviewOverlay">
+    <div class="att-preview-box">
+      <div class="att-preview-bar">
+        <span class="att-preview-filename" id="attPreviewName"></span>
+        <div class="att-preview-actions">
+          <button class="att-preview-btn att-preview-download" id="attPreviewDownloadBtn">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download
+          </button>
+          <button class="att-preview-btn att-preview-expand" id="attPreviewExpandBtn"
+            onclick="toggleAttFullscreen()"></button>
+          <button class="att-preview-btn att-preview-close" onclick="closeAttPreview()">✕ Close</button>
+        </div>
+      </div>
+      <div class="att-preview-content" id="attPreviewContent"></div>
+      <div class="att-preview-esc-hint" id="attEscHint">
+        <kbd>ESC</kbd> to exit fullscreen
+      </div>
     </div>
   </div>
-</div>
-
-<!-- PAYSLIP -->
-<div class="page inner-page" id="page-payslip">
-  <p class="page-label">PAYSLIP — COMING SOON</p>
-</div>
-
-<!-- EMAIL -->
-<div class="page inner-page" id="page-email">
-  <p class="page-label">EMAIL — COMING SOON</p>
-</div>
-
-<script src="script/user-dashboard.js"></script>
 </body>
+
 </html>

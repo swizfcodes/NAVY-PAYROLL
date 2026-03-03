@@ -116,6 +116,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
 
         // Save token & user info to localStorage
         localStorage.setItem("token",     data.token);
+        localStorage.setItem("pre_login_token", data.token);
         localStorage.setItem("user_id",   data.user.user_id);
         localStorage.setItem("full_name", data.user.full_name);
         localStorage.setItem("role",      data.user.role);

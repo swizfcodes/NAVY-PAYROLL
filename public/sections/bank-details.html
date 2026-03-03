@@ -236,7 +236,7 @@
   async function loadBanks() {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/bank?page=${currentPage}&limit=${recordsPerPage}`, {
+      const res = await auth.fetchWithAuth(`/api/bank?page=${currentPage}&limit=${recordsPerPage}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -317,7 +317,7 @@
         const { bankcode, branchcode } = bankData[editingBankIndex];
         const token = localStorage.getItem('token');
 
-        const res = await fetch(`/api/${bankcode}/${branchcode}`, {
+        const res = await auth.fetchWithAuth(`/api/${bankcode}/${branchcode}`, {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
@@ -332,7 +332,7 @@
         //Create via POST
         const token = localStorage.getItem('token');
 
-        const res = await fetch("/api/bankcreate", {
+        const res = await auth.fetchWithAuth("/api/bankcreate", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -477,7 +477,7 @@
         const { bankcode, branchcode } = bankData[pendingDeleteIndex];
         const token = localStorage.getItem('token');
 
-        const res = await fetch(`/api/${bankcode}/${branchcode}`, { 
+        const res = await auth.fetchWithAuth(`/api/${bankcode}/${branchcode}`, { 
           method: "DELETE",
           headers: { 
             "Content-Type": "application/json",
@@ -601,7 +601,7 @@
     let fullData;
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(REPORT_API_URL, {   
+        const response = await auth.fetchWithAuth(REPORT_API_URL, {   
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

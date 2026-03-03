@@ -124,6 +124,7 @@
 
 <script>
 // Old Personnel Management Script
+const auth = window.authService;
 const OLD_API_BASE = '/personnel';
 const OLD_API_HEADERS = {
   'Content-Type': 'application/json',
@@ -444,7 +445,7 @@ class OldPersonnelManager {
 
   async apiRequest(url, options = {}) {
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         ...options,
         headers: { ...OLD_API_HEADERS, ...options.headers }
       });
@@ -518,7 +519,7 @@ class OldPersonnelManager {
       const params = new URLSearchParams({ findEmployee: employeeId, limit: '10' });
       if (filters.search) params.append('q', filters.search);
       if (filters.rank)   params.append('rank', filters.rank);
-      const response = await fetch(`/personnel/employees-old/search?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`/personnel/employees-old/search?${params.toString()}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -806,7 +807,7 @@ class OldPersonnelManager {
         if (search) qp.push(`q=${encodeURIComponent(search)}`);
         if (rank)   qp.push(`rank=${encodeURIComponent(rank)}`);
         qp.push(`page=${this.currentPage}`, `limit=10`);
-        const response = await fetch(`/personnel/employees-old/search?${qp.join('&')}`, {
+        const response = await auth.fetchWithAuth(`/personnel/employees-old/search?${qp.join('&')}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
           signal: currentController.signal
@@ -848,7 +849,7 @@ class OldPersonnelManager {
 
   async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
-      const response = await fetch(`/reference/${endpoint}`, {
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -877,7 +878,7 @@ class OldPersonnelManager {
     const token = localStorage.getItem('token');
     await Promise.all(['title'].map(async endpoint => {
       try {
-        const res = await fetch(`/reference/${endpoint}`, {
+        const res = await auth.fetchWithAuth(`/reference/${endpoint}`, {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) { this.lookupMaps[endpoint] = {}; return; }

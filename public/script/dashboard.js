@@ -1435,37 +1435,46 @@ document.addEventListener('DOMContentLoaded', function() {
 // re-authenticate via the payroll modal (_pid/_ppwd handle this).
 // ================================================
 
-function logout() {
-  // Save encrypted credentials
-  var pid  = sessionStorage.getItem('_pid');
-  var ppwd = sessionStorage.getItem('_ppwd');
+async function logout() {
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      await fetch("/api/users/logout", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Logout error:", err);
+  } finally {
+    var pid = sessionStorage.getItem("_pid");
+    var ppwd = sessionStorage.getItem("_ppwd");
+    var preLoginToken = localStorage.getItem("pre_login_token"); // ← restore this
+    var userId = localStorage.getItem("user_id");
+    var fullName = localStorage.getItem("full_name");
+    var role = localStorage.getItem("role");
+    var cls = localStorage.getItem("class");
 
-  // FIX: also save the token before wiping
-  // user-dashboard.html needs it to load normally
-  var token     = localStorage.getItem('token');
-  var userId    = localStorage.getItem('user_id');
-  var fullName  = localStorage.getItem('full_name');
-  var role      = localStorage.getItem('role');
-  var cls       = localStorage.getItem('class');
+    localStorage.clear();
+    sessionStorage.clear();
 
-  // Wipe everything
-  localStorage.clear();
-  sessionStorage.clear();
+    if (pid) sessionStorage.setItem("_pid", pid);
+    if (ppwd) sessionStorage.setItem("_ppwd", ppwd);
+    if (preLoginToken) localStorage.setItem("token", preLoginToken); // clean, no current_class
+    if (preLoginToken)
+      localStorage.setItem("pre_login_token", preLoginToken);
+    if (userId) localStorage.setItem("user_id", userId);
+    if (fullName) localStorage.setItem("full_name", fullName);
+    if (role) localStorage.setItem("role", role);
+    if (cls) localStorage.setItem("class", cls);
 
-  // Restore credentials for payroll modal re-auth
-  if (pid)  sessionStorage.setItem('_pid',  pid);
-  if (ppwd) sessionStorage.setItem('_ppwd', ppwd);
-
-  // FIX: Restore token + display info so user-dashboard
-  // can make API calls normally after returning
-  if (token)    localStorage.setItem('token',     token);
-  if (userId)   localStorage.setItem('user_id',   userId);
-  if (fullName) localStorage.setItem('full_name', fullName);
-  if (role)     localStorage.setItem('role',      role);
-  if (cls)      localStorage.setItem('class',     cls);
-
-  sessionStorage.setItem('_from_logout', 'true');
-  window.location.href = 'user-dashboard.html';
+    //this.stopTracking();
+    sessionStorage.setItem("_from_logout", "true");
+    window.location.href = "user-dashboard.html";
+  }
 }
 
 // ── Inactivity timeout ─────────────────────────────────────
@@ -1484,8 +1493,8 @@ var activityEvents = [
   'scroll', 'touchstart', 'click'
 ];
 
-document.addEventListener('DOMContentLoaded', function() {
-  window.logout = logout;
+document.addEventListener('DOMContentLoaded', async function() {
+  window.logout = await logout;
   resetInactivityTimer();
   activityEvents.forEach(function(evt) {
     document.addEventListener(evt, resetInactivityTimer, true);

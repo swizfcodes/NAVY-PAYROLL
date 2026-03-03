@@ -38,9 +38,12 @@ app.use(
         "'unsafe-inline'",
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],   // ← allows blob: images
+      frameSrc: ["'self'", "blob:"],           // ← allows blob: iframes
     },
   })
 );
+
 app.use(morgan('dev'));
 
 

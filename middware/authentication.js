@@ -7,111 +7,107 @@ if (!SECRET) {
   throw new Error("JWT_SECRET is not set in environment variables");
 }
 
-// Reverse mapping for display
-const PAYROLL_MAPPING = {
-  OFFICERS: config.databases.officers,
-  "W/OFFICER": config.databases.wofficers,
-  "RATE A": config.databases.ratings,
-  "RATE B": config.databases.ratingsA,
-  "RATE C": config.databases.ratingsB,
-  TRAINEE: config.databases.juniorTrainee,
-};
-
 const verifyToken = async (req, res, next) => {
+  // ── 1. Extract token ──────────────────────────────────────
   const bearerHeader = req.headers["authorization"];
   let token = null;
 
   if (bearerHeader && bearerHeader.startsWith("Bearer ")) {
     token = bearerHeader.split(" ")[1];
   }
-
   if (!token && req.query.token) {
     token = req.query.token;
   }
-
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
   }
 
+  // ── 2. Verify JWT signature + expiry ─────────────────────
+  let decoded;
+  try {
+    decoded = jwt.verify(token, SECRET);
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token has expired" });
+    }
+    return res.status(401).json({ message: "Please Log In" });
+  }
+
+  // ── 3. Check token matches DB (stored token validation) ───
+  try {
+    // Skip DB token check for:
+    // 1. Pre-login tokens (no current_class)
+    // 2. Class-switched tokens (current_class !== created_in — new token was never stored in DB)
+    const isPreLogin = !decoded.current_class;
+    const isClassSwitch = decoded.current_class !== decoded.created_in;
+
+    if (!isPreLogin && !isClassSwitch) {
+      pool.useDatabase(decoded.created_in || config.databases.officers);
+
+      const [rows] = await pool.query(
+        "SELECT token FROM users WHERE user_id = ?",
+        [decoded.user_id],
+      );
+
+      if (!rows || rows.length === 0) {
+        return res.status(401).json({ message: "Please Log In" });
+      }
+
+      const storedToken = rows[0].token;
+      if (storedToken && storedToken !== token) {
+        return res.status(401).json({ message: "Please Log In" });
+      }
+    }
+  } catch (dbErr) {
+    console.error("❌ Token DB check error:", dbErr);
+    return res.status(500).json({ message: "Server error" });
+  }
+
+  // ── 4. Attach user info to request ───────────────────────
+  req.user_id = decoded.user_id;
+  req.user_fullname = decoded.full_name;
+  req.email = decoded.email;
+  req.user_role = decoded.role;
+  req.primary_class = decoded.primary_class;
+  req.current_class = decoded.current_class;
+
+  // ── 5. Set DB context (only when current_class is present) ─
+  // Pre-login tokens have no current_class — skip DB switching for them.
+  if (!decoded.current_class) {
+    return next();
+  }
 
   try {
-    const decoded = jwt.verify(token, SECRET);
+    const databaseName = decoded.current_class;
+    const sessionId = decoded.user_id.toString();
+    req.current_database = databaseName;
+    req.session_id = sessionId;
 
-    pool.useDatabase(config.databases.officers);
+    const sessionContext = pool._getSessionContext
+      ? pool._getSessionContext()
+      : null;
 
-    const [res] = await pool.query(
-      "SELECT token FROM users WHERE user_id = ?",
-      [decoded.user_id],
-    );
-
-    if (!res || res.length === 0) {
-      return res.status(401).json({ message: "Please Log In" });
-    }
-
-    if (res[0].token !== token) {
-      return res.status(401).json({ message: "Please Log In" });
-    }
-
-    // Attach user info to the request object
-    req.user_id = decoded.user_id;
-    req.user_fullname = decoded.full_name;
-    req.user_role = decoded.role;
-    req.primary_class = PAYROLL_MAPPING[decoded.primary_class];
-    req.current_class = PAYROLL_MAPPING[decoded.current_class];
-
-    // Set database context based on user's current class
-    if (decoded.current_class) {
-      try {
-        const databaseName = PAYROLL_MAPPING[decoded.current_class];
-        const sessionId = decoded.user_id.toString();
-
-        // ⬅️ Set on request object FIRST
-        req.current_database = databaseName;
-        req.session_id = sessionId;
-
-        // Get session context
-        const sessionContext = pool._getSessionContext
-          ? pool._getSessionContext()
-          : null;
-
-        if (sessionContext) {
-          // Run entire request chain in this context
-          return sessionContext.run(sessionId, () => {
-            try {
-              pool.useDatabase(databaseName, sessionId);
-              console.log(
-                `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`,
-              );
-              next();
-            } catch (dbError) {
-              console.error("❌ Database context error:", dbError);
-              return res
-                .status(500)
-                .json({ message: "Database context error" });
-            }
-          });
-        } else {
-          // Fallback without sessionContext
+    if (sessionContext) {
+      return sessionContext.run(sessionId, () => {
+        try {
           pool.useDatabase(databaseName, sessionId);
           console.log(
             `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`,
           );
-          return next();
+          next();
+        } catch (dbError) {
+          console.error("❌ Database context error:", dbError);
+          return res.status(500).json({ message: "Database context error" });
         }
-      } catch (dbError) {
-        console.error("❌ Database context error:", dbError);
-        return res.status(500).json({ message: "Database context error" });
-      }
+      });
     } else {
+      pool.useDatabase(databaseName, sessionId);
+      console.log(`🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`);
       return next();
     }
-  } catch (err) {
-    if (err) {
-      if (err.name === "TokenExpiredError") {
-        return res.status(401).json({ message: "Token has expired" });
-      }
-      return res.status(401).json({ message: "Please Log In" });
-    }
+  } catch (dbError) {
+    console.error("❌ Database context error:", dbError);
+    return res.status(500).json({ message: "Database context error" });
   }
 };
 

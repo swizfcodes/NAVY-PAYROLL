@@ -189,26 +189,43 @@
 
     async logout() {
       try {
-        const accessToken = this.getAccessToken();
-        const refreshToken = this.getRefreshToken();
-
-        if (accessToken) {
-          await fetch(`${this.API_BASE}/logout`, {
+        const token = localStorage.getItem("token");
+        if (token) {
+          await fetch("/api/users/logout", {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${accessToken}`,
+              Authorization: "Bearer " + token,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ refresh_token: refreshToken }),
           });
         }
-      } catch (error) {
-        console.error("Logout error:", error);
+      } catch (err) {
+        console.error("Logout error:", err);
       } finally {
+        var pid = sessionStorage.getItem("_pid");
+        var ppwd = sessionStorage.getItem("_ppwd");
+        var preLoginToken = localStorage.getItem("pre_login_token"); // ← restore this
+        var userId = localStorage.getItem("user_id");
+        var fullName = localStorage.getItem("full_name");
+        var role = localStorage.getItem("role");
+        var cls = localStorage.getItem("class");
+
+        localStorage.clear();
+        sessionStorage.clear();
+
+        if (pid) sessionStorage.setItem("_pid", pid);
+        if (ppwd) sessionStorage.setItem("_ppwd", ppwd);
+        if (preLoginToken) localStorage.setItem("token", preLoginToken); // clean, no current_class
+        if (preLoginToken)
+          localStorage.setItem("pre_login_token", preLoginToken);
+        if (userId) localStorage.setItem("user_id", userId);
+        if (fullName) localStorage.setItem("full_name", fullName);
+        if (role) localStorage.setItem("role", role);
+        if (cls) localStorage.setItem("class", cls);
+
         this.stopTracking();
-        this.clearAuth();
-        // Redirect to login page
-        window.location.href = "personnel-login.html";
+        sessionStorage.setItem("_from_logout", "true");
+        window.location.href = "user-dashboard.html";
       }
     }
 

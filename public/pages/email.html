@@ -3,7 +3,6 @@
   Save as: pages/email.html
   Loaded dynamically by user-dashboard.js
 ================================================ -->
-
 <style>
   .email-wrap {
     display: flex;
@@ -16,7 +15,6 @@
     width: 900px;
   }
 
-  /* ── Header ── */
   .email-header {
     display: flex;
     align-items: center;
@@ -32,7 +30,9 @@
     letter-spacing: -0.5px;
   }
 
-  .email-title span { color: #f5c842; }
+  .email-title span {
+    color: #f5c842;
+  }
 
   .email-compose-btn {
     display: flex;
@@ -49,25 +49,30 @@
     cursor: pointer;
     transition: all 0.2s;
   }
+
   .email-compose-btn:hover {
     background: #ffd95a;
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(245,200,66,0.3);
+    box-shadow: 0 6px 20px rgba(245, 200, 66, 0.3);
   }
-  .email-compose-btn svg { width: 16px; height: 16px; }
 
-  /* ── Tabs ── */
+  .email-compose-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .email-tabs {
     display: flex;
     gap: 4px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
   }
+
   .email-tab {
     padding: 10px 20px;
     font-size: 14px;
     font-weight: 500;
-    color: rgba(200,220,255,0.5);
+    color: rgba(200, 220, 255, 0.5);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -78,8 +83,15 @@
     align-items: center;
     gap: 8px;
   }
-  .email-tab:hover { color: rgba(200,220,255,0.85); }
-  .email-tab.active { color: #f5c842; border-bottom-color: #f5c842; }
+
+  .email-tab:hover {
+    color: rgba(200, 220, 255, 0.85);
+  }
+
+  .email-tab.active {
+    color: #f5c842;
+    border-bottom-color: #f5c842;
+  }
 
   .email-badge {
     background: #f5c842;
@@ -92,9 +104,11 @@
     text-align: center;
     display: none;
   }
-  .email-badge.visible { display: inline-block; }
 
-  /* ── Message List ── */
+  .email-badge.visible {
+    display: inline-block;
+  }
+
   .email-list {
     flex: 1;
     overflow-y: auto;
@@ -104,18 +118,25 @@
     min-height: 0;
     position: relative;
   }
-  .email-list::-webkit-scrollbar { width: 4px; }
-  .email-list::-webkit-scrollbar-track { background: transparent; }
+
+  .email-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .email-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   .email-list::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
   }
 
   .email-row {
     display: grid;
-    grid-template-columns: 14px 220px 1fr 100px;
+    grid-template-columns: 14px 220px 1fr auto auto;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     padding: 14px 20px;
     border-radius: 10px;
     cursor: pointer;
@@ -123,30 +144,47 @@
     border: 1px solid transparent;
     flex-shrink: 0;
   }
-  .email-row:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
-  .email-row.unread { background: rgba(245,200,66,0.05); border-color: rgba(245,200,66,0.1); }
-  .email-row.unread:hover { background: rgba(245,200,66,0.09); }
+
+  .email-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .email-row.unread {
+    background: rgba(245, 200, 66, 0.05);
+    border-color: rgba(245, 200, 66, 0.1);
+  }
+
+  .email-row.unread:hover {
+    background: rgba(245, 200, 66, 0.09);
+  }
 
   .email-dot {
-    width: 7px; height: 7px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: transparent;
     flex-shrink: 0;
   }
+
   .email-row.unread .email-dot {
     background: #f5c842;
-    box-shadow: 0 0 6px rgba(245,200,66,0.6);
+    box-shadow: 0 0 6px rgba(245, 200, 66, 0.6);
   }
 
   .email-sender {
     font-size: 14px;
     font-weight: 500;
-    color: rgba(230,245,250,0.991);
+    color: rgba(230, 245, 250, 0.991);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .email-row.unread .email-sender { font-weight: 700; color: #fff; }
+
+  .email-row.unread .email-sender {
+    font-weight: 700;
+    color: #fff;
+  }
 
   .email-preview {
     display: flex;
@@ -154,35 +192,179 @@
     gap: 2px;
     min-width: 0;
   }
+
   .email-subject {
     font-size: 14px;
     font-weight: 500;
-    color: rgba(200,220,255,0.7);
+    color: rgba(200, 220, 255, 0.7);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .email-row.unread .email-subject { font-weight: 700; color: #e8f0fe; }
+
+  .email-row.unread .email-subject {
+    font-weight: 700;
+    color: #e8f0fe;
+  }
+
   .email-body-preview {
     font-size: 12px;
-    color: rgba(200,220,255,0.35);
+    color: rgba(200, 220, 255, 0.35);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* paperclip icon in list row */
+  .email-row-clip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(200, 220, 255, 0.3);
+    flex-shrink: 0;
+  }
+
+  .email-row-clip svg {
+    width: 13px;
+    height: 13px;
   }
 
   .email-time {
     font-size: 12px;
-    color: rgba(200,220,255,0.35);
+    color: rgba(200, 220, 255, 0.35);
     text-align: right;
     white-space: nowrap;
   }
-  .email-row.unread .email-time { color: #f5c842; font-weight: 600; }
 
-  /* ── Empty State ── */
+  .email-row.unread .email-time {
+    color: #f5c842;
+    font-weight: 600;
+  }
+
+  /* ── Tick icons (sent list) ── */
+  .email-tick {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    vertical-align: middle;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+
+  .email-tick svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  /* ── 3-dot menu button ── */
+  .email-row-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .email-dots-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: rgba(200, 220, 255, 0.25);
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    /* hidden until row hovered */
+    pointer-events: none;
+  }
+
+  .email-row:hover .email-dots-btn {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .email-dots-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  .email-dots-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ── Tick popover ── */
+  .tick-popover {
+    position: fixed;
+    z-index: 500;
+    background: #0d1e33;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 230px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+    font-family: 'DM Sans', sans-serif;
+    animation: popIn 0.15s ease;
+  }
+
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: scale(0.94) translateY(-4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .tick-popover-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(200, 220, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .tick-popover-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .tick-popover-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .tick-popover-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    width: 28px;
+  }
+
+  .tick-popover-label {
+    font-size: 12px;
+    color: rgba(200, 220, 255, 0.45);
+    width: 60px;
+    flex-shrink: 0;
+  }
+
+  .tick-popover-val {
+    font-size: 12px;
+    color: #e8f0fe;
+  }
+
+  /* ── Empty / Loading ── */
   .email-empty {
     position: absolute;
-    top: 50%; left: 50%;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
@@ -193,33 +375,60 @@
     text-align: center;
     box-sizing: border-box;
   }
+
   .email-empty-icon {
-    width: 60px; height: 60px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 6px;
   }
-  .email-empty-icon svg { width: 26px; height: 26px; opacity: 0.35; stroke: rgba(200,220,255,0.6); }
-  .email-empty-title { font-size: 15px; font-weight: 500; color: rgba(200,220,255,0.35); margin: 0; }
-  .email-empty-sub   { font-size: 12px; color: rgba(200,220,255,0.18); margin: 0; }
 
-  /* ── Loading ── */
-  .email-loading {
-    flex: 1; display: flex;
-    align-items: center; justify-content: center;
+  .email-empty-icon svg {
+    width: 26px;
+    height: 26px;
+    opacity: 0.35;
+    stroke: rgba(200, 220, 255, 0.6);
   }
+
+  .email-empty-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(200, 220, 255, 0.35);
+    margin: 0;
+  }
+
+  .email-empty-sub {
+    font-size: 12px;
+    color: rgba(200, 220, 255, 0.18);
+    margin: 0;
+  }
+
+  .email-loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .email-spinner {
-    width: 32px; height: 32px;
-    border: 2px solid rgba(255,255,255,0.1);
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
     border-top-color: #f5c842;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 
   /* ── Pagination ── */
   .email-pagination {
@@ -230,77 +439,174 @@
     padding: 12px 0;
     flex-shrink: 0;
   }
+
   .email-page-btn {
     padding: 8px 18px;
-    background: rgba(255,255,255,0.06);
-    color: rgba(200,220,255,0.7);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(200, 220, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: 'DM Sans', sans-serif;
   }
-  .email-page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.11); color: #fff; }
-  .email-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  .email-page-info { font-size: 13px; color: rgba(200,220,255,0.4); }
+
+  .email-page-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.11);
+    color: #fff;
+  }
+
+  .email-page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .email-page-info {
+    font-size: 13px;
+    color: rgba(200, 220, 255, 0.4);
+  }
 
   /* ── Modals shared ── */
   .email-modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(4,12,28,0.82);
+    position: fixed;
+    top: 68px;
+    /* sit flush below the fixed header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(4, 12, 28, 0.82);
     backdrop-filter: blur(6px);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    /* vertically centre within the remaining viewport */
+    justify-content: center;
     z-index: 200;
-    opacity: 0; pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.25s ease;
+    padding: 24px 16px;
+    /* breathing room so box never touches edges */
+    box-sizing: border-box;
   }
-  .email-modal-overlay.open { opacity: 1; pointer-events: all; }
 
+  .email-modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* The box itself is a flex column with a capped height so it never
+     overflows the available space between header and bottom of screen */
   .email-modal-box {
     background: #0f2340;
-    border: 1px solid rgba(255,255,255,0.10);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 16px;
-    width: 100%; max-width: 560px;
-    padding: 36px 40px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    width: 100%;
+    max-width: 560px;
+    /* max height = remaining viewport minus overlay padding */
+    max-height: calc(100vh - 68px - 48px);
+    display: flex;
+    flex-direction: column;
+    /* header | body | footer stacked */
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
     transform: translateY(12px);
     transition: transform 0.25s ease;
+    overflow: hidden;
+    /* clip children to rounded corners */
   }
-  .email-modal-overlay.open .email-modal-box { transform: translateY(0); }
 
-  .email-modal-header {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
+  .email-modal-overlay.open .email-modal-box {
+    transform: translateY(0);
   }
+
+  /* ── Fixed modal header ── */
+  .email-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 36px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+  }
+
   .email-modal-title {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 24px; font-weight: 700; color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
   }
+
   .email-modal-close {
-    background: none; border: none;
-    color: rgba(200,220,255,0.4);
-    cursor: pointer; padding: 4px; transition: color 0.2s;
+    background: none;
+    border: none;
+    color: rgba(200, 220, 255, 0.4);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
   }
-  .email-modal-close:hover { color: #fff; }
-  .email-modal-close svg { width: 20px; height: 20px; }
+
+  .email-modal-close:hover {
+    color: #fff;
+  }
+
+  .email-modal-close svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ── Scrollable modal body ── */
+  .email-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 36px;
+    min-height: 0;
+    /* critical — allows flex child to shrink */
+  }
+
+  .email-modal-body::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .email-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .email-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  /* ── Fixed modal footer ── */
+  .email-modal-footer {
+    padding: 16px 36px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+    background: #0f2340;
+    /* match box so it looks solid when content scrolls under */
+  }
 
   /* ── Form fields ── */
-  .email-field { margin-bottom: 16px; }
+  .email-field {
+    margin-bottom: 16px;
+  }
+
   .email-field label {
     display: block;
-    font-size: 12px; font-weight: 600;
-    color: rgba(200,220,255,0.5);
-    text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(200, 220, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     margin-bottom: 8px;
   }
+
   .email-field input,
   .email-field textarea {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     color: #e8f0fe;
     font-family: 'DM Sans', sans-serif;
@@ -309,115 +615,513 @@
     transition: border-color 0.2s;
     box-sizing: border-box;
   }
+
   .email-field input:focus,
-  .email-field textarea:focus { border-color: rgba(245,200,66,0.5); }
-  .email-field textarea { resize: vertical; min-height: 120px; }
+  .email-field textarea:focus {
+    border-color: rgba(245, 200, 66, 0.5);
+  }
+
+  .email-field textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
   .email-field input::placeholder,
-  .email-field textarea::placeholder { color: rgba(200,220,255,0.2); }
+  .email-field textarea::placeholder {
+    color: rgba(200, 220, 255, 0.2);
+  }
 
   /* ── Recipient search ── */
-  .email-recipient-wrap { position: relative; }
+  .email-recipient-wrap {
+    position: relative;
+  }
+
   .email-recipient-results {
-    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
     background: #0d1f35;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    max-height: 200px; overflow-y: auto;
-    z-index: 10; display: none;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   }
-  .email-recipient-results.open { display: block; }
+
+  .email-recipient-results.open {
+    display: block;
+  }
+
   .email-recipient-option {
-    padding: 11px 16px; cursor: pointer;
+    padding: 11px 16px;
+    cursor: pointer;
     transition: background 0.15s;
-    display: flex; flex-direction: column; gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  .email-recipient-option:hover { background: rgba(245,200,66,0.08); }
-  .email-recipient-name { font-size: 14px; color: #e8f0fe; font-weight: 500; }
-  .email-recipient-id   { font-size: 12px; color: rgba(200,220,255,0.4); }
+
+  .email-recipient-option:hover {
+    background: rgba(245, 200, 66, 0.08);
+  }
+
+  .email-recipient-name {
+    font-size: 14px;
+    color: #e8f0fe;
+    font-weight: 500;
+  }
 
   .email-selected-recipient {
-    display: flex; align-items: center; gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
-    background: rgba(245,200,66,0.1);
-    border: 1px solid rgba(245,200,66,0.25);
-    border-radius: 6px; margin-bottom: 8px;
+    background: rgba(245, 200, 66, 0.1);
+    border: 1px solid rgba(245, 200, 66, 0.25);
+    border-radius: 6px;
+    margin-bottom: 8px;
   }
-  .email-selected-recipient span { font-size: 13px; color: #f5c842; font-weight: 500; flex: 1; }
+
+  .email-selected-recipient span {
+    font-size: 13px;
+    color: #f5c842;
+    font-weight: 500;
+    flex: 1;
+  }
+
   .email-selected-recipient button {
-    background: none; border: none;
-    color: rgba(245,200,66,0.5); cursor: pointer;
-    padding: 0; font-size: 16px; line-height: 1; transition: color 0.2s;
+    background: none;
+    border: none;
+    color: rgba(245, 200, 66, 0.5);
+    cursor: pointer;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.2s;
   }
-  .email-selected-recipient button:hover { color: #f5c842; }
+
+  .email-selected-recipient button:hover {
+    color: #f5c842;
+  }
+
+  /* ── Attachment upload area ── */
+  .email-attach-area {
+    margin-bottom: 16px;
+  }
+
+  .email-attach-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(200, 220, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .email-attach-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: rgba(200, 220, 255, 0.55);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .email-attach-btn:hover {
+    background: rgba(245, 200, 66, 0.06);
+    border-color: rgba(245, 200, 66, 0.3);
+    color: #f5c842;
+  }
+
+  .email-attach-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .email-attach-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .email-attach-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .email-attach-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+  }
+
+  .email-attach-item-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: rgba(245, 200, 66, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .email-attach-item-icon svg {
+    width: 15px;
+    height: 15px;
+    stroke: #f5c842;
+  }
+
+  .email-attach-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .email-attach-item-name {
+    font-size: 13px;
+    color: #e8f0fe;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .email-attach-item-size {
+    font-size: 11px;
+    color: rgba(200, 220, 255, 0.35);
+  }
+
+  /* Upload progress bar */
+  .email-attach-progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+
+  .email-attach-progress-bar {
+    height: 100%;
+    background: #f5c842;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  .email-attach-item-remove {
+    background: none;
+    border: none;
+    color: rgba(255, 100, 100, 0.5);
+    cursor: pointer;
+    padding: 2px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .email-attach-item-remove:hover {
+    color: #ff6060;
+  }
+
+  .email-attach-item-remove svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .email-read-attach-chip.already-downloaded {
+    border-color: rgba(245, 200, 66, 0.2);
+    background: rgba(245, 200, 66, 0.04);
+  }
+
+  .email-read-attach-downloaded {
+    font-size: 10px;
+    font-weight: 700;
+    color: #f5c842;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .email-attach-error {
+    font-size: 12px;
+    color: #ff8080;
+    margin-top: 6px;
+    display: none;
+  }
 
   /* ── Send button ── */
   .email-send-btn {
-    width: 100%; padding: 14px;
-    background: #f5c842; color: #0d1f35;
+    width: 100%;
+    padding: 14px;
+    background: #f5c842;
+    color: #0d1f35;
     font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 700;
-    border: none; border-radius: 8px;
-    cursor: pointer; transition: all 0.2s;
-    margin-top: 8px;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
+
   .email-send-btn:hover:not(:disabled) {
     background: #ffd95a;
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(245,200,66,0.3);
+    box-shadow: 0 6px 20px rgba(245, 200, 66, 0.3);
   }
-  .email-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .email-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 
   /* ── Read modal ── */
-  .email-read-box { max-width: 620px; }
+  .email-read-box {
+    max-width: 620px;
+  }
+
   .email-read-meta {
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     padding: 16px 0;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     margin-bottom: 20px;
   }
-  .email-read-meta-row { display: flex; gap: 12px; font-size: 13px; }
-  .email-read-meta-label { color: rgba(200,220,255,0.4); width: 50px; flex-shrink: 0; }
-  .email-read-meta-val  { color: #e8f0fe; }
+
+  .email-read-meta-row {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .email-read-meta-label {
+    color: rgba(200, 220, 255, 0.4);
+    width: 50px;
+    flex-shrink: 0;
+  }
+
+  .email-read-meta-val {
+    color: #e8f0fe;
+  }
+
+  .email-read-subject-wrap {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
   .email-read-subject {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 22px; font-weight: 700; color: #fff;
-    margin-bottom: 16px; line-height: 1.3;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+    flex: 1;
+    margin-bottom: 0;
+    /* reset — now inside wrap */
   }
+
+  .email-read-status-bar {
+    display: none;
+    /* shown only for sent tab */
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    padding-top: 6px;
+  }
+
+  .email-read-status-bar.visible {
+    display: flex;
+  }
+
+  .email-read-status-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(180, 200, 230, 0.65);
+    transition: color 0.3s;
+  }
+
+  .email-read-status-label.read {
+    color: #f5c842;
+  }
+
   .email-read-body {
-    font-size: 14px; color: rgba(200,220,255,0.75);
-    line-height: 1.8; white-space: pre-wrap;
+    font-size: 14px;
+    color: rgba(200, 220, 255, 0.75);
+    line-height: 1.8;
+    white-space: pre-wrap;
   }
-  .email-read-actions { display: flex; gap: 10px; margin-top: 24px; }
+
+  /* ── Attachments in read view ── */
+  .email-read-attachments {
+    margin-top: 20px;
+  }
+
+  .email-read-attach-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(200, 220, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .email-read-attach-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .email-read-attach-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    max-width: 260px;
+    font-family: 'DM Sans', sans-serif;
+    color: inherit;
+  }
+
+  .email-read-attach-chip:hover {
+    background: rgba(245, 200, 66, 0.08);
+    border-color: rgba(245, 200, 66, 0.25);
+  }
+
+  .email-read-attach-chip svg {
+    width: 15px;
+    height: 15px;
+    stroke: #f5c842;
+    flex-shrink: 0;
+  }
+
+  .email-read-attach-chip-name {
+    font-size: 13px;
+    color: #e8f0fe;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .email-read-attach-chip-size {
+    font-size: 11px;
+    color: rgba(200, 220, 255, 0.35);
+    flex-shrink: 0;
+  }
+
+  /* Small badge on chip showing action type */
+  .email-read-attach-action {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(200, 220, 255, 0.3);
+    flex-shrink: 0;
+  }
+
+  .email-read-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 0;
+  }
+
   .email-read-delete {
     padding: 10px 20px;
-    background: rgba(255,80,80,0.1); color: rgba(255,120,120,0.8);
-    border: 1px solid rgba(255,80,80,0.2); border-radius: 8px;
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    cursor: pointer; transition: all 0.2s;
+    background: rgba(255, 80, 80, 0.1);
+    color: rgba(255, 120, 120, 0.8);
+    border: 1px solid rgba(255, 80, 80, 0.2);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  .email-read-delete:hover { background: rgba(255,80,80,0.2); color: #ff8080; }
+
+  .email-read-delete:hover {
+    background: rgba(255, 80, 80, 0.2);
+    color: #ff8080;
+  }
+
   .email-read-reply {
     padding: 10px 20px;
-    background: rgba(245,200,66,0.1); color: #f5c842;
-    border: 1px solid rgba(245,200,66,0.25); border-radius: 8px;
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    cursor: pointer; transition: all 0.2s;
+    background: rgba(245, 200, 66, 0.1);
+    color: #f5c842;
+    border: 1px solid rgba(245, 200, 66, 0.25);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  .email-read-reply:hover { background: rgba(245,200,66,0.18); }
 
-  /* Nav vibrate keyframes (also defined in main HTML; safe to repeat) */
-  @keyframes navVibrate {
-    0%,100% { transform: translateX(0) rotate(0deg); }
-    15%     { transform: translateX(-3px) rotate(-5deg); }
-    30%     { transform: translateX(3px)  rotate(5deg); }
-    45%     { transform: translateX(-2px) rotate(-3deg); }
-    60%     { transform: translateX(2px)  rotate(3deg); }
-    75%     { transform: translateX(-1px) rotate(-1deg); }
-    90%     { transform: translateX(1px)  rotate(1deg); }
+  .email-read-reply:hover {
+    background: rgba(245, 200, 66, 0.18);
   }
+
+  @keyframes navVibrate {
+
+    0%,
+    100% {
+      transform: translateX(0) rotate(0deg);
+    }
+
+    15% {
+      transform: translateX(-3px) rotate(-5deg);
+    }
+
+    30% {
+      transform: translateX(3px) rotate(5deg);
+    }
+
+    45% {
+      transform: translateX(-2px) rotate(-3deg);
+    }
+
+    60% {
+      transform: translateX(2px) rotate(3deg);
+    }
+
+    75% {
+      transform: translateX(-1px) rotate(-1deg);
+    }
+
+    90% {
+      transform: translateX(1px) rotate(1deg);
+    }
+  }
+
   .nav-vibrate {
     animation: navVibrate 0.65s ease-in-out;
     display: inline-block;
@@ -426,12 +1130,11 @@
 
 <!-- ── Email Page HTML ──────────────────────── -->
 <div class="email-wrap">
-
   <div class="email-header">
     <h1 class="email-title">Mail<span>box</span></h1>
     <button class="email-compose-btn" onclick="openComposeModal()">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Compose
     </button>
@@ -439,14 +1142,15 @@
 
   <div class="email-tabs">
     <button class="email-tab active" id="tab-inbox" onclick="switchTab('inbox')">
-      Inbox
-      <span class="email-badge" id="inbox-badge">0</span>
+      Inbox <span class="email-badge" id="inbox-badge">0</span>
     </button>
     <button class="email-tab" id="tab-sent" onclick="switchTab('sent')">Sent</button>
   </div>
 
   <div class="email-list" id="email-list">
-    <div class="email-loading"><div class="email-spinner"></div></div>
+    <div class="email-loading">
+      <div class="email-spinner"></div>
+    </div>
   </div>
 
   <div class="email-pagination" id="email-pagination" style="display:none;">
@@ -454,509 +1158,1378 @@
     <span class="email-page-info" id="email-page-info">Page 1</span>
     <button class="email-page-btn" id="email-next" onclick="changePage(1)">Next →</button>
   </div>
-
 </div>
 
 <!-- COMPOSE MODAL -->
 <div class="email-modal-overlay" id="composeModal">
   <div class="email-modal-box">
+
+    <!-- Fixed header -->
     <div class="email-modal-header">
       <h2 class="email-modal-title">New Message</h2>
       <button class="email-modal-close" onclick="closeComposeModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <div class="email-selected-recipient" id="selected-recipient-tag" style="display:none;">
-      <span id="selected-recipient-label"></span>
-      <button onclick="clearRecipient()">×</button>
-    </div>
+    <!-- Scrollable body -->
+    <div class="email-modal-body">
+      <div class="email-selected-recipient" id="selected-recipient-tag" style="display:none;">
+        <span id="selected-recipient-label"></span>
+        <button onclick="clearRecipient()">×</button>
+      </div>
+      <div class="email-field" id="recipient-search-field">
+        <label>To</label>
+        <div class="email-recipient-wrap">
+          <input type="text" id="recipient-search" placeholder="Search by name or email..." autocomplete="off"
+            oninput="searchRecipients(this.value)" />
+          <div class="email-recipient-results" id="recipient-results"></div>
+        </div>
+      </div>
 
-    <div class="email-field" id="recipient-search-field">
-      <label>To</label>
-      <div class="email-recipient-wrap">
-        <input type="text" id="recipient-search" placeholder="Search by name or email..."
-               autocomplete="off" oninput="searchRecipients(this.value)"/>
-        <div class="email-recipient-results" id="recipient-results"></div>
+      <div class="email-field">
+        <label>Subject</label>
+        <input type="text" id="compose-subject" placeholder="Enter subject" />
+      </div>
+      <div class="email-field">
+        <label>Message</label>
+        <textarea id="compose-body" placeholder="Write your message here..."></textarea>
+      </div>
+
+      <!-- ATTACHMENTS -->
+      <div class="email-attach-area">
+        <span class="email-attach-label">Attachments <span id="attach-count-label"
+            style="color:rgba(200,220,255,0.3);font-weight:400;text-transform:none;letter-spacing:0;">(0 / 3 · max 5 MB
+            each)</span></span>
+        <input type="file" id="attach-file-input" style="display:none;"
+          accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelected(this)" />
+        <button class="email-attach-btn" id="attach-btn" onclick="document.getElementById('attach-file-input').click()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13" />
+          </svg>
+          Attach file
+        </button>
+        <div class="email-attach-error" id="attach-error"></div>
+        <div class="email-attach-list" id="attach-list"></div>
       </div>
     </div>
 
-    <div class="email-field">
-      <label>Subject</label>
-      <input type="text" id="compose-subject" placeholder="Enter subject"/>
+    <!-- Fixed footer -->
+    <div class="email-modal-footer">
+      <button class="email-send-btn" id="send-btn" onclick="sendMessage()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+        Send Message
+      </button>
     </div>
 
-    <div class="email-field">
-      <label>Message</label>
-      <textarea id="compose-body" placeholder="Write your message here..."></textarea>
-    </div>
-
-    <button class="email-send-btn" id="send-btn" onclick="sendMessage()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-      </svg>
-      Send Message
-    </button>
   </div>
 </div>
 
 <!-- READ MESSAGE MODAL -->
 <div class="email-modal-overlay" id="readModal">
   <div class="email-modal-box email-read-box">
+
+    <!-- Fixed header -->
     <div class="email-modal-header">
       <h2 class="email-modal-title" id="read-tab-label">Message</h2>
       <button class="email-modal-close" onclick="closeReadModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <h3 class="email-read-subject" id="read-subject"></h3>
+    <!-- Scrollable body -->
+    <div class="email-modal-body">
+      <div class="email-read-subject-wrap">
+        <h3 class="email-read-subject" id="read-subject"></h3>
+        <!-- Status indicator — only visible for sent messages, shows current highest status -->
+        <div class="email-read-status-bar" id="read-status-bar">
+          <svg id="read-status-svg" width="20" height="12" viewBox="0 0 16 12" fill="none"
+            stroke="rgba(180,200,230,0.65)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1,6 4,9 10,3" />
+            <polyline points="5,6 8,9 14,3" />
+          </svg>
+          <span class="email-read-status-label" id="read-status-label">Sent</span>
+        </div>
+      </div>
+      <div class="email-read-meta">
+        <div class="email-read-meta-row">
+          <span class="email-read-meta-label">From</span>
+          <span class="email-read-meta-val" id="read-from"></span>
+        </div>
+        <div class="email-read-meta-row" id="read-email-row">
+          <span class="email-read-meta-label">Email</span>
+          <span class="email-read-meta-val" id="read-email">—</span>
+        </div>
+        <div class="email-read-meta-row">
+          <span class="email-read-meta-label">Date</span>
+          <span class="email-read-meta-val" id="read-date"></span>
+        </div>
+      </div>
+      <div class="email-read-body" id="read-body"></div>
+      <div id="read-attachments"></div>
+    </div>
 
-    <div class="email-read-meta">
-      <div class="email-read-meta-row">
-        <span class="email-read-meta-label">From</span>
-        <span class="email-read-meta-val" id="read-from"></span>
-      </div>
-      <div class="email-read-meta-row" id="read-email-row">
-        <span class="email-read-meta-label">Email</span>
-        <span class="email-read-meta-val" id="read-email">—</span>
-      </div>
-      <div class="email-read-meta-row">
-        <span class="email-read-meta-label">Date</span>
-        <span class="email-read-meta-val" id="read-date"></span>
+    <!-- Fixed footer -->
+    <div class="email-modal-footer">
+      <div class="email-read-actions">
+        <button class="email-read-reply" id="read-reply-btn" onclick="replyToMessage()">↩ Reply</button>
+        <button class="email-read-delete" onclick="deleteMessage()">Delete</button>
       </div>
     </div>
 
-    <div class="email-read-body" id="read-body"></div>
-
-    <div class="email-read-actions">
-      <button class="email-read-reply" id="read-reply-btn" onclick="replyToMessage()">↩ Reply</button>
-      <button class="email-read-delete" onclick="deleteMessage()">Delete</button>
-    </div>
   </div>
 </div>
 
 <!-- DELETE OPTIONS MODAL -->
 <div class="email-modal-overlay" id="deleteOptionsModal">
   <div class="email-modal-box">
+
     <div class="email-modal-header">
       <h2 class="email-modal-title">Delete Message</h2>
       <button class="email-modal-close" onclick="closeDeleteOptionsModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
-    <p style="font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(200,220,255,0.75);margin-bottom:28px;">
-      How would you like to delete this message?
-    </p>
-    <div style="display:flex;gap:12px;">
-      <button class="email-send-btn" style="background:#f39c12;flex:1;" onclick="deleteModeMe()">Delete for me</button>
-      <button class="email-send-btn" style="background:#e74c3c;flex:1;" onclick="deleteForAll()">Delete for all</button>
+
+    <div class="email-modal-body">
+      <p style="font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(200,220,255,0.75);line-height:1.6;">
+        How would you like to delete this message?
+      </p>
     </div>
+
+    <div class="email-modal-footer">
+      <div style="display:flex;gap:12px;">
+        <button class="email-send-btn" style="background:#f39c12;flex:1;" onclick="deleteModeMe()">Delete for
+          me</button>
+        <button class="email-send-btn" style="background:#e74c3c;flex:1;" onclick="deleteForAll()">Delete for
+          all</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 
 <script>
-(function () {
-  var currentTab      = 'inbox';
-  var currentPage     = 1;
-  var selectedRecipient = null;
-  var currentMsgId    = null;
-  var currentReplyTo  = null;
-  var searchTimer     = null;
-  var tickTimer       = null;
-  const PAGE_LIMIT    = 5;
-  const TOKEN         = localStorage.getItem('token');
+  (function () {
+    var currentTab = 'inbox';
+    var currentPage = 1;
+    var selectedRecipient = null;
+    var currentMsgId = null;
+    var currentReplyTo = null;
+    var searchTimer = null;
+    var tickTimer = null;
+    const PAGE_LIMIT = 5;
+    const TOKEN = localStorage.getItem('token');
+    const MAX_ATTACHMENTS = 3;
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
-  function authHeaders() {
-    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
-  }
+    // Tracks uploaded attachments: [{ temp_token, filename, file_size, mime_type }]
+    var attachments = [];
 
-  function formatTime(dateStr) {
-    var normalized = dateStr
-      ? (dateStr.endsWith('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z')
-      : dateStr;
-    var d    = new Date(normalized);
-    var now  = new Date();
-    var diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-    if (diff < 0)      diff = 0;
-    if (diff < 60)     return 'Just now';
-    if (diff < 3600)   return Math.floor(diff / 60) + 'm';
-    if (diff < 86400)  return Math.floor(diff / 3600) + 'h';
-    if (diff < 172800) return 'Yesterday';
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-  }
-
-  function formatDate(isoString) {
-    var normalized = isoString
-      ? (isoString.endsWith('Z') ? isoString : isoString.replace(' ', 'T') + 'Z')
-      : isoString;
-    var d = new Date(normalized);
-    return d.toLocaleDateString('en-GB', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    }) + ', ' + d.toLocaleTimeString('en-GB');
-  }
-
-  // ─────────────────────────────────────────────────
-  // Badge update — delegates to the GLOBAL updater in
-  // user-dashboard.js so both nav badge and home button
-  // are always kept in sync.
-  // ─────────────────────────────────────────────────
-  function syncBadge(count) {
-    // Update the in-page inbox tab badge
-    var badge = document.getElementById('inbox-badge');
-    if (badge) {
-      badge.textContent = count > 99 ? '99+' : count;
-      count > 0 ? badge.classList.add('visible') : badge.classList.remove('visible');
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + TOKEN };
     }
-    // Delegate to the global updater (defined in user-dashboard.js)
-    if (typeof updateGlobalBadge === 'function') {
-      updateGlobalBadge(count);
-    }
-  }
-
-  window.switchTab = function (tab) {
-    currentTab  = tab;
-    currentPage = 1;
-    document.getElementById('tab-inbox').classList.toggle('active', tab === 'inbox');
-    document.getElementById('tab-sent').classList.toggle('active', tab === 'sent');
-    loadMessages();
-  };
-
-  function loadMessages() {
-    var list = document.getElementById('email-list');
-    list.innerHTML = '<div class="email-loading"><div class="email-spinner"></div></div>';
-    document.getElementById('email-pagination').style.display = 'none';
-
-    var url = currentTab === 'inbox'
-      ? '/messages/inbox?page=' + currentPage + '&limit=' + PAGE_LIMIT
-      : '/messages/sent?page='  + currentPage + '&limit=' + PAGE_LIMIT;
-
-    fetch(url, { headers: authHeaders() })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var msgs = data.messages || [];
-        if (data.unread !== undefined) syncBadge(data.unread);
-        renderMessages(msgs);
-        updatePagination(msgs.length);
-      })
-      .catch(function () {
-        list.innerHTML = emptyHTML(
-          'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-          'Failed to load messages',
-          'Check your connection and try again'
-        );
-      });
-  }
-
-  // ─────────────────────────────────────────────────
-  // Listen for new-mail events fired by the GLOBAL
-  // poller in user-dashboard.js so the list refreshes
-  // even when we're on the inbox page and the global
-  // poller detects new mail before the in-page logic.
-  // ─────────────────────────────────────────────────
-  document.addEventListener('globalNewMail', function () {
-    if (currentTab === 'inbox') loadMessages();
-  });
-
-  function emptyHTML(iconPath, title, sub) {
-    return '<div class="email-empty">' +
-      '<div class="email-empty-icon">' +
-      '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="' + iconPath + '"/>' +
-      '</svg></div>' +
-      '<p class="email-empty-title">' + title + '</p>' +
-      '<p class="email-empty-sub">' + sub + '</p>' +
-      '</div>';
-  }
-
-  function renderMessages(msgs) {
-    var list = document.getElementById('email-list');
-    if (msgs.length === 0) {
-      var title = currentTab === 'inbox' ? 'Your inbox is empty' : 'No sent messages';
-      var sub   = currentTab === 'inbox' ? 'New messages will appear here' : 'Messages you send will show up here';
-      list.innerHTML = emptyHTML(
-        'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-        title, sub
-      );
-      return;
+    function authHeadersJSON() {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
     }
 
-    var html = '<div class="email-rows">';
-    msgs.forEach(function (msg) {
-      var isUnread = currentTab === 'inbox' && !msg.is_read;
-      var name     = currentTab === 'inbox' ? msg.from_name : (msg.to_name || 'Unknown');
-      var preview  = msg.body ? msg.body.substring(0, 80) : '';
-      html += '<div class="email-row' + (isUnread ? ' unread' : '') + '" ' +
-        'data-sent="' + msg.sent_at + '" ' +
-        'onclick="openMessage(' + msg.id + ', \'' + currentTab + '\')">' +
-        '<div class="email-dot"></div>' +
-        '<div class="email-sender">'   + escHtml(name)    + '</div>' +
-        '<div class="email-preview">' +
-          '<div class="email-subject">'      + escHtml(msg.subject) + '</div>' +
-          '<div class="email-body-preview">' + escHtml(preview)     + '</div>' +
-        '</div>' +
-        '<div class="email-time">' + formatTime(msg.sent_at) + '</div>' +
-        '</div>';
-    });
-    html += '</div>';
-    list.innerHTML = html;
-  }
+    // ── Server clock offset ───────────────────────────────────
+    // The server sends server_time as new Date().toISOString() (UTC).
+    // MySQL stores DATETIME in server LOCAL time (no tz suffix).
+    // So if server is UTC, MySQL "11:26" means 11:26 UTC.
+    // If server is UTC+1, MySQL "12:26" means 12:26 local = 11:26 UTC.
+    //
+    // _serverTZOffsetMin = server's UTC offset in minutes (e.g. 0 for UTC, 60 for UTC+1)
+    // We use this to convert MySQL strings to real UTC before comparing.
+    var _serverTZOffsetMin = 0;
 
-  function updatePagination(count) {
-    var pg = document.getElementById('email-pagination');
-    if (currentPage === 1 && count < PAGE_LIMIT) { pg.style.display = 'none'; return; }
-    pg.style.display = 'flex';
-    document.getElementById('email-prev').disabled = currentPage === 1;
-    document.getElementById('email-next').disabled = count < PAGE_LIMIT;
-    document.getElementById('email-page-info').textContent = 'Page ' + currentPage;
-  }
-
-  window.changePage = function (dir) {
-    currentPage += dir;
-    if (currentPage < 1) currentPage = 1;
-    loadMessages();
-  };
-
-  window.openMessage = function (id, tab) {
-    currentMsgId    = id;
-    currentReplyTo  = null;
-
-    var emailRow = document.getElementById('read-email-row');
-    var emailVal = document.getElementById('read-email');
-    emailRow.style.display = 'none';
-
-    if (tab === 'sent') {
-      document.getElementById('read-reply-btn').style.display = 'none';
-      document.getElementById('read-tab-label').textContent   = 'Sent Message';
-      document.getElementById('read-body').textContent        = 'Loading...';
-
-      fetch('/messages/sent-item/' + id, { headers: authHeaders() })
-        .then(function (r) { return r.json(); })
-        .then(function (msg) {
-          document.getElementById('read-subject').textContent = msg.subject;
-          document.getElementById('read-from').textContent    = 'You → ' + msg.to_name;
-          document.getElementById('read-date').textContent    = formatDate(msg.sent_at);
-          document.getElementById('read-body').textContent    = msg.body;
-          if (msg.to_email) {
-            emailVal.textContent = msg.to_email;
-            emailRow.style.display = 'flex';
-          }
-        });
-    } else {
-      document.getElementById('read-reply-btn').style.display = 'inline-block';
-      document.getElementById('read-tab-label').textContent   = 'Message';
-      document.getElementById('read-body').textContent        = 'Loading...';
-
-      fetch('/messages/' + id, { headers: authHeaders() })
-        .then(function (r) { return r.json(); })
-        .then(function (msg) {
-          document.getElementById('read-subject').textContent = msg.subject;
-          document.getElementById('read-from').textContent    = msg.from_name;
-          document.getElementById('read-date').textContent    = formatDate(msg.sent_at);
-          document.getElementById('read-body').textContent    = msg.body;
-          if (msg.from_email) {
-            emailVal.textContent = msg.from_email;
-            emailRow.style.display = 'flex';
-          }
-          currentReplyTo = { user_id: msg.from_user_id, full_name: msg.from_name };
-          document.querySelectorAll('.email-row').forEach(function (row) {
-            if ((row.getAttribute('onclick') || '').includes('(' + id + ',')) {
-              row.classList.remove('unread');
-            }
-          });
-        });
+    function applyServerOffset(isoServerNow) {
+      // isoServerNow = server's new Date().toISOString() which is always UTC.
+      // We compare it with browser's Date.now() to find the wall-clock delta,
+      // but that only gives us network skew — not what we want.
+      //
+      // Instead we use it to derive: what UTC offset is the SERVER running on?
+      // The server also sends server_tz_offset (minutes) directly — use that.
+      // This function handles the ISO fallback for safety.
+      var serverUTC = new Date(isoServerNow).getTime();
+      var browserUTC = Date.now();
+      // Round to nearest 30-min boundary to remove network latency noise
+      var rawDiffMin = (serverUTC - browserUTC) / 60000;
+      _serverTZOffsetMin = Math.round(rawDiffMin / 30) * 30;
     }
-    document.getElementById('readModal').classList.add('open');
-  };
 
-  window.closeReadModal = function () {
-    document.getElementById('readModal').classList.remove('open');
-    currentMsgId = null;
-  };
-
-  window.deleteMessage = function () {
-    if (!currentMsgId) return;
-    var isSender = (currentTab === 'sent');
-    if (!isSender) {
-      DashAlertModal.confirm('Delete this message from your inbox?', function () {
-        performDelete('me');
-      });
-    } else {
-      document.getElementById('deleteOptionsModal').classList.add('open');
+    function applyServerTZ(offsetMin) {
+      // Called when server explicitly sends its UTC offset in minutes
+      _serverTZOffsetMin = offsetMin;
     }
-  };
 
-  window.closeDeleteOptionsModal = function () {
-    document.getElementById('deleteOptionsModal').classList.remove('open');
-  };
-
-  window.deleteModeMe = function () {
-    DashAlertModal.confirm('Delete from your sent messages?', function () {
-      closeDeleteOptionsModal();
-      performDelete('me');
-    });
-  };
-
-  window.deleteForAll = function () {
-    DashAlertModal.confirm('⚠ Delete for all? The recipient will be notified.', function () {
-      closeDeleteOptionsModal();
-      performDelete('all');
-    });
-  };
-
-  function performDelete(mode) {
-    fetch('/messages/' + currentMsgId + '?mode=' + mode, {
-      method: 'DELETE',
-      headers: authHeaders()
-    })
-      .then(function (r) { return r.json(); })
-      .then(function () {
-        closeReadModal();
-        loadMessages();
-        DashAlertModal.show('✅ Message deleted.');
-      })
-      .catch(function () {
-        DashAlertModal.show('❌ Failed to delete message.');
-      });
-  }
-
-  window.replyToMessage = function () {
-    var subj      = document.getElementById('read-subject').textContent;
-    var replySubj = subj.startsWith('Re: ') ? subj : 'Re: ' + subj;
-    closeReadModal();
-    openComposeModal(replySubj, currentReplyTo);
-  };
-
-  window.openComposeModal = function (prefillSubject, prefillRecipient) {
-    clearRecipient();
-    document.getElementById('compose-subject').value = prefillSubject || '';
-    document.getElementById('compose-body').value    = '';
-    document.getElementById('composeModal').classList.add('open');
-    if (prefillRecipient) {
-      selectRecipient(prefillRecipient.user_id, prefillRecipient.full_name, prefillRecipient.email || '');
-    } else {
-      document.getElementById('recipient-search').focus();
+    // Convert a MySQL DATETIME string (server local time, no tz) to a JS Date in UTC.
+    // e.g. if server is UTC: "2026-02-27 11:26:38" → treat as UTC → correct
+    // e.g. if server is UTC+1: "2026-02-27 12:26:38" → subtract 60min → 11:26 UTC
+    // toUTC: always returns a Date (or null). Treats MySQL DATETIME strings
+    // (which have no tz info) as server-local time, then adjusts by the
+    // detected server offset so the result is true UTC.
+    function toUTC(dateStr) {
+      if (!dateStr) return null;
+      var ms;
+      if (dateStr.endsWith('Z') || dateStr.includes('+')) {
+        // Already has tz info — parse directly
+        ms = new Date(dateStr).getTime();
+      } else {
+        // MySQL DATETIME — treat as server local, subtract server offset to get UTC
+        ms = new Date(dateStr.replace(' ', 'T') + 'Z').getTime()
+          - _serverTZOffsetMin * 60000;
+      }
+      var d = new Date(ms);
+      return isNaN(d) ? null : d;
     }
-  };
 
-  window.closeComposeModal = function () {
-    document.getElementById('composeModal').classList.remove('open');
-  };
+    function formatTime(dateStr) {
+      var d = toUTC(dateStr);
+      if (!d || isNaN(d)) return '';
+      var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diff < 0) diff = 0;
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+      if (diff < 172800) return 'Yesterday';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
 
-  window.searchRecipients = function (q) {
-    clearTimeout(searchTimer);
-    var results = document.getElementById('recipient-results');
-    if (q.trim().length < 2) { results.classList.remove('open'); return; }
-    searchTimer = setTimeout(function () {
-      fetch('/messages/users/search?q=' + encodeURIComponent(q), { headers: authHeaders() })
+    function formatDate(iso) {
+      var d = toUTC(iso);
+      if (!d || isNaN(d)) return '—';
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        ', ' + d.toLocaleTimeString('en-GB');
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function mimeIcon(mime) {
+      // Returns an SVG path string appropriate for the mime type
+      if (mime && mime.startsWith('image/'))
+        return 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z';
+      if (mime === 'application/pdf')
+        return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+      return 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+    }
+
+    // ─────────────────────────────────────────────
+    // Badge sync
+    // ─────────────────────────────────────────────
+    function syncBadge(count) {
+      var badge = document.getElementById('inbox-badge');
+      if (badge) {
+        badge.textContent = count > 99 ? '99+' : count;
+        count > 0 ? badge.classList.add('visible') : badge.classList.remove('visible');
+      }
+      if (typeof updateGlobalBadge === 'function') updateGlobalBadge(count);
+    }
+
+    // ─────────────────────────────────────────────
+    // Tab / pagination
+    // ─────────────────────────────────────────────
+    window.switchTab = function (tab) {
+      currentTab = tab; currentPage = 1;
+      document.getElementById('tab-inbox').classList.toggle('active', tab === 'inbox');
+      document.getElementById('tab-sent').classList.toggle('active', tab === 'sent');
+      loadMessages();
+    };
+
+    function loadMessages() {
+      var list = document.getElementById('email-list');
+      list.innerHTML = '<div class="email-loading"><div class="email-spinner"></div></div>';
+      document.getElementById('email-pagination').style.display = 'none';
+
+      var url = currentTab === 'inbox'
+        ? '/messages/inbox?page=' + currentPage + '&limit=' + PAGE_LIMIT
+        : '/messages/sent?page=' + currentPage + '&limit=' + PAGE_LIMIT;
+
+      fetch(url, { headers: authHeadersJSON() })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          var users = data.users || [];
-          if (users.length === 0) {
-            results.innerHTML = '<div class="email-recipient-option">' +
-              '<span class="email-recipient-name" style="color:rgba(200,220,255,0.4)">No users found</span></div>';
-          } else {
-            results.innerHTML = users.map(function (u) {
-              return '<div class="email-recipient-option" onclick="selectRecipient(\'' + u.user_id +
-                '\', \'' + escHtml(u.full_name) + '\', \'' + escHtml(u.email || '') + '\')">' +
-                '<span class="email-recipient-name">' + escHtml(u.full_name) +
-                ' (' + escHtml(u.email || 'no-email') + ')</span></div>';
-            }).join('');
+          var msgs = data.messages || [];
+          // server_tz_offset = server's UTC offset in minutes (e.g. 0 = UTC, 60 = UTC+1)
+          // Apply once on first load — stable for the session
+          if (typeof data.server_tz_offset === 'number') {
+            applyServerTZ(data.server_tz_offset);
+          } else if (data.server_time) {
+            applyServerOffset(data.server_time); // fallback ISO method
           }
-          results.classList.add('open');
+          if (data.unread !== undefined) syncBadge(data.unread);
+          renderMessages(msgs);
+          updatePagination(msgs.length);
+          // Immediately check tick status for any unread sent messages
+          if (currentTab === 'sent' && typeof pollSentTicks === 'function') pollSentTicks();
+        })
+        .catch(function () {
+          list.innerHTML = emptyHTML(
+            'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+            'Failed to load messages', 'Check your connection and try again');
         });
-    }, 350);
-  };
-
-  window.selectRecipient = function (uid, name, email) {
-    selectedRecipient = { user_id: uid, full_name: name, email: email || '' };
-    document.getElementById('selected-recipient-label').textContent = name + ' (' + email + ')';
-    document.getElementById('selected-recipient-tag').style.display  = 'flex';
-    document.getElementById('recipient-search-field').style.display  = 'none';
-    document.getElementById('recipient-results').classList.remove('open');
-    document.getElementById('recipient-search').value = '';
-  };
-
-  window.clearRecipient = function () {
-    selectedRecipient = null;
-    document.getElementById('selected-recipient-tag').style.display  = 'none';
-    document.getElementById('recipient-search-field').style.display  = 'block';
-    document.getElementById('recipient-search').value = '';
-    document.getElementById('recipient-results').classList.remove('open');
-  };
-
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.email-recipient-wrap')) {
-      document.getElementById('recipient-results').classList.remove('open');
     }
-  });
 
-  window.sendMessage = function () {
-    var subject = document.getElementById('compose-subject').value.trim();
-    var body    = document.getElementById('compose-body').value.trim();
-    var btn     = document.getElementById('send-btn');
-
-    if (!selectedRecipient) return DashAlertModal.show('Please select a recipient.');
-    if (!subject)           return DashAlertModal.show('Please enter a subject.');
-    if (!body)              return DashAlertModal.show('Please write a message.');
-
-    btn.disabled    = true;
-    btn.textContent = 'Sending...';
-
-    fetch('/messages', {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({
-        to_user_id: selectedRecipient.user_id,
-        to_name:    selectedRecipient.full_name,
-        to_email:   selectedRecipient.email,
-        subject:    subject,
-        body:       body
-      })
-    })
-      .then(function (r) { return r.json(); })
-      .then(function () {
-        btn.disabled    = false;
-        btn.textContent = 'Send Message';
-        closeComposeModal();
-        DashAlertModal.show('✅ Message sent successfully.');
-        if (currentTab === 'sent') loadMessages();
-      })
-      .catch(function () {
-        btn.disabled    = false;
-        btn.textContent = 'Send Message';
-        DashAlertModal.show('Failed to send. Please try again.');
-      });
-  };
-
-  function escHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  // ── Live timestamp ticker ─────────────────────
-  function tickTimestamps() {
-    document.querySelectorAll('.email-row[data-sent]').forEach(function (row) {
-      var timeEl = row.querySelector('.email-time');
-      if (timeEl) timeEl.textContent = formatTime(row.getAttribute('data-sent'));
+    document.addEventListener('globalNewMail', function () {
+      if (currentTab === 'inbox') loadMessages();
     });
-  }
-  function startTicking() {
+
+    function emptyHTML(iconPath, title, sub) {
+      return '<div class="email-empty"><div class="email-empty-icon">' +
+        '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="' + iconPath + '"/>' +
+        '</svg></div><p class="email-empty-title">' + title + '</p>' +
+        '<p class="email-empty-sub">' + sub + '</p></div>';
+    }
+
+    function tickSvg(status) {
+      // Single grey tick = sent only
+      if (status === 'sent') {
+        return '<span class="email-tick" title="Sent">' +
+          '<svg viewBox="0 0 12 12" fill="none" stroke="rgba(180,200,230,0.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="1,6 4,9 10,3"/></svg></span>';
+      }
+      // Two grey ticks = delivered
+      if (status === 'delivered') {
+        return '<span class="email-tick" title="Delivered">' +
+          '<svg viewBox="0 0 16 12" fill="none" stroke="rgba(180,200,230,0.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="1,6 4,9 10,3"/>' +
+          '<polyline points="5,6 8,9 14,3"/></svg></span>';
+      }
+      // Two yellow ticks = read
+      return '<span class="email-tick" title="Read">' +
+        '<svg viewBox="0 0 16 12" fill="none" stroke="#f5c842" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="1,6 4,9 10,3"/>' +
+        '<polyline points="5,6 8,9 14,3"/></svg></span>';
+    }
+
+    function tickStatus(msg) {
+      if (msg.read_at) return 'read';
+      if (msg.delivered_at) return 'delivered';
+      return 'sent';
+    }
+
+    function renderMessages(msgs) {
+      var list = document.getElementById('email-list');
+      if (msgs.length === 0) {
+        var t = currentTab === 'inbox' ? 'Your inbox is empty' : 'No sent messages';
+        var s = currentTab === 'inbox' ? 'New messages will appear here' : 'Messages you send will show up here';
+        list.innerHTML = emptyHTML(
+          'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', t, s);
+        return;
+      }
+      var html = '<div class="email-rows">';
+      msgs.forEach(function (msg) {
+        var isUnread = currentTab === 'inbox' && !msg.is_read;
+        var name = currentTab === 'inbox' ? msg.from_name : (msg.to_name || 'Unknown');
+        var preview = msg.body ? msg.body.substring(0, 80) : '';
+
+        var clip = msg.has_attachments
+          ? '<div class="email-row-clip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+          'd="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13"/>' +
+          '</svg></div>'
+          : '<div></div>';
+
+        // Meta column: time + tick (sent tab) + 3-dot button (sent tab)
+        var metaCol;
+        if (currentTab === 'sent') {
+          var status = tickStatus(msg);
+          metaCol = '<div class="email-row-meta">' +
+            '<div class="email-time">' + formatTime(msg.sent_at) + tickSvg(status) + '</div>' +
+            '<button class="email-dots-btn" ' +
+            'onclick="event.stopPropagation();showTickPopover(event,' + msg.id + ')" ' +
+            'title="Message info">' +
+            '<svg fill="currentColor" viewBox="0 0 24 24">' +
+            '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>' +
+            '</svg>' +
+            '</button>' +
+            '</div>';
+        } else {
+          metaCol = '<div class="email-row-meta">' +
+            '<div class="email-time">' + formatTime(msg.sent_at) + '</div>' +
+            '</div>';
+        }
+
+        html += '<div class="email-row' + (isUnread ? ' unread' : '') + '" ' +
+          'data-sent="' + msg.sent_at + '" ' +
+          'data-delivered="' + (msg.delivered_at || '') + '" ' +
+          'data-read="' + (msg.read_at || '') + '" ' +
+          'data-msgid="' + msg.id + '" ' +
+          'onclick="openMessage(' + msg.id + ', \'' + currentTab + '\')">' +
+          '<div class="email-dot"></div>' +
+          '<div class="email-sender">' + escHtml(name) + '</div>' +
+          '<div class="email-preview">' +
+          '<div class="email-subject">' + escHtml(msg.subject) + '</div>' +
+          '<div class="email-body-preview">' + escHtml(preview) + '</div>' +
+          '</div>' +
+          clip +
+          metaCol +
+          '</div>';
+      });
+      html += '</div>';
+      list.innerHTML = html;
+    }
+
+    function updatePagination(count) {
+      var pg = document.getElementById('email-pagination');
+      if (currentPage === 1 && count < PAGE_LIMIT) { pg.style.display = 'none'; return; }
+      pg.style.display = 'flex';
+      document.getElementById('email-prev').disabled = currentPage === 1;
+      document.getElementById('email-next').disabled = count < PAGE_LIMIT;
+      document.getElementById('email-page-info').textContent = 'Page ' + currentPage;
+    }
+
+    window.changePage = function (dir) {
+      currentPage = Math.max(1, currentPage + dir);
+      loadMessages();
+    };
+
+    // ─────────────────────────────────────────────
+    // Open message
+    // ─────────────────────────────────────────────
+    window.openMessage = function (id, tab) {
+      currentMsgId = id; currentReplyTo = null;
+      var emailRow = document.getElementById('read-email-row');
+      var emailVal = document.getElementById('read-email');
+      emailRow.style.display = 'none';
+      document.getElementById('read-attachments').innerHTML = '';
+      document.getElementById('read-body').textContent = 'Loading...';
+
+      if (tab === 'sent') {
+        document.getElementById('read-reply-btn').style.display = 'none';
+        document.getElementById('read-tab-label').textContent = 'Sent Message';
+        document.getElementById('read-status-bar').classList.add('visible');
+        // Reset to grey "Sent" while loading
+        var sv = document.getElementById('read-status-svg');
+        var sl = document.getElementById('read-status-label');
+        sv.setAttribute('stroke', 'rgba(180,200,230,0.65)');
+        sl.textContent = 'Sent';
+        sl.className = 'email-read-status-label';
+        fetch('/messages/sent-item/' + id, { headers: authHeadersJSON() })
+          .then(function (r) { return r.json(); })
+          .then(function (msg) {
+            document.getElementById('read-subject').textContent = msg.subject;
+            document.getElementById('read-from').textContent = 'You → ' + msg.to_name;
+            document.getElementById('read-date').textContent = formatDate(msg.sent_at);
+            document.getElementById('read-body').textContent = msg.body;
+            if (msg.to_email) { emailVal.textContent = msg.to_email; emailRow.style.display = 'flex'; }
+            fetchAndRenderAttachments(msg.id);
+            // Populate status bar
+            renderReadStatusBar(msg);
+          });
+      } else {
+        document.getElementById('read-reply-btn').style.display = 'inline-block';
+        document.getElementById('read-tab-label').textContent = 'Message';
+        document.getElementById('read-status-bar').classList.remove('visible');
+        fetch('/messages/' + id, { headers: authHeadersJSON() })
+          .then(function (r) { return r.json(); })
+          .then(function (msg) {
+            document.getElementById('read-subject').textContent = msg.subject;
+            document.getElementById('read-from').textContent = msg.from_name;
+            document.getElementById('read-date').textContent = formatDate(msg.sent_at);
+            document.getElementById('read-body').textContent = msg.body;
+            if (msg.from_email) { emailVal.textContent = msg.from_email; emailRow.style.display = 'flex'; }
+            currentReplyTo = { user_id: msg.from_user_id, full_name: msg.from_name };
+            fetchAndRenderAttachments(msg.id);
+            document.querySelectorAll('.email-row').forEach(function (row) {
+              if ((row.getAttribute('onclick') || '').includes('(' + id + ','))
+                row.classList.remove('unread');
+            });
+          });
+      }
+      document.getElementById('readModal').classList.add('open');
+    };
+
+    function renderReadAttachments(list, mailId) {
+      var wrap = document.getElementById('read-attachments');
+      if (!list || list.length === 0) { wrap.innerHTML = ''; return; }
+
+      var html = '<div class="email-read-attachments">' +
+        '<div class="email-read-attach-label">📎 Attachments (' + list.length + ')</div>' +
+        '<div class="email-read-attach-list">';
+
+      list.forEach(function (a) {
+        var previewable = isPreviewable(a.mime_type);
+        var actionLabel = previewable ? 'View' : 'Download';
+
+        // If already downloaded, show "Downloaded" badge with date
+        var downloadedBadge = '';
+        if (a.downloaded_at && !previewable) {
+          var dlDate = new Date(a.downloaded_at.includes('T') ? a.downloaded_at : a.downloaded_at.replace(' ', 'T') + 'Z');
+          var dlLabel = dlDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+          downloadedBadge = '<span class="email-read-attach-downloaded" title="Downloaded ' + dlLabel + '">✓ ' + dlLabel + '</span>';
+          actionLabel = 'Open again';
+        }
+
+        html += '<button class="email-read-attach-chip' + (a.downloaded_at ? ' already-downloaded' : '') + '" ' +
+          'id="attach-chip-' + a.id + '" ' +
+          'onclick="openAttachment(' + a.id + ',\'' + escHtml(a.filename) + '\',\'' + escHtml(a.mime_type) + '\',' + (!previewable && !!a.downloaded_at) + ')">' +
+          '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="' + mimeIcon(a.mime_type) + '"/></svg>' +
+          '<span class="email-read-attach-chip-name">' + escHtml(a.filename) + '</span>' +
+          '<span class="email-read-attach-chip-size">' + formatBytes(a.file_size) + '</span>' +
+          downloadedBadge +
+          '<span class="email-read-attach-action">' + actionLabel + '</span>' +
+          '</button>';
+      });
+
+      html += '</div></div>';
+      wrap.innerHTML = html;
+    }
+
+    // Which mime types can be previewed inline in the browser
+    function isPreviewable(mime) {
+      if (!mime) return false;
+      return mime.startsWith('image/') || mime === 'application/pdf';
+    }
+
+    // Fetches the file with auth token then either:
+    //   - opens the lightbox preview (images + PDFs)
+    window.openAttachment = function (id, filename, mime, alreadyDownloaded) {
+      // For non-previewable files (Word, Excel), warn before re-downloading
+      if (!isPreviewable(mime) && alreadyDownloaded) {
+        DashAlertModal.confirm(
+          '📁 You already downloaded "' + filename + '". It may still be in your Downloads folder. Download again?',
+          function () { _fetchAndDownload(id, filename, mime); },
+          null,
+          'Download',   // ← button label
+          false         // ← false = gold button, not red          
+        );
+        return;
+      }
+      _fetchAndDownload(id, filename, mime);
+    };
+
+    function _fetchAndDownload(id, filename, mime) {
+      var chip = document.getElementById('attach-chip-' + id);
+      if (chip) { chip.style.opacity = '0.6'; chip.style.pointerEvents = 'none'; }
+
+      fetch('/messages/attachment/' + id, {
+        headers: { 'Authorization': 'Bearer ' + TOKEN }
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error('Failed (' + r.status + ')');
+          return r.blob();
+        })
+        .then(function (blob) {
+          var resolvedMime = blob.type || mime;
+          var blobUrl = URL.createObjectURL(blob);
+
+          if (isPreviewable(resolvedMime)) {
+            showAttPreview(blobUrl, filename, resolvedMime, id, mime);
+          } else {
+            triggerDownload(blobUrl, filename);
+            setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 10000);
+
+            // Mark chip as downloaded immediately without waiting for page reload
+            if (chip) {
+              chip.classList.add('already-downloaded');
+              var actionEl = chip.querySelector('.email-read-attach-action');
+              if (actionEl) actionEl.textContent = 'Open again';
+              // Inject downloaded badge
+              var sizeEl = chip.querySelector('.email-read-attach-chip-size');
+              if (sizeEl && !chip.querySelector('.email-read-attach-downloaded')) {
+                var today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                var badge = document.createElement('span');
+                badge.className = 'email-read-attach-downloaded';
+                badge.title = 'Downloaded ' + today;
+                badge.textContent = '✓ ' + today;
+                sizeEl.insertAdjacentElement('afterend', badge);
+              }
+              // Update onclick to pass alreadyDownloaded = true from now on
+              chip.setAttribute('onclick',
+                'openAttachment(' + id + ',\'' + escHtml(filename) + '\',\'' + escHtml(mime) + '\',true)');
+            }
+          }
+        })
+        .catch(function (err) {
+          DashAlertModal.show('❌ Could not open file. Please try again.');
+          console.error(err);
+        })
+        .finally(function () {
+          if (chip) { chip.style.opacity = ''; chip.style.pointerEvents = ''; }
+        });
+    }
+
+    function fetchAndRenderAttachments(mailId) {
+      fetch('/messages/attachment-status/' + mailId, {
+        headers: { 'Authorization': 'Bearer ' + TOKEN }
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          renderReadAttachments(data.attachments || [], mailId);
+        })
+        .catch(function () {
+          // Fallback — render without download status
+          renderReadAttachments([], mailId);
+        });
+    }
+
+    // Keep a reference to the current blob URL so we can revoke it on close
+    var _previewBlobUrl = null;
+    var _isFullscreen = false;
+
+    function showAttPreview(blobUrl, filename, mime, id, origMime) {
+      _previewBlobUrl = blobUrl;
+      _isFullscreen = false;
+
+      var overlay = document.getElementById('attPreviewOverlay');
+      var content = document.getElementById('attPreviewContent');
+      var dlBtn = document.getElementById('attPreviewDownloadBtn');
+      var expBtn = document.getElementById('attPreviewExpandBtn');
+      var hint = document.getElementById('attEscHint');
+      var box = overlay.querySelector('.att-preview-box');
+
+      box.classList.remove('fullscreen');
+      overlay.classList.remove('fullscreen-mode');
+      hint.classList.remove('visible');
+      expBtn.innerHTML = expandIcon() + ' Expand';
+
+      document.getElementById('attPreviewName').textContent = filename;
+      content.innerHTML = '';
+
+      if (mime.startsWith('image/')) {
+        var img = document.createElement('img');
+        img.src = blobUrl;
+        img.alt = filename;
+        content.appendChild(img);
+
+      } else if (mime === 'application/pdf') {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = [
+          'position:relative',
+          'width:100%',
+          'height:100%',
+          'flex:1',
+          'min-height:0',
+          'display:flex',
+          'flex-direction:column'
+        ].join(';');
+
+        var iframe = document.createElement('iframe');
+        iframe.src = blobUrl + '#toolbar=0&navpanes=0&scrollbar=0';
+        iframe.title = filename;
+        iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;display:block;flex:1;min-height:0;';
+
+        var catcher = document.createElement('div');
+        catcher.className = 'pdf-catcher';
+        catcher.style.cssText = [
+          'position:absolute',
+          'inset:0',
+          'z-index:2',
+          'background:transparent',
+          'cursor:default',
+          'pointer-events:none'
+        ].join(';');
+
+        catcher.addEventListener('mousemove', function (e) {
+          document.dispatchEvent(new MouseEvent('mousemove', {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            bubbles: true
+          }));
+        });
+
+        catcher.addEventListener('click', function (e) {
+          document.dispatchEvent(new MouseEvent('click', {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            bubbles: true
+          }));
+        });
+
+        wrap.appendChild(iframe);
+        wrap.appendChild(catcher);
+        content.appendChild(wrap);
+      }                                        // ← no semicolon here
+
+      // THESE WERE MISSING — modal never opened!
+      dlBtn.onclick = function () { triggerDownload(blobUrl, filename); };
+
+      overlay.classList.add('open');
+      overlay.onclick = function (e) {
+        if (e.target === overlay) closeAttPreview();
+      };
+    }
+
+    // ── Fullscreen bar visibility controller ──────────────────
+    var _fsBarTimer = null;
+    var _fsLastMouseX = -1;
+    var _fsLastMouseY = -1;
+    var _fsMoveHandler = null;
+    var _fsClickHandler = null;
+    var _fsIgnoreNextClick = false;
+
+    function showFsBar() {
+      var bar = document.querySelector('.att-preview-bar');
+      var hint = document.getElementById('attEscHint');
+      var catcher = document.querySelector('.pdf-catcher');
+
+      if (bar) bar.classList.add('fs-bar-visible');
+      if (hint) hint.classList.add('fs-bar-visible');
+      if (catcher && _isFullscreen) catcher.style.pointerEvents = 'none';
+
+      // Reset the hide timer
+      clearTimeout(_fsBarTimer);
+      _fsBarTimer = setTimeout(hideFsBar, 2000);
+    }
+
+    function hideFsBar() {
+      var bar = document.querySelector('.att-preview-bar');
+      var hint = document.getElementById('attEscHint');
+      var catcher = document.querySelector('.pdf-catcher');
+
+      if (bar) bar.classList.remove('fs-bar-visible');
+      if (hint) hint.classList.remove('fs-bar-visible');
+      // Bar hidden = re-enable catcher to detect mouse movement
+      // Small delay so any ongoing scroll gesture completes first
+      if (catcher && _isFullscreen) {
+        setTimeout(function () {
+          catcher.style.pointerEvents = 'all';
+        }, 300);
+      }
+
+      clearTimeout(_fsBarTimer);
+    }
+
+    function startFsBarListeners() {
+      // Mouse MOVEMENT — only show if mouse actually moved (not scroll events)
+      _fsMoveHandler = function (e) {
+        if (!_isFullscreen) return;
+        var dx = e.clientX - _fsLastMouseX;
+        var dy = e.clientY - _fsLastMouseY;
+        _fsLastMouseX = e.clientX;
+        _fsLastMouseY = e.clientY;
+        // Ignore zero-delta events (fired by scroll on some browsers)
+        if (dx === 0 && dy === 0) return;
+        showFsBar();
+      };
+
+      // CLICK anywhere — show bar for 2 seconds
+      _fsClickHandler = function (e) {
+        if (!_isFullscreen) return;
+        if (_fsIgnoreNextClick) {
+          _fsIgnoreNextClick = false;   // swallow this one click, then re-enable
+          return;
+        }
+        // Don't hide if clicking buttons on the bar itself
+        showFsBar();
+      };
+
+      document.addEventListener('mousemove', _fsMoveHandler);
+      document.addEventListener('click', _fsClickHandler);
+    }
+
+    function stopFsBarListeners() {
+      if (_fsMoveHandler) document.removeEventListener('mousemove', _fsMoveHandler);
+      if (_fsClickHandler) document.removeEventListener('click', _fsClickHandler);
+      _fsMoveHandler = null;
+      _fsClickHandler = null;
+      clearTimeout(_fsBarTimer);
+      _fsBarTimer = null;
+      _fsLastMouseX = -1;
+      _fsLastMouseY = -1;
+    }
+
+    // ── Updated toggleAttFullscreen ───────────────────────────
+    window.toggleAttFullscreen = function () {
+      var overlay = document.getElementById('attPreviewOverlay');
+      var box = overlay.querySelector('.att-preview-box');
+      var expBtn = document.getElementById('attPreviewExpandBtn');
+      var hint = document.getElementById('attEscHint');
+      var catcher = document.querySelector('.pdf-catcher');
+
+      _isFullscreen = !_isFullscreen;
+
+      if (_isFullscreen) {
+        box.classList.add('fullscreen');
+        overlay.classList.add('fullscreen-mode');
+        expBtn.innerHTML = collapseIcon() + ' Exit Fullscreen';
+        hint.classList.add('visible');
+        _fsLastMouseX = -1;
+        _fsLastMouseY = -1;
+        _fsIgnoreNextClick = true;
+        if (catcher) catcher.style.pointerEvents = 'all';
+        startFsBarListeners();
+      } else {
+        box.classList.remove('fullscreen');
+        overlay.classList.remove('fullscreen-mode');
+        expBtn.innerHTML = expandIcon() + ' Expand';
+        hint.classList.remove('visible');
+        if (catcher) catcher.style.pointerEvents = 'none';
+        // Clean up
+        hideFsBar();
+        stopFsBarListeners();
+      }
+    };
+
+    // ── Updated closeAttPreview — clean up listeners too ─────
+    window.closeAttPreview = function () {
+      var overlay = document.getElementById('attPreviewOverlay');
+      var box = overlay.querySelector('.att-preview-box');
+      var hint = document.getElementById('attEscHint');
+
+      overlay.style.opacity = '0';
+      box.style.transform = 'translateY(12px)';
+
+      setTimeout(function () {
+        overlay.classList.remove('open', 'fullscreen-mode');
+        box.classList.remove('fullscreen');
+        overlay.style.opacity = '';
+        box.style.transform = '';
+        hint.classList.remove('visible');
+        hideFsBar();
+        stopFsBarListeners();
+        _isFullscreen = false;
+        document.getElementById('attPreviewContent').innerHTML = '';
+        if (_previewBlobUrl) {
+          URL.revokeObjectURL(_previewBlobUrl);
+          _previewBlobUrl = null;
+        }
+      }, 250);
+    };
+
+    // ESC — exit fullscreen first, then close on second press
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var overlay = document.getElementById('attPreviewOverlay');
+      if (!overlay || !overlay.classList.contains('open')) return;
+      if (_isFullscreen) {
+        toggleAttFullscreen();
+      } else {
+        closeAttPreview();
+      }
+    });
+
+    function expandIcon() {
+      return '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+        'd="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>';
+    }
+
+    function collapseIcon() {
+      return '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+        'd="M9 9V4m0 5H4m5 0L3 3m12 6h5m-5 0V4m0 5l6-6M9 15v5m0-5H4m5 5l-6 6m12-6h5m-5 0v5m0-5l6 6"/></svg>';
+    }
+
+    function triggerDownload(blobUrl, filename) {
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Keep old name as alias in case anything else calls it
+    window.downloadAttachment = window.openAttachment;
+
+    function renderReadStatusBar(msg) {
+      var svg = document.getElementById('read-status-svg');
+      var label = document.getElementById('read-status-label');
+      if (!svg || !label) return;
+
+      if (msg.read_at) {
+        // Double yellow ticks — READ
+        svg.setAttribute('stroke', '#f5c842');
+        label.textContent = 'Read';
+        label.className = 'email-read-status-label read';
+      } else if (msg.delivered_at) {
+        // Double grey ticks — DELIVERED
+        svg.setAttribute('stroke', 'rgba(180,200,230,0.65)');
+        label.textContent = 'Delivered';
+        label.className = 'email-read-status-label';
+      } else {
+        // Double grey ticks — SENT (sent = delivered to server, not yet to recipient)
+        svg.setAttribute('stroke', 'rgba(180,200,230,0.65)');
+        label.textContent = 'Sent';
+        label.className = 'email-read-status-label';
+      }
+    }
+
+    window.closeReadModal = function () {
+      document.getElementById('readModal').classList.remove('open');
+      currentMsgId = null;
+    };
+
+    // ─────────────────────────────────────────────
+    // Delete
+    // ─────────────────────────────────────────────
+    window.deleteMessage = function () {
+      if (!currentMsgId) return;
+      if (currentTab !== 'sent') {
+        DashAlertModal.confirm('Delete this message from your inbox?', function () { performDelete('me'); });
+      } else {
+        document.getElementById('deleteOptionsModal').classList.add('open');
+      }
+    };
+    window.closeDeleteOptionsModal = function () {
+      document.getElementById('deleteOptionsModal').classList.remove('open');
+    };
+    window.deleteModeMe = function () {
+      DashAlertModal.confirm('Delete from your sent messages?', function () {
+        closeDeleteOptionsModal(); performDelete('me');
+      });
+    };
+    window.deleteForAll = function () {
+      DashAlertModal.confirm('⚠ Delete for all? The recipient will be notified.', function () {
+        closeDeleteOptionsModal(); performDelete('all');
+      });
+    };
+    function performDelete(mode) {
+      fetch('/messages/' + currentMsgId + '?mode=' + mode, {
+        method: 'DELETE', headers: authHeadersJSON()
+      })
+        .then(function (r) { return r.json(); })
+        .then(function () { closeReadModal(); loadMessages(); DashAlertModal.show('✅ Message deleted.'); })
+        .catch(function () { DashAlertModal.show('❌ Failed to delete message.'); });
+    }
+
+    // ─────────────────────────────────────────────
+    // Reply
+    // ─────────────────────────────────────────────
+    window.replyToMessage = function () {
+      var subj = document.getElementById('read-subject').textContent;
+      closeReadModal();
+      openComposeModal(subj.startsWith('Re: ') ? subj : 'Re: ' + subj, currentReplyTo);
+    };
+
+    // ─────────────────────────────────────────────
+    // Compose
+    // ─────────────────────────────────────────────
+    window.openComposeModal = function (prefillSubject, prefillRecipient) {
+      clearRecipient();
+      attachments = [];
+      renderAttachList();
+      document.getElementById('compose-subject').value = prefillSubject || '';
+      document.getElementById('compose-body').value = '';
+      document.getElementById('attach-error').style.display = 'none';
+      document.getElementById('composeModal').classList.add('open');
+      if (prefillRecipient) {
+        selectRecipient(prefillRecipient.user_id, prefillRecipient.full_name, prefillRecipient.email || '');
+      } else {
+        document.getElementById('recipient-search').focus();
+      }
+    };
+    window.closeComposeModal = function () {
+      document.getElementById('composeModal').classList.remove('open');
+    };
+
+    // ─────────────────────────────────────────────
+    // Recipient search
+    // ─────────────────────────────────────────────
+    window.searchRecipients = function (q) {
+      clearTimeout(searchTimer);
+      var results = document.getElementById('recipient-results');
+      if (q.trim().length < 2) { results.classList.remove('open'); return; }
+      searchTimer = setTimeout(function () {
+        fetch('/messages/users/search?q=' + encodeURIComponent(q), { headers: authHeadersJSON() })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            var users = data.users || [];
+            results.innerHTML = users.length === 0
+              ? '<div class="email-recipient-option"><span class="email-recipient-name" style="color:rgba(200,220,255,0.4)">No users found</span></div>'
+              : users.map(function (u) {
+                return '<div class="email-recipient-option" onclick="selectRecipient(\'' + u.user_id +
+                  '\',\'' + escHtml(u.full_name) + '\',\'' + escHtml(u.email || '') + '\')">' +
+                  '<span class="email-recipient-name">' + escHtml(u.full_name) +
+                  ' (' + escHtml(u.email || 'no-email') + ')</span></div>';
+              }).join('');
+            results.classList.add('open');
+          });
+      }, 350);
+    };
+
+    window.selectRecipient = function (uid, name, email) {
+      selectedRecipient = { user_id: uid, full_name: name, email: email || '' };
+      document.getElementById('selected-recipient-label').textContent = name + ' (' + email + ')';
+      document.getElementById('selected-recipient-tag').style.display = 'flex';
+      document.getElementById('recipient-search-field').style.display = 'none';
+      document.getElementById('recipient-results').classList.remove('open');
+      document.getElementById('recipient-search').value = '';
+    };
+    window.clearRecipient = function () {
+      selectedRecipient = null;
+      document.getElementById('selected-recipient-tag').style.display = 'none';
+      document.getElementById('recipient-search-field').style.display = 'block';
+      document.getElementById('recipient-search').value = '';
+      document.getElementById('recipient-results').classList.remove('open');
+    };
+    document.addEventListener('click', function (e) {
+      if (!e.target || typeof e.target.closest !== 'function') return;
+      if (!e.target.closest('.email-recipient-wrap'))
+        document.getElementById('recipient-results').classList.remove('open');
+    });
+
+    // ─────────────────────────────────────────────
+    // ATTACHMENT HANDLING
+    // ─────────────────────────────────────────────
+    window.handleFileSelected = function (input) {
+      var file = input.files[0];
+      input.value = ''; // reset so same file can be re-added after removal
+      if (!file) return;
+
+      var errEl = document.getElementById('attach-error');
+      errEl.style.display = 'none';
+
+      if (attachments.length >= MAX_ATTACHMENTS) {
+        showAttachError('Maximum ' + MAX_ATTACHMENTS + ' attachments allowed.');
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        showAttachError('"' + file.name + '" exceeds the 5 MB limit.');
+        return;
+      }
+
+      // Add a pending item with a progress bar immediately
+      var tempId = 'att-' + Date.now();
+      attachments.push({ tempId: tempId, filename: file.name, file_size: file.size, mime_type: file.type, uploading: true, temp_token: null });
+      renderAttachList();
+
+      // Upload via XHR so we get real progress events
+      var xhr = new XMLHttpRequest();
+      var fd = new FormData();
+      fd.append('file', file);
+
+      xhr.upload.addEventListener('progress', function (e) {
+        if (!e.lengthComputable) return;
+        var pct = Math.round((e.loaded / e.total) * 100);
+        var bar = document.getElementById('bar-' + tempId);
+        if (bar) bar.style.width = pct + '%';
+      });
+
+      xhr.addEventListener('load', function () {
+        var att = attachments.find(function (a) { return a.tempId === tempId; });
+        if (!att) return;
+        if (xhr.status === 201) {
+          var res = JSON.parse(xhr.responseText);
+          att.temp_token = res.temp_token;
+          att.uploading = false;
+        } else {
+          // Upload failed — remove from list and show error
+          attachments = attachments.filter(function (a) { return a.tempId !== tempId; });
+          try {
+            var err = JSON.parse(xhr.responseText);
+            showAttachError(err.error || 'Upload failed.');
+          } catch (e) { showAttachError('Upload failed.'); }
+        }
+        renderAttachList();
+      });
+
+      xhr.addEventListener('error', function () {
+        attachments = attachments.filter(function (a) { return a.tempId !== tempId; });
+        showAttachError('Upload failed. Check your connection.');
+        renderAttachList();
+      });
+
+      xhr.open('POST', '/messages/upload');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
+      xhr.send(fd);
+    };
+
+    function showAttachError(msg) {
+      var el = document.getElementById('attach-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(function () { el.style.display = 'none'; }, 4000);
+    }
+
+    window.removeAttachment = function (tempId) {
+      attachments = attachments.filter(function (a) { return a.tempId !== tempId; });
+      renderAttachList();
+    };
+
+    function renderAttachList() {
+      var list = document.getElementById('attach-list');
+      var btn = document.getElementById('attach-btn');
+      var countLbl = document.getElementById('attach-count-label');
+      var count = attachments.length;
+
+      countLbl.textContent = '(' + count + ' / ' + MAX_ATTACHMENTS + ' · max 5 MB each)';
+      btn.classList.toggle('disabled', count >= MAX_ATTACHMENTS);
+
+      if (count === 0) { list.innerHTML = ''; return; }
+
+      list.innerHTML = attachments.map(function (a) {
+        var progressRow = a.uploading
+          ? '<div class="email-attach-progress"><div class="email-attach-progress-bar" id="bar-' + a.tempId + '"></div></div>'
+          : '';
+        var removeBtn = !a.uploading
+          ? '<button class="email-attach-item-remove" onclick="removeAttachment(\'' + a.tempId + '\')" title="Remove">' +
+          '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>'
+          : '<span style="font-size:11px;color:rgba(200,220,255,0.35);padding-right:4px;">uploading…</span>';
+
+        return '<div class="email-attach-item">' +
+          '<div class="email-attach-item-icon">' +
+          '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="' + mimeIcon(a.mime_type) + '"/></svg></div>' +
+          '<div class="email-attach-item-info">' +
+          '<div class="email-attach-item-name">' + escHtml(a.filename) + '</div>' +
+          '<div class="email-attach-item-size">' + formatBytes(a.file_size) + '</div>' +
+          progressRow +
+          '</div>' +
+          removeBtn +
+          '</div>';
+      }).join('');
+    }
+
+    // ─────────────────────────────────────────────
+    // Send
+    // ─────────────────────────────────────────────
+    window.sendMessage = function () {
+      var subject = document.getElementById('compose-subject').value.trim();
+      var body = document.getElementById('compose-body').value.trim();
+      var btn = document.getElementById('send-btn');
+
+      if (!selectedRecipient) return DashAlertModal.show('Please select a recipient.');
+      if (!subject) return DashAlertModal.show('Please enter a subject.');
+      if (!body) return DashAlertModal.show('Please write a message.');
+
+      var stillUploading = attachments.some(function (a) { return a.uploading; });
+      if (stillUploading) return DashAlertModal.show('Please wait — files are still uploading.');
+
+      var tokens = attachments.map(function (a) { return a.temp_token; }).filter(Boolean);
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      fetch('/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+        body: JSON.stringify({
+          to_user_id: selectedRecipient.user_id,
+          to_name: selectedRecipient.full_name,
+          to_email: selectedRecipient.email,
+          subject: subject,
+          body: body,
+          attachment_tokens: tokens,
+        })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Message';
+          closeComposeModal();
+          DashAlertModal.show('✅ Message sent successfully.');
+          if (currentTab === 'sent') loadMessages();
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'Send Message';
+          DashAlertModal.show('Failed to send. Please try again.');
+        });
+    };
+
+    // ─────────────────────────────────────────────
+    // Tick popover — 3-dot button handler
+    // ─────────────────────────────────────────────
+    var _tickPopover = null;
+
+    window.showTickPopover = function (event, msgId) {
+      closeTickPopover();
+
+      // Read timestamps from the row's data attributes (already in DOM)
+      var row = event.currentTarget.closest('.email-row');
+      var sentAt = row ? row.getAttribute('data-sent') : null;
+      var delivAt = row ? row.getAttribute('data-delivered') : null;
+      var readAt = row ? row.getAttribute('data-read') : null;
+
+      var pop = document.createElement('div');
+      pop.className = 'tick-popover';
+      pop.innerHTML = buildPopoverHTML(sentAt, delivAt, readAt);
+      document.body.appendChild(pop);
+      _tickPopover = pop;
+
+      // Position near the button, staying within viewport
+      var rect = event.currentTarget.getBoundingClientRect();
+      var popW = 250, popH = 130;
+      var left = Math.min(rect.right - popW, window.innerWidth - popW - 12);
+      var top = rect.bottom + 8;
+      if (top + popH > window.innerHeight) top = rect.top - popH - 8;
+      pop.style.left = Math.max(8, left) + 'px';
+      pop.style.top = top + 'px';
+
+      // If tick data isn't on the row yet (e.g. old render), fetch it
+      if (!sentAt) {
+        fetch('/messages/tick/' + msgId, {
+          headers: { 'Authorization': 'Bearer ' + TOKEN }
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (_tickPopover) {
+              _tickPopover.innerHTML = buildPopoverHTML(d.sent_at, d.delivered_at, d.read_at);
+              // Update the row's data attributes so next open is instant
+              if (row) {
+                row.setAttribute('data-delivered', d.delivered_at || '');
+                row.setAttribute('data-read', d.read_at || '');
+              }
+              // Update the tick icon in the row
+              updateRowTick(row, d);
+            }
+          })
+          .catch(function () { });
+      }
+
+      // Close on next click anywhere
+      setTimeout(function () {
+        document.addEventListener('click', closeTickPopover, { once: true });
+      }, 0);
+    };
+
+    function buildPopoverHTML(sentAt, delivAt, readAt) {
+      // Each row always shows its OWN fixed tick style so the user can see
+      // what each tick means:
+      //   Sent row      → always 1 grey tick
+      //   Delivered row → always 2 grey ticks  (dimmed if not yet delivered)
+      //   Read row      → always 2 yellow ticks (dimmed if not yet read)
+      return '<div class="tick-popover-title">Message Status</div>' +
+        popRow('grey1', 'Sent', sentAt, true) +
+        popRow('grey2', 'Delivered', delivAt, !!delivAt) +
+        popRow('yellow2', 'Read', readAt, !!readAt);
+    }
+
+    function popRow(iconType, label, isoStr, active) {
+      var opacity = active ? '1' : '0.2';
+      var icon = '';
+      if (iconType === 'grey1') {
+        icon = '<svg width="22" height="12" viewBox="0 0 12 12" fill="none" ' +
+          'stroke="rgba(180,200,230,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="1,6 4,9 10,3"/></svg>';
+      } else if (iconType === 'grey2') {
+        icon = '<svg width="22" height="12" viewBox="0 0 16 12" fill="none" ' +
+          'stroke="rgba(180,200,230,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="1,6 4,9 10,3"/><polyline points="5,6 8,9 14,3"/></svg>';
+      } else {
+        // yellow2
+        icon = '<svg width="22" height="12" viewBox="0 0 16 12" fill="none" ' +
+          'stroke="#f5c842" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="1,6 4,9 10,3"/><polyline points="5,6 8,9 14,3"/></svg>';
+      }
+      var val = isoStr
+        ? formatDate(isoStr)
+        : '<span style="color:rgba(200,220,255,0.18)">—</span>';
+      return '<div class="tick-popover-row" style="opacity:' + opacity + '">' +
+        '<div class="tick-popover-icon">' + icon + '</div>' +
+        '<div class="tick-popover-label">' + label + '</div>' +
+        '<div class="tick-popover-val">' + val + '</div>' +
+        '</div>';
+    }
+
+    function updateRowTick(row, data) {
+      if (!row) return;
+      var timeEl = row.querySelector('.email-time');
+      if (!timeEl) return;
+      var sentAt = row.getAttribute('data-sent');
+      var status = data.read_at ? 'read' : data.delivered_at ? 'delivered' : 'sent';
+      // Rebuild time cell with updated tick
+      timeEl.innerHTML = formatTime(sentAt) + tickSvg(status);
+    }
+
+    function closeTickPopover() {
+      if (_tickPopover) { _tickPopover.remove(); _tickPopover = null; }
+    }
+
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function tickTimestamps() {
+      document.querySelectorAll('.email-row[data-sent]').forEach(function (row) {
+        var timeEl = row.querySelector('.email-time');
+        if (!timeEl) return;
+        var sentAt = row.getAttribute('data-sent');
+        var delivAt = row.getAttribute('data-delivered');
+        var readAt = row.getAttribute('data-read');
+        if (currentTab === 'sent') {
+          var status = readAt ? 'read' : delivAt ? 'delivered' : 'sent';
+          timeEl.innerHTML = formatTime(sentAt) + tickSvg(status);
+        } else {
+          timeEl.textContent = formatTime(sentAt);
+        }
+      });
+    }
+
+    // ── Live tick poller ──────────────────────────────────────
+    // Polls tick status for any sent messages that aren't 'read' yet.
+    // Once a message reaches 'read' it never changes, so we stop polling it.
+    // Runs every 15s while on the sent tab; pauses otherwise to save requests.
+    var _tickPollTimer = null;
+
+    function pollSentTicks() {
+      if (currentTab !== 'sent') return;
+
+      // Collect rows that aren't fully read yet
+      var rows = Array.from(document.querySelectorAll('.email-row[data-msgid]'))
+        .filter(function (row) { return !row.getAttribute('data-read'); });
+
+      if (rows.length === 0) return; // all read — nothing to poll
+
+      rows.forEach(function (row) {
+        var msgId = row.getAttribute('data-msgid');
+        fetch('/messages/tick/' + msgId, {
+          headers: { 'Authorization': 'Bearer ' + TOKEN }
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.sent_at) return; // 404 / error
+            // Update data attributes
+            if (d.delivered_at) row.setAttribute('data-delivered', d.delivered_at);
+            if (d.read_at) row.setAttribute('data-read', d.read_at);
+            // Refresh the time+tick cell immediately
+            var timeEl = row.querySelector('.email-time');
+            if (timeEl) {
+              var status = d.read_at ? 'read' : d.delivered_at ? 'delivered' : 'sent';
+              timeEl.innerHTML = formatTime(d.sent_at) + tickSvg(status);
+            }
+          })
+          .catch(function () { });
+      });
+    }
+
+    function startTickPolling() {
+      if (_tickPollTimer) clearInterval(_tickPollTimer);
+      _tickPollTimer = setInterval(pollSentTicks, 15000);
+    }
+
+    // Re-run tick poll when tab switches to sent
+    var _origSwitchTab = window.switchTab;
+    window.switchTab = function (tab) {
+      _origSwitchTab(tab);
+      if (tab === 'sent') {
+        pollSentTicks();         // immediate check on switch
+        startTickPolling();
+      } else {
+        if (_tickPollTimer) { clearInterval(_tickPollTimer); _tickPollTimer = null; }
+      }
+    };
+
+    loadMessages();
     if (tickTimer) clearInterval(tickTimer);
     tickTimer = setInterval(tickTimestamps, 30000);
-  }
+    // Start tick polling if we land on sent tab on initial load
+    if (currentTab === 'sent') startTickPolling();
+  })();
 
-  loadMessages();
-  startTicking();
-})();
 </script>
