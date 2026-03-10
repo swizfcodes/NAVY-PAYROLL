@@ -1,3 +1,32 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <div>
   <!-- TABS -->
   <div class="p-6">
@@ -524,7 +553,14 @@
 <!-- Action Popup -->
 <div id="actionPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
   <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-64">
-    <div id="popupIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+    <div id="popupIcon" class="relative w-10 h-10 mx-auto mb-4">
+      <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+      <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+      <div
+        class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2">
+      </div>
+    </div>
+
     <p id="popupText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
   </div>
 </div>
@@ -550,6 +586,30 @@
     <div class="flex justify-end gap-3">
       <button id="deleteCancelBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
       <button id="deleteConfirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Edit Modal -->
+<div id="cancelEditModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+    
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Cancel Editing</h2>
+    
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to cancel editing? Any unsaved changes will be lost.
+    </p>
+
+    <div class="flex justify-end space-x-4">
+      <button id="cancelEditNo"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+        No
+      </button>
+
+      <button id="cancelEditYes"
+        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+        Yes, Cancel
+      </button>
     </div>
   </div>
 </div>
@@ -978,8 +1038,14 @@ function showPopup(message, callback) {
   const icon = document.getElementById('popupIcon');
   const text = document.getElementById('popupText');
 
-  icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
-  text.textContent = message;
+  // Reset icon to spinner state
+  icon.className = "relative w-10 h-10 mx-auto mb-4";
+  icon.innerHTML = `
+    <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+    <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+    <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+  `;
+  text.textContent = 'Processing...';
   popup.classList.remove('hidden');
 
   setTimeout(() => {
@@ -987,10 +1053,9 @@ function showPopup(message, callback) {
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                       </svg>`;
-    text.textContent = "Success!";
+    text.textContent = message + "!";
     setTimeout(() => {
       popup.classList.add('hidden');
-      icon.innerHTML = "";
       if (callback) callback();
     }, 1000);
   }, 1500);
@@ -1049,19 +1114,42 @@ async function submitPersonnelFormWithValidation() {
 }
 
 function cancelPersonnelForm() {
-  try {
-    // 1. Check if in edit mode and show confirmation
-    if (formMode === 'edit') {
-      const confirmed = confirm('Are you sure you want to cancel editing? Any unsaved changes will be lost.');
-      if (!confirmed) return;
+  // 1. Check if in edit mode and show confirmation
+  if (formMode === 'edit') {
+    const modal = document.getElementById('cancelEditModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const yesBtn = document.getElementById('cancelEditYes');
+    const noBtn = document.getElementById('cancelEditNo');
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    noBtn.onclick = closeModal;
+
+    yesBtn.onclick = () => {
+      closeModal();
 
       // Enable Service Number field
       document.getElementById("field-service-number").disabled = false;
 
       // Clear editing state
       localStorage.removeItem('editing_employee_id');
+
       setCreateMode();
-    }
+
+      // run the rest of the cancel logic
+      completeCancelPersonnelForm();
+    };
+  }
+  return;
+}
+
+function completeCancelPersonnelForm() {
+  try {
 
     // 2. Reset all form data
     document.getElementById("personnelForm")?.reset();

@@ -1,4 +1,32 @@
 <!-- BATCH UPLOAD SECTION -->
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
 <div id="section-batch" class="p-6">
   <div class="flex flex-col items-center">
     <div id="batchUploadDiv" class="w-full max-w-md rounded-2xl">
@@ -18,43 +46,25 @@
       <!-- Upload Form -->
       <form id="batchUploadForm" class="space-y-6">
         <div>
-          <label
-            for="batchFile"
-            class="block text-sm font-medium text-gray-700 mb-2"
-            >Upload File</label
-          >
-          <input
-            type="file"
-            id="batchFile"
-            accept=".xlsx,.xls,.csv"
-            class="mt-1 block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-          />
+          <label for="batchFile" class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+          <input type="file" id="batchFile" accept=".xlsx,.xls,.csv"
+            class="mt-1 block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400" />
           <p class="text-xs text-gray-500 mt-2">
             Only <span class="font-semibold">.xlsx</span>,
             <span class="font-semibold">.xls</span> or
             <span class="font-semibold">.csv</span> files are allowed.
-            <button
-              type="button"
-              id="downloadTemplateBtn"
-              class="text-blue-600 font-medium hover:underline ml-2"
-            >
+            <button type="button" id="downloadTemplateBtn" class="text-blue-600 font-medium hover:underline ml-2">
               Download Template
             </button>
           </p>
         </div>
         <div class="flex justify-end gap-3">
-          <button
-            type="button"
-            id="cancelBatchBtn"
-            class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium shadow-sm"
-          >
+          <button type="button" id="cancelBatchBtn"
+            class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium shadow-sm">
             Cancel
           </button>
-          <button
-            type="button"
-            id="uploadBatchBtn"
-            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium shadow-md"
-          >
+          <button type="button" id="uploadBatchBtn"
+            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium shadow-md">
             Upload
           </button>
         </div>
@@ -63,24 +73,11 @@
   </div>
 
   <!-- Success Modal -->
-  <div
-    id="successModal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
+  <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-lg p-6 max-w-md w-full text-center">
       <div id="successIcon" class="mb-3 flex items-center justify-center">
-        <svg
-          class="h-8 w-8 text-green-600"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M5 13l4 4L19 7"
-          />
+        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
       <h2 id="successTitle" class="text-xl font-bold text-green-600 mb-2">
@@ -89,10 +86,7 @@
       <p id="successMessage" class="text-gray-600 mb-4">
         Action completed successfully.
       </p>
-      <div
-        id="uploadSummary"
-        class="hidden text-left bg-gray-50 rounded-lg p-4 mb-4 text-sm"
-      >
+      <div id="uploadSummary" class="hidden text-left bg-gray-50 rounded-lg p-4 mb-4 text-sm">
         <p class="font-semibold mb-2">Upload Summary:</p>
         <p>
           Total Unique Records:
@@ -119,31 +113,19 @@
           <div id="failedList" class="text-xs text-red-500 mt-1"></div>
         </div>
       </div>
-      <button
-        id="closeModalBtn"
-        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-      >
+      <button id="closeModalBtn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
         OK
       </button>
     </div>
   </div>
 
   <!-- Error Modal -->
-  <div
-    id="errorModal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
+  <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-lg p-6 max-w-2xl w-full">
       <h2 class="text-xl font-bold text-red-600 mb-4">Upload Errors</h2>
-      <div
-        id="errorContent"
-        class="text-gray-700 text-sm max-h-96 overflow-y-auto"
-      ></div>
+      <div id="errorContent" class="text-gray-700 text-sm max-h-96 overflow-y-auto"></div>
       <div class="flex justify-end mt-4">
-        <button
-          id="closeErrorBtn"
-          class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
-        >
+        <button id="closeErrorBtn" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium">
           Close
         </button>
       </div>
@@ -271,7 +253,12 @@
 
     // Show Loading
     function showLoading() {
-      successIcon.innerHTML = `<div class="h-8 w-8 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>`;
+      successIcon.innerHTML = `
+      <div class="relative w-10 h-10">
+        <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+        <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+        <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+      </div>`;
       successTitle.textContent = "Uploading...";
       successMessage.textContent = "Please wait while we process your file.";
       uploadSummary.classList.add("hidden");
@@ -335,15 +322,13 @@
           <div class="bg-red-50 border border-red-200 rounded p-3">
             <p class="font-semibold text-red-700">Error ${index + 1}:</p>
             ${err.row ? `<p class="text-sm">Row: ${err.row}</p>` : ""}
-            ${
-              err.serviceNumber
-                ? `<p class="text-sm">Service Number: ${err.serviceNumber}</p>`
-                : ""
+            ${err.serviceNumber
+              ? `<p class="text-sm">Service Number: ${err.serviceNumber}</p>`
+              : ""
             }
-            ${
-              err.deductionType
-                ? `<p class="text-sm">Deduction Type: ${err.deductionType}</p>`
-                : ""
+            ${err.deductionType
+              ? `<p class="text-sm">Deduction Type: ${err.deductionType}</p>`
+              : ""
             }
             <p class="text-sm text-red-600">${err.error || err}</p>
           </div>`;

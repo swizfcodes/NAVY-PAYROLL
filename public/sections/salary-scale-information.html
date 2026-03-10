@@ -757,26 +757,6 @@ window.viewScale = async function(index) {
   try {
     const progressionData = await ApiService.getProgressionSteps(s.salcode, s.saltype, s.grade);
     const maxStep = progressionData.data.maxProgressionStep;
-    
-    let html = `
-      <div class="p-6 border rounded-2xl shadow-lg">
-        <div class="flex items-center flex-wrap gap-6 mb-4">
-          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.salcode}
-          </p>
-          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Salary Type:</span> ${s.saltype}
-          </p>
-          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
-          </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
-            <span class="text-red-600 font-bold">Max Progression:</span> Step ${maxStep}
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm" mt-6">
-    `;
 
     function formatToNGN(amount) {
       if (amount == null || amount === "-") return "-";
@@ -787,29 +767,35 @@ window.viewScale = async function(index) {
       }).format(amount);
     }
 
+    let html = `
+      <div class="mb-4">
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">
+          <span class="italic font-semibold text-blue-500">SALARY GROUP</span> : ${s.salcode} — 
+          <span class="italic font-semibold text-blue-500">PAYMENT TYPE</span> : ${s.saltype} — 
+          <span class="italic font-semibold text-blue-500">GRADE LEVEL</span> : ${s.grade}
+        </h4>
+      </div>
+      <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
+        <h5 class="font-semibold text-gray-700 mb-3 flex items-center justify-between">
+          <span>Salary Steps:</span>
+          <span class="text-yellow-500 font-semibold">Max Progression: Step ${maxStep}</span>
+        </h5>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+    `;
+
     for (let i = 0; i < 19; i++) {
       const isAvailable = (i + 1) <= maxStep;
-      const bgColor = isAvailable ? 'bg-white' : 'bg-gray-100';
-      const textColor = isAvailable ? 'text-blue-600' : 'text-gray-400';
-
       html += `
-        <div class="flex justify-between ${bgColor} p-2 rounded border hover:shadow-md transition ${!isAvailable ? 'opacity-50' : ''}">
-          <span class="text-base font-medium text-gray-600">Step ${i + 1}:</span>
-          <span class="text-base font-semibold ${textColor}">
-            ${s.steps[i] ? formatToNGN(s.steps[i]) : "-"}
+        <div class="flex justify-between bg-white p-2 rounded border ${!isAvailable ? 'opacity-50' : ''}">
+          <span class="font-medium">Step ${i + 1}:</span>
+          <span class="${isAvailable ? 'text-blue-600' : 'text-gray-400'} font-semibold">
+            ${s.steps[i] ? formatToNGN(s.steps[i]) : '-'}
           </span>
-        </div>`;
+        </div>
+      `;
     }
 
-    html += `
-        </div>
-        <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-          <p class="text-sm font-medium text-yellow-800">
-            <span class="font-bold">Max Progression Limit:</span> Employees can progress up to Step ${maxStep} only
-          </p>
-        </div>
-      </div>
-    `;
+    html += `</div></div>`;
 
     document.getElementById("scaleViewContent").innerHTML = html;
     document.getElementById("scaleViewModal").classList.remove("hidden");

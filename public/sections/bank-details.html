@@ -805,7 +805,7 @@
             <strong>${timeStr}</strong>
           </div>
           <div>
-            <strong>${bankData.length}</strong>
+            <strong>${data.length}</strong>
             <span>RECORDS</span>
           </div>
         </div>
@@ -830,7 +830,7 @@
             </tr>
           </thead>
           <tbody>
-            ${bankData.map((item, index) => `
+            ${data.map((item, index) => `
               <tr>
                 <td class="text-center"><strong>${index + 1}</strong></td>
                 <td>${item.address || '-'}</td>

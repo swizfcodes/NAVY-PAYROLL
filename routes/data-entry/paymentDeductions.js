@@ -1,45 +1,56 @@
-const express = require('express');
-const pool = require('../../config/db'); // mysql2 pool
-const verifyToken = require('../../middware/authentication');
+const express = require("express");
+const pool = require("../../config/db"); // mysql2 pool
+const verifyToken = require("../../middware/authentication");
 const router = express.Router();
 
-
 // GET ALL ACTIVE DEDUCTIONS (ALL EMPLOYEES)
-router.get('/active/all', verifyToken, async (req, res) => {
+router.get("/active/all", verifyToken, async (req, res) => {
   try {
     // Get pagination parameters from query string
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const searchQuery = req.query.search || '';
+    const searchQuery = req.query.search || "";
 
     // Build WHERE clause for search
-    let whereClause = '';
+    let whereClause = "";
     let queryParams = [];
-    
+
     if (searchQuery) {
-      whereClause = `WHERE (
-        p.Empl_id LIKE ? OR 
-        p.type LIKE ? OR 
-        pi.inddesc LIKE ?
+      // Sanitize: escape % and _ which are LIKE wildcards, and quotes
+      const escaped = searchQuery
+        .replace(/\\/g, "\\\\")
+        .replace(/%/g, "\\%")
+        .replace(/_/g, "\\_")
+        .replace(/'/g, "\\'");
+
+      const searchPattern = `%${escaped}%`;
+
+      whereClause = `AND (
+        p.Empl_id LIKE '${searchPattern}' OR 
+        p.type LIKE '${searchPattern}' OR 
+        pi.inddesc LIKE '${searchPattern}'
       )`;
-      const searchPattern = `%${searchQuery}%`;
-      queryParams = [searchPattern, searchPattern, searchPattern];
+      queryParams = [];
     }
 
-    // Get total count with search filter
+    // Count query needs its own WHERE structure
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
+      WHERE (
+        p.amtad IS NULL 
+        OR (p.amtad REGEXP '^-?[0-9]+(\\.[0-9]+)?$' AND p.amtad <= 0)
+      )
       ${whereClause}
     `;
-    const [countResult] = await pool.query(countQuery, queryParams);
-    const totalRecords = countResult[0].total;
-    const totalPages = Math.ceil(totalRecords / limit);
 
-    // Modified query with search and pagination
-    const query = `
+        const [countResult] = await pool.query(countQuery, queryParams);
+        const totalRecords = countResult[0].total;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        const query = `
       SELECT 
         p.Empl_id,
         p.type,
@@ -55,15 +66,19 @@ router.get('/active/all', verifyToken, async (req, res) => {
         p.createdby,
         p.datecreated
       FROM py_payded p
-      LEFT JOIN py_payind pi ON p.payind = pi.ind
+      LEFT JOIN py_payind pi 
+        ON p.payind = pi.ind
+      WHERE 
+        (
+          p.amtad IS NULL 
+          OR (p.amtad REGEXP '^-?[0-9]+(\\.[0-9]+)?$' AND p.amtad <= 0)
+        )
       ${whereClause}
       ORDER BY p.Empl_id, p.type
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // Add limit and offset to query params
-    const finalParams = [...queryParams, limit, offset];
-    const [rows] = await pool.query(query, finalParams);
+    const [rows] = await pool.query(query, queryParams);
 
     res.json({
       success: true,
@@ -74,24 +89,24 @@ router.get('/active/all', verifyToken, async (req, res) => {
         totalRecords: totalRecords,
         limit: limit,
         hasPreviousPage: page > 1,
-        hasNextPage: page < totalPages
-      }
+        hasNextPage: page < totalPages,
+      },
     });
   } catch (error) {
-    console.error('Error fetching active deductions:', error);
+    console.error("Error fetching active deductions:", error);
     res.status(500).json({
-      success: false, 
-      message: 'Error fetching active deductions',
-      error: error.message
+      success: false,
+      message: "Error fetching active deductions",
+      error: error.message,
     });
   }
 });
 
 // NEW: GET ALL ACTIVE DEDUCTIONS FOR REPORT (NO LIMITS)
-router.get('/report-all', verifyToken, async (req, res) => {
+router.get("/report-all", verifyToken, async (req, res) => {
   try {
     const [countResult] = await pool.query(
-      `SELECT COUNT(*) as total FROM py_payded p`
+      `SELECT COUNT(*) as total FROM py_payded p`,
     );
     const totalRecords = countResult[0].total;
 
@@ -111,40 +126,46 @@ router.get('/report-all', verifyToken, async (req, res) => {
         p.createdby,
         p.datecreated
       FROM py_payded p
-      LEFT JOIN py_payind pi ON p.payind = pi.ind
-      ORDER BY p.Empl_id, p.type
+      LEFT JOIN py_payind pi 
+        ON p.payind = pi.ind
+      WHERE 
+        (
+          p.amtad IS NULL 
+          OR (p.amtad REGEXP '^-?[0-9]+(\\.[0-9]+)?$' AND p.amtad <= 0)
+        )
+      ORDER BY p.Empl_id, p.type;
     `;
 
     const [rows] = await pool.query(query);
 
     res.json({
-        success: true,
-        data: rows,
-        pagination: {
-          totalRecords: totalRecords,
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching ALL report deductions:', error);
-      res.status(500).json({
-          success: false, 
-          message: 'Error fetching all report deductions',
-          error: error.message
-      });
-    }
+      success: true,
+      data: rows,
+      pagination: {
+        totalRecords: totalRecords,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching ALL report deductions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching all report deductions",
+      error: error.message,
+    });
+  }
 });
 
 //// GET ALL ACTIVE VARIATIONS (ALL EMPLOYEES)
-router.get('/active/all-variations', verifyToken, async (req, res) => {
+router.get("/active/all-variations", verifyToken, async (req, res) => {
   try {
     // Get pagination parameters from query string
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const searchQuery = req.query.search || '';
+    const searchQuery = req.query.search || "";
 
     // Build WHERE clause for search
-    let searchClause = '';
+    let searchClause = "";
     let queryParams = [];
 
     if (searchQuery) {
@@ -212,21 +233,21 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
         totalRecords: totalRecords,
         limit: limit,
         hasPreviousPage: page > 1,
-        hasNextPage: page < totalPages
-      }
+        hasNextPage: page < totalPages,
+      },
     });
   } catch (error) {
-    console.error('Error fetching active variations:', error);
+    console.error("Error fetching active variations:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching active variations',
-      error: error.message
+      message: "Error fetching active variations",
+      error: error.message,
     });
   }
 });
 
 //// GET ALL ACTIVE VARIATIONS REPORTS
-router.get('/report-all-variations', verifyToken, async (req, res) => {
+router.get("/report-all-variations", verifyToken, async (req, res) => {
   try {
     // Base WHERE clause - filter only variation records (non-numeric amtad)
     const baseWhere = `
@@ -275,30 +296,30 @@ router.get('/report-all-variations', verifyToken, async (req, res) => {
       data: rows,
       pagination: {
         totalRecords: totalRecords,
-      }
+      },
     });
   } catch (error) {
-    console.error('Error fetching active variations:', error);
+    console.error("Error fetching active variations:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching active variations',
-      error: error.message
+      message: "Error fetching active variations",
+      error: error.message,
     });
   }
 });
 
 // GET ALL DEDUCTIONS FOR AN EMPLOYEE
-router.get('/:emplId', verifyToken, async (req, res) => {
+router.get("/:emplId", verifyToken, async (req, res) => {
   try {
     const { emplId } = req.params;
-    const { active } = req.query; 
+    const { active } = req.query;
 
     // Get pagination parameters from query string
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    
-    console.log('Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
+
+    console.log("Pagination - Page:", page, "Limit:", limit, "Offset:", offset);
 
     let query = `
       SELECT 
@@ -318,13 +339,17 @@ router.get('/:emplId', verifyToken, async (req, res) => {
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
       WHERE p.Empl_id = ?
+       AND (
+          p.amtad IS NULL 
+          OR (p.amtad REGEXP '^-?[0-9]+(\\.[0-9]+)?$' AND p.amtad <= 0)
+        )
     `;
 
     query += ` ORDER BY p.mak1 ASC, p.datecreated DESC`;
 
     const [countResult] = await pool.query(
       `SELECT COUNT(*) AS total FROM py_payded WHERE Empl_id = ?`,
-      [emplId]
+      [emplId],
     );
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
@@ -341,21 +366,21 @@ router.get('/:emplId', verifyToken, async (req, res) => {
         totalRecords: totalRecords,
         limit: limit,
         hasPreviousPage: page > 1,
-        hasNextPage: page < totalPages
-      }
+        hasNextPage: page < totalPages,
+      },
     });
   } catch (error) {
-    console.error('Error fetching deductions:', error);
+    console.error("Error fetching deductions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching deductions',
-      error: error.message
+      message: "Error fetching deductions",
+      error: error.message,
     });
   }
 });
 
 // GET SPECIFIC DEDUCTION
-router.get('/:emplId/:type',  verifyToken, async (req, res) => {
+router.get("/:emplId/:type", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -385,26 +410,26 @@ router.get('/:emplId/:type',  verifyToken, async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: "Deduction not found",
       });
     }
 
     res.json({
       success: true,
-      data: rows[0]
+      data: rows[0],
     });
   } catch (error) {
-    console.error('Error fetching deduction:', error);
+    console.error("Error fetching deduction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching deduction',
-      error: error.message
+      message: "Error fetching deduction",
+      error: error.message,
     });
   }
 });
 
 // GET DEDUCTION SUMMARY BY EMPLOYEE
-router.get('/summary/:emplId',  verifyToken, async (req, res) => {
+router.get("/summary/:emplId", verifyToken, async (req, res) => {
   try {
     const { emplId } = req.params;
 
@@ -432,39 +457,29 @@ router.get('/summary/:emplId',  verifyToken, async (req, res) => {
           active_deductions: 0,
           inactive_deductions: 0,
           total_monthly_deduction: 0,
-          total_deducted_to_date: 0
-        }
+          total_deducted_to_date: 0,
+        },
       });
     }
 
     res.json({
       success: true,
-      data: rows[0]
+      data: rows[0],
     });
   } catch (error) {
-    console.error('Error fetching summary:', error);
+    console.error("Error fetching summary:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching summary',
-      error: error.message
+      message: "Error fetching summary",
+      error: error.message,
     });
   }
 });
 
-
 //Create Payded
-router.post('/', verifyToken, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
-    const {
-      Empl_id,
-      type,
-      mak1,
-      amtp,
-      mak2,
-      amttd,
-      payind,
-      nomth,
-    } = req.body;
+    const { Empl_id, type, mak1, amtp, mak2, amttd, payind, nomth } = req.body;
 
     const createdby = req.user_fullname;
 
@@ -472,7 +487,7 @@ router.post('/', verifyToken, async (req, res) => {
     if (!Empl_id || !type || !amtp || !payind) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: Empl_id, type, amtp, payind'
+        message: "Missing required fields: Empl_id, type, amtp, payind",
       });
     }
 
@@ -486,7 +501,7 @@ router.post('/', verifyToken, async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Payment/Deduction already exists for this employee and type'
+        message: "Payment/Deduction already exists for this employee and type",
       });
     }
 
@@ -506,39 +521,34 @@ router.post('/', verifyToken, async (req, res) => {
       amttd,
       payind,
       nomth || 0,
-      createdby
+      createdby,
     ]);
 
     // Fetch the created record
     const [newRecord] = await pool.query(
-      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
-      [Empl_id, type]
+      "SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?",
+      [Empl_id, type],
     );
 
     res.status(201).json({
       success: true,
-      message: 'New Payment/Deduction record created successfully',
-      data: newRecord[0]
+      message: "New Payment/Deduction record created successfully",
+      data: newRecord[0],
     });
   } catch (error) {
-    console.error('Error creating payment/deduction:', error);
+    console.error("Error creating payment/deduction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating payment/deduction',
-      error: error.message
+      message: "Error creating payment/deduction",
+      error: error.message,
     });
   }
 });
 
-//Create Variations 
-router.post('/variation', verifyToken, async (req, res) => {
+//Create Variations
+router.post("/variation", verifyToken, async (req, res) => {
   try {
-    const {
-      Empl_id,
-      type,
-      amt,
-      amtad,
-    } = req.body;
+    const { Empl_id, type, amt, amtad } = req.body;
 
     const createdby = req.user_fullname;
 
@@ -546,7 +556,7 @@ router.post('/variation', verifyToken, async (req, res) => {
     if (!Empl_id || !type || !amt || !amtad) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: Service No, type, amount, action'
+        message: "Missing required fields: Service No, type, amount, action",
       });
     }
 
@@ -560,7 +570,7 @@ router.post('/variation', verifyToken, async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Variation already exists for this employee and type'
+        message: "Variation already exists for this employee and type",
       });
     }
 
@@ -576,33 +586,35 @@ router.post('/variation', verifyToken, async (req, res) => {
       type,
       amt,
       amtad,
-      createdby
+      createdby,
     ]);
 
     // Fetch the created record
     const [newRecord] = await pool.query(
-      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
-      [Empl_id, type]
+      "SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?",
+      [Empl_id, type],
     );
 
     res.status(201).json({
       success: true,
-      message: 'New Variation to Payment/Deduction record created successfully',
-      data: newRecord[0]
+      message: "New Variation to Payment/Deduction record created successfully",
+      data: newRecord[0],
     });
   } catch (error) {
-    console.error('Error creating a new Variation to payment/deduction:', error);
+    console.error(
+      "Error creating a new Variation to payment/deduction:",
+      error,
+    );
     res.status(500).json({
       success: false,
-      message: 'Error creating a new Variation to payment/deduction',
-      error: error.message
+      message: "Error creating a new Variation to payment/deduction",
+      error: error.message,
     });
   }
 });
 
-
 //Update Payded
-router.put('/:emplId/:type',  verifyToken, async (req, res) => {
+router.put("/:emplId/:type", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -618,7 +630,7 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: "Deduction not found",
       });
     }
 
@@ -627,50 +639,50 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
     const values = [];
 
     if (amtp !== undefined) {
-      updates.push('amtp = ?');
+      updates.push("amtp = ?");
       values.push(amtp);
     }
     if (amttd !== undefined) {
-      updates.push('amttd = ?');
+      updates.push("amttd = ?");
       values.push(amttd);
     }
     if (mak1 !== undefined) {
-      updates.push('mak1 = ?');
+      updates.push("mak1 = ?");
       values.push(mak1);
       // If marking for deletion, set amtp to 0
-      if (mak1 === 'Yes') {
-        updates.push('amtp = 0.00');
+      if (mak1 === "Yes") {
+        updates.push("amtp = 0.00");
       }
     }
     if (mak2 !== undefined) {
-      updates.push('mak2 = ?');
+      updates.push("mak2 = ?");
       values.push(mak2);
       /*if (mak2 === 'Yes') {
         updates.push('amttd = 0.00');
       }*/
     }
     if (payind !== undefined) {
-      updates.push('payind = ?');
+      updates.push("payind = ?");
       values.push(payind);
     }
     if (nomth !== undefined) {
-      updates.push('nomth = ?');
+      updates.push("nomth = ?");
       values.push(nomth);
     }
 
     if (updates.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No fields to update'
+        message: "No fields to update",
       });
     }
 
-    updates.push('datecreated = NOW()');
+    updates.push("datecreated = NOW()");
     values.push(emplId, decodedType);
 
     const query = `
       UPDATE py_payded 
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE Empl_id = ? AND type = ?
     `;
 
@@ -678,27 +690,27 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
 
     // Fetch updated record
     const [updated] = await pool.query(
-      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
-      [emplId, decodedType]
+      "SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?",
+      [emplId, decodedType],
     );
 
     res.json({
       success: true,
-      message: 'Successfully updated a payment/deduction record',
-      data: updated[0]
+      message: "Successfully updated a payment/deduction record",
+      data: updated[0],
     });
   } catch (error) {
-    console.error('Error updating payment/deduction:', error);
+    console.error("Error updating payment/deduction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating payment/deduction',
-      error: error.message
+      message: "Error updating payment/deduction",
+      error: error.message,
     });
   }
 });
 
 //Update Variations
-router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
+router.put("/variation/:emplId/:type", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -714,7 +726,7 @@ router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: "Deduction not found",
       });
     }
 
@@ -723,27 +735,27 @@ router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
     const values = [];
 
     if (amtad !== undefined) {
-      updates.push('amtad = ?');
+      updates.push("amtad = ?");
       values.push(amtad);
     }
     if (amt !== undefined) {
-      updates.push('amt = ?');
+      updates.push("amt = ?");
       values.push(amt);
     }
 
     if (updates.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No fields to update'
+        message: "No fields to update",
       });
     }
 
-    updates.push('datecreated = NOW()');
+    updates.push("datecreated = NOW()");
     values.push(emplId, decodedType);
 
     const query = `
       UPDATE py_payded 
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE Empl_id = ? AND type = ?
     `;
 
@@ -751,29 +763,31 @@ router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
 
     // Fetch updated record
     const [updated] = await pool.query(
-      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
-      [emplId, decodedType]
+      "SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?",
+      [emplId, decodedType],
     );
 
     res.json({
       success: true,
-      message: 'Successfully updated a Variation to Payment/Deduction record',
-      data: updated[0]
+      message: "Successfully updated a Variation to Payment/Deduction record",
+      data: updated[0],
     });
   } catch (error) {
-    console.error('Error updating a Variation to payment/deduction record:', error);
+    console.error(
+      "Error updating a Variation to payment/deduction record:",
+      error,
+    );
     res.status(500).json({
       success: false,
-      message: 'Error updating a Variation to payment/deduction record',
-      error: error.message
+      message: "Error updating a Variation to payment/deduction record",
+      error: error.message,
     });
   }
 });
 
-
 // DEACTIVATE DEDUCTION (SOFT DELETE)
 
-router.patch('/:emplId/:type/deactivate', verifyToken, async (req, res) => {
+router.patch("/:emplId/:type/deactivate", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -789,27 +803,27 @@ router.patch('/:emplId/:type/deactivate', verifyToken, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: "Deduction not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Payment/Deduction deactivated successfully',
-      affectedRows: result.affectedRows
+      message: "Payment/Deduction deactivated successfully",
+      affectedRows: result.affectedRows,
     });
   } catch (error) {
-    console.error('Error deactivating payment/deduction:', error);
+    console.error("Error deactivating payment/deduction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deactivating payment/deduction',
-      error: error.message
+      message: "Error deactivating payment/deduction",
+      error: error.message,
     });
   }
 });
 
 // REACTIVATE DEDUCTION
-router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
+router.patch("/:emplId/:type/reactivate", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -818,7 +832,7 @@ router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
     if (!amtp || amtp <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Valid amount payable (amtp) is required'
+        message: "Valid amount payable (amtp) is required",
       });
     }
 
@@ -833,27 +847,27 @@ router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Payment/Deduction not found'
+        message: "Payment/Deduction not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Payment/Deduction reactivated successfully',
-      affectedRows: result.affectedRows
+      message: "Payment/Deduction reactivated successfully",
+      affectedRows: result.affectedRows,
     });
   } catch (error) {
-    console.error('Error reactivating payment/deduction:', error);
+    console.error("Error reactivating payment/deduction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error reactivating payment/deduction',
-      error: error.message
+      message: "Error reactivating payment/deduction",
+      error: error.message,
     });
   }
 });
 
 // DELETE DEDUCTION (HARD DELETE)
-router.delete('/:emplId/:type', verifyToken, async (req, res) => {
+router.delete("/:emplId/:type", verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
@@ -868,29 +882,29 @@ router.delete('/:emplId/:type', verifyToken, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: "Deduction not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Successfully deleted payment/deduction record',
-      affectedRows: result.affectedRows
+      message: "Successfully deleted payment/deduction record",
+      affectedRows: result.affectedRows,
     });
   } catch (error) {
-    console.error('Error deleting payment/deduction record:', error);
+    console.error("Error deleting payment/deduction record:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting payment/deduction record',
-      error: error.message
+      message: "Error deleting payment/deduction record",
+      error: error.message,
     });
   }
 });
 
 // PROCESS MONTHLY DEDUCTIONS FOR EMPLOYEE
-router.post('/:emplId/process-monthly', verifyToken, async (req, res) => {
+router.post("/:emplId/process-monthly", verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
-  
+
   try {
     const { emplId } = req.params;
 
@@ -931,17 +945,17 @@ router.post('/:emplId/process-monthly', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Monthly deductions processed successfully',
+      message: "Monthly deductions processed successfully",
       affectedRows: updateResult.affectedRows,
-      data: processed
+      data: processed,
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Error processing monthly deductions:', error);
+    console.error("Error processing monthly deductions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error processing monthly deductions',
-      error: error.message
+      message: "Error processing monthly deductions",
+      error: error.message,
     });
   } finally {
     connection.release();
@@ -949,9 +963,9 @@ router.post('/:emplId/process-monthly', verifyToken, async (req, res) => {
 });
 
 // PROCESS MONTHLY DEDUCTIONS FOR ALL EMPLOYEES
-router.post('/process-monthly/all', verifyToken, async (req, res) => {
+router.post("/process-monthly/all", verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.beginTransaction();
 
@@ -986,17 +1000,17 @@ router.post('/process-monthly/all', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'All monthly deductions processed successfully',
+      message: "All monthly deductions processed successfully",
       affectedRows: updateResult.affectedRows,
-      summary: summary
+      summary: summary,
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Error processing all monthly deductions:', error);
+    console.error("Error processing all monthly deductions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error processing all monthly deductions',
-      error: error.message
+      message: "Error processing all monthly deductions",
+      error: error.message,
     });
   } finally {
     connection.release();
@@ -1004,7 +1018,7 @@ router.post('/process-monthly/all', verifyToken, async (req, res) => {
 });
 
 // GET COMPLETED DEDUCTIONS (nomth = 0)
-router.get('/completed/all', verifyToken, async (req, res) => {
+router.get("/completed/all", verifyToken, async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -1024,20 +1038,20 @@ router.get('/completed/all', verifyToken, async (req, res) => {
     res.json({
       success: true,
       count: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (error) {
-    console.error('Error fetching completed deductions:', error);
+    console.error("Error fetching completed deductions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching completed deductions',
-      error: error.message
+      message: "Error fetching completed deductions",
+      error: error.message,
     });
   }
 });
 
 // CHECK FOR DUPLICATE ACTIVE DEDUCTIONS
-router.get('/validation/duplicates', verifyToken, async (req, res) => {
+router.get("/validation/duplicates", verifyToken, async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -1056,29 +1070,29 @@ router.get('/validation/duplicates', verifyToken, async (req, res) => {
       success: true,
       hasDuplicates: rows.length > 0,
       count: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (error) {
-    console.error('Error checking duplicates:', error);
+    console.error("Error checking duplicates:", error);
     res.status(500).json({
       success: false,
-      message: 'Error checking duplicates',
-      error: error.message
+      message: "Error checking duplicates",
+      error: error.message,
     });
   }
 });
 
 // BULK CREATE DEDUCTIONS
-router.post('/bulk', verifyToken, async (req, res) => {
+router.post("/bulk", verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
-  
+
   try {
     const deductions = req.body;
 
     if (!Array.isArray(deductions) || deductions.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Request body must be a non-empty array of deductions'
+        message: "Request body must be a non-empty array of deductions",
       });
     }
 
@@ -1103,22 +1117,22 @@ router.post('/bulk', verifyToken, async (req, res) => {
           errors.push({
             index: i,
             record: deductions[i],
-            error: 'Missing required fields'
+            error: "Missing required fields",
           });
           continue;
         }
 
         // Check if already exists
         const [existing] = await connection.query(
-          'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
-          [Empl_id, type]
+          "SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?",
+          [Empl_id, type],
         );
 
         if (existing.length > 0) {
           errors.push({
             index: i,
             record: deductions[i],
-            error: 'Deduction already exists'
+            error: "Deduction already exists",
           });
           continue;
         }
@@ -1130,20 +1144,20 @@ router.post('/bulk', verifyToken, async (req, res) => {
           amtp,
           payind,
           nomth || 0,
-          createdby || 'SYSTEM'
+          createdby || "SYSTEM",
         ]);
 
         results.push({
           index: i,
           Empl_id,
           type,
-          status: 'created'
+          status: "created",
         });
       } catch (err) {
         errors.push({
           index: i,
           record: deductions[i],
-          error: err.message
+          error: err.message,
         });
       }
     }
@@ -1152,8 +1166,8 @@ router.post('/bulk', verifyToken, async (req, res) => {
       await connection.rollback();
       return res.status(400).json({
         success: false,
-        message: 'All records failed to insert',
-        errors: errors
+        message: "All records failed to insert",
+        errors: errors,
       });
     }
 
@@ -1165,20 +1179,19 @@ router.post('/bulk', verifyToken, async (req, res) => {
       created: results.length,
       failed: errors.length,
       results: results,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Error bulk creating deductions:', error);
+    console.error("Error bulk creating deductions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error bulk creating deductions',
-      error: error.message
+      message: "Error bulk creating deductions",
+      error: error.message,
     });
   } finally {
     connection.release();
   }
 });
-
 
 module.exports = router;

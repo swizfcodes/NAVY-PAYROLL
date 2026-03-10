@@ -1,5 +1,7 @@
+const path   = require('path');
 const dotenv = require('dotenv');
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 const { notificationMiddleware } = require('./middware/notifications');
 const seamlessWrapper = require('./services/helpers/historicalReportWrapper');
 const express = require('express');
@@ -7,7 +9,6 @@ const app = express();
 const session = require('express-session');
 const serveIndex = require('serve-index');
 const pool = require('./config/db'); 
-const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -20,7 +21,7 @@ const PORT = process.env.PORT || 5500;
 
 
 // Load env variables
-dotenv.config({ path: path.resolve(__dirname, envFile) });
+//dotenv.config({ path: path.resolve(__dirname, envFile) });
 console.log('Running in', process.env.NODE_ENV);
 
 
@@ -32,9 +33,6 @@ app.use(
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "https://cdn.tailwindcss.com",
-        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
-        "'unsafe-eval'",
         "'unsafe-inline'",
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
@@ -86,6 +84,11 @@ app.use(notificationMiddleware);
 // Configuration via environment variable
 // Usage: SERVER_MODE=localhost node server.js
 const SERVER_MODE = process.env.SERVER_MODE || 'auto'; // Default to 'auto'
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
 
 async function startServer() {
   await seamlessWrapper.initialize();
@@ -142,15 +145,14 @@ async function startServer() {
   }
 }
 
+// static files and directory listing
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
+
 startServer().catch(err => {
   console.error('❌ Failed to start server:', err);
   process.exit(1);
 });
-
-
-// static files and directory listing
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
 
 // small helper to expose credentials header for some clients
 app.use((req, res, next) => {

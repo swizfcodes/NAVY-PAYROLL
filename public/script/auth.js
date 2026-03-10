@@ -253,7 +253,14 @@
 
       //   If token expired, try refresh
       if (response.status === 401) {
-        await this.logout();
+        try {
+          await this.refreshToken();          // try refresh first
+          options.headers.Authorization = `Bearer ${this.getAccessToken()}`;
+          response = await fetch(url, options); // retry once
+          if (response.status === 401) await this.logout(); // still 401 → logout
+        } catch {
+          await this.logout();
+        }
       }
 
       return response;

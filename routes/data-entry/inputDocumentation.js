@@ -25,8 +25,10 @@ router.get('/:doc_numb', verifyToken, async (req, res) => {
     );
 
     if (rows.length === 0)
-      return res.status(404).json({ error: "Not found" }); 
-    return res.json(rows[0]);
+      return res.status(404).json({ error: "Not found" });
+
+    // Return array — frontend handles single vs multiple
+    return res.json(rows);
   } catch (err) {
     console.error("Error fetching documentation:", err);
     return res.status(500).json({ error: err.message });
@@ -77,8 +79,8 @@ router.post('/create', verifyToken, async(req, res) => {
 });
 
 //UPDATE
-router.put('/:doc_numb', verifyToken, async(req, res) => {
-    const {doc_numb} = req.params;
+router.put('/:id', verifyToken, async(req, res) => {
+    const { id } = req.params;
     const {
     doc_year,
     doc_month,
@@ -88,18 +90,15 @@ router.put('/:doc_numb', verifyToken, async(req, res) => {
 
   try{
     // Check if SErvice No. exists
-    const [existingRows] = await pool.query('SELECT doc_numb FROM py_documentation WHERE doc_numb = ?', [doc_numb]);
+    const [existingRows] = await pool.query('SELECT id FROM py_documentation WHERE id = ?', [id]);
     if (existingRows.length === 0) {
-      return res.status(404).json({ error: 'Service No. not found' });
+      return res.status(404).json({ error: 'Record not found' });
     }
     
     // Build dynamic update query
     const params = [];
     const sets = [];
 
-    if (typeof doc_numb !== 'undefined' && doc_numb !== null) {
-      sets.push('doc_numb = ?'); params.push(doc_numb);
-    }
     if (typeof doc_year !== 'undefined' && doc_year !== null) {
       sets.push('doc_year = ?'); params.push(doc_year);
     }
@@ -118,13 +117,13 @@ router.put('/:doc_numb', verifyToken, async(req, res) => {
     }
 
     // Add PaymentType for WHERE clause
-    params.push(doc_numb);
+    params.push(id);
 
-    const sql = `UPDATE py_documentation SET ${sets.join(', ')} WHERE doc_numb = ?`;
+    const sql = `UPDATE py_documentation SET ${sets.join(', ')} WHERE id = ?`;
     const [result] = await pool.query(sql, params);
 
     // Get updated record
-    const [updatedRows] = await pool.query('SELECT * FROM py_documentation WHERE doc_numb = ?', [doc_numb]);
+    const [updatedRows] = await pool.query('SELECT * FROM py_documentation WHERE id = ?', [id]);
     res.json({
       message: 'Successfully updated a Documentation record',
       documentation: updatedRows[0]
@@ -137,19 +136,19 @@ router.put('/:doc_numb', verifyToken, async(req, res) => {
 });
 
 //DELETE
-router.delete('/:doc_numb', verifyToken, async(req, res) => {
-  const { doc_numb } = req.params;
-  
+router.delete('/:id', verifyToken, async(req, res) => {
+  const { id } = req.params;
+
   try {
-    const [result] = await pool.query('DELETE FROM py_documentation WHERE doc_numb = ?', [doc_numb]);
+    const [result] = await pool.query('DELETE FROM py_documentation WHERE id = ?', [id]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'SErvice No. not found' });
+      return res.status(404).json({ error: 'Record not found' });
     }
 
     res.json({ 
       message: 'Successfully deleted a Documentation record',
-      doc_numb: doc_numb 
+      id: id 
     });
     
   } catch(err){

@@ -1,3 +1,32 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <div class="p-6">
   <div class="flex justify-end mb-4 gap-2">
     <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
@@ -80,8 +109,8 @@
       <thead class="bg-blue-100 text-blue-900">
         <tr>
           <th class="border px-2 py-3 text-left">One-Off Type</th>
+          <th class="border px-2 py-3 text-left">One-Off Description</th>
           <th class="border px-2 py-3 text-left">Function Type</th>
-          <th class="border px-2 py-3 text-left">One-Off Dependance</th>
           <th class="border px-2 py-3 text-center">Actions</th>
         </tr>
       </thead>
@@ -225,7 +254,11 @@
     descriptionDropdown.innerHTML = `
       <div class="py-1">
         <div class="px-3 py-4 text-center text-gray-500">
-          <svg class="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <div class="relative w-10 h-10 mx-auto mb-4">
+              <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+              <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+              <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+            </div>
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -463,8 +496,8 @@
     tableBody.innerHTML = dataToRender.map((item) => `
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-2 text-left">${item.one_type}</td>
+        <td class="border px-2 py-2 text-left">${item.description || 'N/A'}</td>
         <td class="border px-2 py-2 text-left">${resolveName(item.one_perc, "functiontype")} (${item.one_perc})</td>
-        <td class="border px-2 py-2 text-left">${resolveName(item.one_depend, "elementtype")} (${item.one_depend || 'N/A'})</td>
         <td class="border px-2 py-2 text-center">
           <button onclick="viewRow('${item.one_type}')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
           <button onclick="editRow('${item.one_type}')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
@@ -536,6 +569,7 @@
     let html = "";
     const fieldLabels = {
       one_type: "One-Off Type",
+      description: "One-Off Description",
       one_perc: "Function Type",
       one_std: "Standard Amount or (%)",
       one_maxi: "Maximum Amount",
@@ -715,7 +749,7 @@
         <title>Payments/Deductions Report</title>
         <style>
           @page { 
-            size: A4; 
+            size: A4 landscape;
             margin: 0.5mm; 
             background-color: #f8fbff;
           }
@@ -877,6 +911,7 @@
             <tr>
               <th>S/N</th>
               <th>One-Off Type</th>
+              <th>One-Off Description</th>
               <th>Function Type</th>
               <th>Standard Amt or(%)</th>
               <th>Maximum Amount</th>
@@ -889,6 +924,7 @@
             <tr>
               <td>${index + 1}</td>
                 <td>${item.one_type}</td>
+                <td>${item.description || 'N/A'}</td>
                 <td>${resolveName(item.one_perc, "functiontype")} (${item.one_perc})</td>
                 <td class="amount">${formatCurrency(item.one_std)}</td>
                 <td class="amount">${formatCurrency(item.one_maxi)}</td>

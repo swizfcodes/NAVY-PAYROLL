@@ -83,9 +83,7 @@ router.get("/bank-report-all", verifyToken, async (req, res) => {
     res.json({
       success: true,
       data: rows,
-      pagination: {
-        totalRecords: totalRecords,
-      },
+      totalRecords: totalRecords,
     });
   } catch (err) {
     console.error("❌ Error fetching banks:", err);

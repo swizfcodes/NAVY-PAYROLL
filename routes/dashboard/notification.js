@@ -1,120 +1,112 @@
-const express = require('express');
-const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const verifyToken  = require('../../middware/authentication');
-const { NOTIFICATIONS_DIR } = require('../../middware/notifications');
+const express    = require('express');
+const router     = express.Router();
+const verifyToken = require('../../middware/authentication');
+const redisManager = require('../../config/redis');
 
-// Get notifications for current user
-router.get('/', verifyToken, (req, res) => {
-  const userId = req.user_id;
-  const dbName = req.current_class;
-  
-  const notificationFile = path.join(NOTIFICATIONS_DIR, `${userId}_${dbName}.json`);
-  
-  if (!fs.existsSync(notificationFile)) {
-    return res.json({
-      success: true,
-      notifications: []
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+const MAX_NOTIFICATIONS = 100;
+const TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
+// ─────────────────────────────────────────────
+// HELPER
+// ─────────────────────────────────────────────
+function redisKey(userId, dbName) {
+  return `notifications:${dbName}:${userId}`;
+}
+
+// ─────────────────────────────────────────────
+// GET /  — fetch notifications for current user
+// ─────────────────────────────────────────────
+router.get('/', verifyToken, async (req, res) => {
+  const { user_id: userId, current_class: dbName } = req;
+  const client = redisManager.client;
+
+  if (!redisManager.isConnected || !client) {
+    return res.status(503).json({
+      success: false,
+      error: 'Notification service temporarily unavailable',
     });
   }
-  
+
   try {
-    const fileContent = fs.readFileSync(notificationFile, 'utf8');
-    const notifications = JSON.parse(fileContent);
-    
-    // Sort by timestamp (newest first)
-    notifications.sort((a, b) => b.timestamp - a.timestamp);
-    
-    res.json({
-      success: true,
-      notifications: notifications.slice(0, 50)
-    });
+    const key  = redisKey(userId, dbName);
+    const raw  = await client.lRange(key, 0, MAX_NOTIFICATIONS - 1);
+
+    const notifications = raw
+      .map(item => JSON.parse(item))
+      .sort((a, b) => b.timestamp - a.timestamp) // newest first
+      .slice(0, 50);                              // return top 50
+
+    res.json({ success: true, notifications });
   } catch (error) {
-    console.error('Failed to read notifications:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load notifications'
-    });
+    console.error('Failed to read notifications from Redis:', error);
+    res.status(500).json({ success: false, error: 'Failed to load notifications' });
   }
 });
 
-// Clear notifications for current user
-router.delete('/delete', verifyToken, (req, res) => {
-  const userId = req.user_id;
-  const dbName = req.current_class;
-  
-  const notificationFile = path.join(NOTIFICATIONS_DIR, `${userId}_${dbName}.json`);
-  
+// ─────────────────────────────────────────────
+// DELETE /delete  — clear ALL notifications
+// ─────────────────────────────────────────────
+router.delete('/delete', verifyToken, async (req, res) => {
+  const { user_id: userId, current_class: dbName } = req;
+  const client = redisManager.client;
+
+  if (!redisManager.isConnected || !client) {
+    return res.status(503).json({ success: false });
+  }
+
   try {
-    if (fs.existsSync(notificationFile)) {
-      fs.unlinkSync(notificationFile);
-    }
-    res.json({ 
-      success: true, 
-      //message: 'All notifications cleared' 
-    });
+    await client.del(redisKey(userId, dbName));
+    res.json({ success: true });
   } catch (error) {
     console.error('Failed to clear notifications:', error);
-    res.status(500).json({ 
-      success: false, 
-      //error: 'Failed to clear notifications' 
-    });
+    res.status(500).json({ success: false });
   }
 });
 
-// DELETE a single notification by its ID
-router.delete('/delete/:notificationId', verifyToken, (req, res) => {
-  const userId = req.user_id;
-  const dbName = req.current_class;
-  const notificationIdToDelete = req.params.notificationId; // Get the ID from the URL parameter
+// ─────────────────────────────────────────────
+// DELETE /delete/:notificationId  — remove one notification
+// ─────────────────────────────────────────────
+router.delete('/delete/:notificationId', verifyToken, async (req, res) => {
+  const { user_id: userId, current_class: dbName } = req;
+  const { notificationId } = req.params;
+  const client = redisManager.client;
 
-  // Construct the unique file path for the user's notifications
-  const notificationFile = path.join(NOTIFICATIONS_DIR, `${userId}_${dbName}.json`);
+  if (!redisManager.isConnected || !client) {
+    return res.status(503).json({ success: false });
+  }
 
   try {
-    // Check if the file exists before attempting to read it
-    if (!fs.existsSync(notificationFile)) {
+    const key  = redisKey(userId, dbName);
+    const raw  = await client.lRange(key, 0, MAX_NOTIFICATIONS - 1);
+
+    const notifications   = raw.map(item => JSON.parse(item));
+    const initialLength   = notifications.length;
+    const updated         = notifications.filter(n => n.id.toString() !== notificationId.toString());
+
+    if (updated.length === initialLength) {
       return res.status(404).json({
         success: false,
-        error: 'No notifications file found for this user.'
+        error: `Notification ${notificationId} not found`,
       });
     }
 
-    const data = fs.readFileSync(notificationFile, 'utf8');
-    let notifications = JSON.parse(data);
-
-    if (!Array.isArray(notifications)) {
-        notifications = [];
+    // Rewrite list with the item removed
+    await client.del(key);
+    if (updated.length > 0) {
+      await client.rPush(key, ...updated.map(n => JSON.stringify(n)));
+      await client.expire(key, TTL_SECONDS);
     }
-
-
-    const initialLength = notifications.length;
-    const updatedNotifications = notifications.filter(
-      (notification) => notification.id.toString() !== notificationIdToDelete.toString()
-    );
-
-    // Check if a notification was actually removed
-    if (updatedNotifications.length === initialLength) {
-      return res.status(404).json({
-        success: false,
-        error: `Notification with ID ${notificationIdToDelete} not found.`
-      });
-    }
-
-    fs.writeFileSync(notificationFile, JSON.stringify(updatedNotifications, null, 2));
 
     res.json({
       success: true,
-      //message: `Notification with ID ${notificationIdToDelete} deleted successfully.`,
-      deletedCount: initialLength - updatedNotifications.length
+      deletedCount: initialLength - updated.length,
     });
   } catch (error) {
     console.error('Failed to delete single notification:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete single notification due to a server error.'
-    });
+    res.status(500).json({ success: false, error: 'Failed to delete notification' });
   }
 });
 

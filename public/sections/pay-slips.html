@@ -1,3 +1,32 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <!-- Payslip Section -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
   <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Generate and Print Payslips</h2>
@@ -41,7 +70,8 @@
     <div>
       <label for="payrollClass" class="block text-sm font-medium mb-1">Payroll Class</label>
       <select id="payrollClass" name="payrollClass"
-        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        disabled>
       </select>
     </div>
 
@@ -62,12 +92,10 @@
 
     <!-- Buttons -->
     <div class="flex gap-2 justify-end pt-2">
-      <button type="reset" id="clearBtn"
-        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+      <button type="reset" id="clearBtn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
         Clear
       </button>
-      <button type="button" id="generateBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      <button type="button" id="generateBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
         Generate
       </button>
     </div>
@@ -78,8 +106,15 @@
 <!-- Loading Indicator -->
 <div id="loadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-  <span class="text-gray-700">Generating payslips...</span>
+    <!-- Replace this spinner -->
+    <div class="relative w-10 h-10 mx-auto mb-4">
+      <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+      <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+      <div
+        class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2">
+      </div>
+    </div>
+    <span class="text-gray-700">Generating payslips...</span>
   </div>
 </div>
 
@@ -90,12 +125,10 @@
     <p class="mb-6 text-gray-700">Do you want to continue and generate payslips?</p>
 
     <div class="flex justify-end space-x-2">
-      <button id="cancelBtn"
-        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+      <button id="cancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
         Cancel
       </button>
-      <button id="continueBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      <button id="continueBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
         Continue
       </button>
     </div>
@@ -107,8 +140,7 @@
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
     <p class="mb-6 text-gray-700" id="successMessage">Payslips generated successfully!</p>
-    <button id="successOkBtn"
-      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+    <button id="successOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
       OK
     </button>
   </div>
@@ -119,8 +151,7 @@
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
     <p class="mb-6 text-gray-700" id="errorMessage">Please fill in Start and End Service Numbers.</p>
-    <button id="errorOkBtn"
-      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+    <button id="errorOkBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
       OK
     </button>
   </div>
@@ -133,11 +164,11 @@
       <h3 class="text-lg font-semibold">Payslip Preview</h3>
       <button id="closePreviewBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
     </div>
-    
+
     <div id="previewContent" class="p-6 overflow-y-auto max-h-[70vh]">
       <!-- Payslip content will be inserted here -->
     </div>
-    
+
     <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end space-x-2">
       <button id="cancelPreviewBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
         Cancel
@@ -171,7 +202,7 @@
   const errorOkBtn = document.getElementById("errorOkBtn");
   const errorMessage = document.getElementById("errorMessage");
 
-    // Load payroll classes
+  // Load payroll classes
   async function loadPayrollClasses() {
     try {
       const token = localStorage.getItem('token');
@@ -198,35 +229,35 @@
 
   async function fetchDatabaseName() {
     try {
-    const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-    const res = await auth.fetchWithAuth("/payslips/database",{
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }                 
-    });
+      const res = await auth.fetchWithAuth("/payslips/database", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
 
-    payrollClass.innerHTML = ""; // clear old options
+      payrollClass.innerHTML = ""; // clear old options
 
-    const option = document.createElement("option");
-    option.value = data.database;
-    option.textContent = data.class_name;
-    option.selected = true;
+      const option = document.createElement("option");
+      option.value = data.database;
+      option.textContent = data.class_name;
+      option.selected = true;
 
-    payrollClass.appendChild(option);
+      payrollClass.appendChild(option);
     } catch (err) {
-    console.error("Failed to load payroll class:", err);
+      console.error("Failed to load payroll class:", err);
     }
   }
 
   function toggleInputs() {
     const selectedValue = document.querySelector('input[name="people"]:checked').value;
-    
+
     if (selectedValue === 'all') {
       startNo.disabled = true;
       endNo.disabled = true;
@@ -246,7 +277,7 @@
     const selectedPeople = document.querySelector('input[name="people"]:checked').value;
     const excelRadio = document.querySelector('input[name="format"][value="excel"]');
     const pdfRadio = document.querySelector('input[name="format"][value="pdf"]');
-    
+
     if (selectedPeople === 'individual') {
       excelRadio.disabled = true;
       excelRadio.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
@@ -267,14 +298,14 @@
 
   generateBtn.addEventListener("click", () => {
     const selectedPeople = document.querySelector('input[name="people"]:checked').value;
-    
+
     // Validation
     if (selectedPeople === 'specific' && (!startNo.value || !endNo.value)) {
       errorMessage.textContent = 'Please fill in both Start and End Service Numbers for range selection.';
       errorModal.classList.remove("hidden");
       return;
     }
-    
+
     if (selectedPeople === 'individual' && !startNo.value) {
       errorMessage.textContent = 'Please enter a Service Number.';
       errorModal.classList.remove("hidden");
@@ -299,10 +330,10 @@
 
     try {
       const token = localStorage.getItem('token');
-      
+
       // Step 1: Build query parameters
       const params = new URLSearchParams();
-      
+
       if (selectedPeople === 'all') {
         params.append('optall', '1');
         params.append('empno1', '');
@@ -316,10 +347,10 @@
         params.append('empno1', startNo.value);
         params.append('empno2', '');
       }
-      
+
       params.append('branch', payrollClass);
       params.append('wxdate', new Date().toISOString().split('T')[0]);
-      
+
       // Step 2: Generate payslip data
       const dataResponse = await auth.fetchWithAuth(`/payslips/generate?${params.toString()}`, {
         method: 'GET',
@@ -330,11 +361,11 @@
 
       if (!dataResponse.ok) {
         const errorData = await dataResponse.json();
-        throw new Error(errorData.error || 'Failed to generate payslip data');
+        throw new Error(errorData.message || errorData.error || 'Failed to generate payslip data');
       }
 
       const result = await dataResponse.json();
-      
+
       if (!result.success || !result.data || result.data.length === 0) {
         throw new Error('No payslip data generated. Please check your selection.');
       }
@@ -360,7 +391,7 @@
       console.error('Error:', error);
     }
   });
-    
+
   successOkBtn.addEventListener("click", () => {
     successModal.classList.add("hidden");
   });
@@ -378,9 +409,9 @@
   function showPreviewModal(payslipData, token) {
     const previewContent = document.getElementById('previewContent');
     previewContent.innerHTML = generatePayslipHTML(payslipData);
-    
+
     document.getElementById('previewModal').classList.remove('hidden');
-    
+
     // Store data for download
     window.currentPayslipData = payslipData;
     window.currentToken = token;
@@ -391,7 +422,7 @@
     const allowanceItems = data.earnings.filter(e => e.type === 'Non-Taxable');
     const grossTotal = grossPayItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
     const allowanceTotal = allowanceItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-    
+
     return `
       <div style="font-family: Helvetica, Arial, sans-serif; max-width: 800px; margin: 0 auto; background: #f8fbff; padding: 20px; border: 1px solid #e0e0e0;">
         <!-- Header -->
@@ -437,13 +468,13 @@
           ${grossPayItems.map(item => `
             <tr style="border-bottom: 1px solid #f0f0f0;">
               <td style="padding: 5px;">${item.description}</td>
-              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           `).join('')}
         </table>
         <div style="background: #f5f5f5; border-top: 1px solid #d0d0d0; padding: 6px 8px; margin: 8px 0; display: flex; justify-content: space-between; font-size: 9pt; font-weight: 600;">
           <span>TOTAL</span>
-          <span style="font-family: 'Courier New', monospace;">NGN ${grossTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          <span style="font-family: 'Courier New', monospace;">NGN ${grossTotal.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
 
         <!-- Deductions -->
@@ -453,15 +484,15 @@
             <tr style="border-bottom: 1px solid #f0f0f0;">
               <td style="padding: 5px;">
                 ${item.description}
-                ${item.is_loan && item.loan_balance ? `<span style="color: #d32f2f; font-size: 7pt; font-weight: 600;"> (Bal: NGN ${parseFloat(item.loan_balance).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>` : ''}
+                ${item.is_loan && item.loan_balance ? `<span style="color: #d32f2f; font-size: 7pt; font-weight: 600;"> (Bal: NGN ${parseFloat(item.loan_balance).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>` : ''}
               </td>
-              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           `).join('')}
         </table>
         <div style="background: #f5f5f5; border-top: 1px solid #d0d0d0; padding: 6px 8px; margin: 8px 0; display: flex; justify-content: space-between; font-size: 9pt; font-weight: 600;">
           <span>TOTAL DEDUCTIONS</span>
-          <span style="font-family: 'Courier New', monospace;">NGN ${data.total_deductions.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          <span style="font-family: 'Courier New', monospace;">NGN ${data.total_deductions.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
 
         <!-- Allowances -->
@@ -470,19 +501,19 @@
           ${allowanceItems.map(item => `
             <tr style="border-bottom: 1px solid #f0f0f0;">
               <td style="padding: 5px;">${item.description}</td>
-              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td style="padding: 5px; text-align: right; font-family: 'Courier New', monospace; font-weight: 700;">NGN ${parseFloat(item.amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           `).join('')}
         </table>
         <div style="background: #f5f5f5; border-top: 1px solid #d0d0d0; padding: 6px 8px; margin: 8px 0; display: flex; justify-content: space-between; font-size: 9pt; font-weight: 600;">
           <span>TOTAL</span>
-          <span style="font-family: 'Courier New', monospace;">NGN ${allowanceTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          <span style="font-family: 'Courier New', monospace;">NGN ${allowanceTotal.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
 
         <!-- Net Pay -->
         <div style="background: #f0f0f0; border: 2px solid #1a1a1a; padding: 8px; margin: 12px 0; display: flex; justify-content: space-between; font-size: 11pt; font-weight: bold;">
           <span>NET PAY</span>
-          <span style="font-family: 'Courier New', monospace;">NGN ${data.net_pay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          <span style="font-family: 'Courier New', monospace;">NGN ${data.net_pay.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
 
         <!-- YTD -->
@@ -490,15 +521,15 @@
           <div style="font-weight: 600; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #d0d0d0;">YEAR-TO-DATE TOTALS (JAN - ${data.payroll_month} ${data.payroll_year})</div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding: 4px;">
             <span style="font-weight: 600;">YTD Gross:</span>
-            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${data.ytd_gross.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${data.ytd_gross.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding: 4px;">
             <span style="font-weight: 600;">YTD Tax:</span>
-            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${data.ytd_tax.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${data.ytd_tax.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 4px;">
             <span style="font-weight: 600;">YTD Net:</span>
-            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${(data.ytd_gross - data.ytd_tax).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            <span style="font-family: 'Courier New', monospace; font-weight: 700;">NGN ${(data.ytd_gross - data.ytd_tax).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
 
@@ -513,7 +544,7 @@
 
   async function downloadPayslips(data, format, token) {
     const exportEndpoint = format === 'pdf' ? '/payslips/export/pdf' : '/payslips/export/excel';
-    
+
     const exportResponse = await auth.fetchWithAuth(exportEndpoint, {
       method: 'POST',
       headers: {

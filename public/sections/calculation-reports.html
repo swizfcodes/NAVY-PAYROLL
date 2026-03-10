@@ -1,3 +1,31 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
 <!-- Payroll Reports Section -->
 <div class="p-6">
   <!-- Not Ready Banner -->
@@ -218,7 +246,7 @@
       <!-- Report content loaded dynamically -->
     </div>
     <div class="flex justify-end gap-3 p-2 border-t bg-gray-50">
-      <button id="printReportBtn" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+      <button id="printReportBtn" class="hidden px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
         <i class="fas fa-print mr-2"></i>Print
       </button>
       <button id="downloadReportBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -233,7 +261,11 @@
   <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
     <div class="text-center">
       <div class="flex justify-center mb-4">
-        <div class="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+        <div class="relative w-10 h-10">
+          <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+          <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+          <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+        </div>
       </div>
       <h3 class="text-xl font-semibold text-gray-900 mb-2">Generating Report...</h3>
       <p id="reportLoadingMessage" class="text-gray-600">Please wait while we prepare your report...</p>

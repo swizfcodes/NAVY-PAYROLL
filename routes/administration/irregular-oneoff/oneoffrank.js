@@ -37,7 +37,7 @@ router.get('/check/:field/:value', verifyToken, async (req, res) => {
 // Get all payperrank records
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM py_oneoffrank");
+    const [rows] = await pool.query("SELECT r.*, et.elmDesc as description FROM py_oneoffrank r LEFT JOIN py_elementType et ON r.one_type = et.PaymentType");
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -49,7 +49,7 @@ router.get("/", verifyToken, async (req, res) => {
 router.get("/:one_type", verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM py_oneoffrank WHERE one_type = ?",
+      "SELECT r.*, et.elmDesc as description FROM py_oneoffrank r LEFT JOIN py_elementType et ON r.one_type = et.PaymentType WHERE r.one_type = ?",
       [req.params.one_type]
     );
     if (rows.length === 0) return res.status(404).json({ error: "Not found" });

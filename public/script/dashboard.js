@@ -1,4 +1,11 @@
-tailwind.config = {
+// dashboard.js — add at the very top
+if (window.location.hostname !== 'localhost' && 
+    window.location.hostname !== '127.0.0.1') {
+  console.log = () => {};
+  console.debug = () => {};
+}
+
+/*tailwind.config = {
   theme: {
     extend: {
       //darkMode: 'class',
@@ -16,18 +23,18 @@ tailwind.config = {
       'custom': '0 2px 5px 0 rgba(0,0,0,0.08)',
       },
       keyframes: {
-        "grow-up": { "0%": { height: "0" }, "100%": { height: "100%" } },
-        "grow-down": { "0%": { height: "0", bottom: "0" }, "100%": { height: "100%" } },
-        "expand": { "0%": { width: "0" }, "100%": { width: "100%" } },
+        "grow-up": { "0%": { height: "0", bottom: "0" }, "100%": { height: "100%", bottom: "0" } },
+        "grow-down": { "0%": { height: "0", top: "0" }, "100%": { height: "100%", top: "0" } },
+        "expand": { "0%": { width: "0", left: "50%", transform: "translate(-50%, -50%)" }, "100%": { width: "100%", left: "0", transform: "translateY(-50%)" } },
       },
       animation: {
-        "grow-up": "grow-up 0.8s ease-out forwards",
-        "grow-down": "grow-down 0.8s ease-out forwards",
-        "expand": "expand 0.8s ease-out forwards",
-      }
+        "grow-up": "grow-up 0.6s ease-in-out infinite alternate",
+        "grow-down": "grow-down 0.6s ease-in-out infinite alternate",
+        "expand": "expand 0.6s ease-in-out infinite alternate",
+      },
     }
   }
-};
+};*/
 
 (function() {
   // Prevent any rendering until state is ready
@@ -617,6 +624,8 @@ function setupSubsubmenus() {
   console.log('Subsubmenu setup complete');
 }
 
+//---------- Dashboard greeting logic ------------//
+
 // Figure out the current time of day
 function getTimeOfDay() {
   const hour = new Date().getHours();
@@ -768,59 +777,26 @@ document.addEventListener('payrollClassFocused', (event) => {
   updateGreeting();
 });
 
-// Get current payroll period from database
-async function getCurrentPayrollPeriod() {
-  try {
-    const token = localStorage.getItem('token');
-    const user = getLoggedInUser();
-    const dbName = user.current_class;
-    
-    const response = await fetch('/payroll-period', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Update the payroll period display
-      const periodElement = document.querySelector('#current-payroll-period');
-      if (periodElement) {
-        const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June',
-                           'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-        const monthName = monthNames[data.month - 1] || 'Unknown';
-        periodElement.textContent = `${monthName} ${data.year}`;
-      }
-      
-      return { month: data.month, year: data.year };
-    }
-  } catch (error) {
-    console.error('Failed to load payroll period:', error);
+
+
+//--------------- Navigation handler for submenu items and Menu Permissions ---------------//
+// Utility: show/hide elements based on menu permission
+function requiresMenuAccess(menuKey, element) {
+  const manager = window.quickAccessManager;
+  if (!manager) return; // not loaded yet
+
+  if (!manager.userAccessibleMenus.includes(menuKey)) {
+    element.style.display = 'none';
+  } else {
+    element.style.display = ''; // explicitly restore visibility
   }
 }
 
-// Init only on dashboard pages
-(async function initDashboard() {
-  if (document.getElementById('dynamicGreeting') || document.getElementById('payrollClassName')) {
-    // Wait for class mappings to load BEFORE updating greeting
-    await loadClassMappings();
-    
-    // Now update greeting with populated classMapping
-    updateGreeting();
-    updateCurrentTime();
+// Check by menu key, hide element if no access
+// Usage: checkMenuAccess('database-restore', btn)
+window.checkMenuAccess = requiresMenuAccess;
 
-    setInterval(updateCurrentTime, 1000);  // Update time every second
-    setInterval(updateGreeting, 60000);    // Refresh greeting every minute (to catch token updates)
-    await getCurrentPayrollPeriod();  // Load current payroll period
-  }
-})();
-
-
-
-// Navigation handler for submenu items
+// Navigation system
 class NavigationSystem {
   constructor() {
     this.currentSection = null;
@@ -858,24 +834,30 @@ class NavigationSystem {
           }
           
           if (isEditMode && currentHash === 'add-personnel' && sectionId !== 'add-personnel') {
-            const confirmed = confirm(
-              'You are currently editing a personnel record. ' +
-              'Any unsaved changes will be lost. Do you want to continue?'
+            // Show modal instead of confirm()
+            this.showEditWarningModal(
+              'You are currently editing a personnel record. Any unsaved changes will be lost. Do you want to continue?',
+              () => {
+                // On confirm — clean up and navigate
+                localStorage.removeItem('editing_employee_id');
+                localStorage.removeItem('isEditMode');
+                localStorage.removeItem('navigatedFromCurrentPersonnel');
+
+                if (window.PersonnelAPI?.setCreateMode) {
+                  window.PersonnelAPI.setCreateMode();
+                }
+
+                if (typeof closeAll === 'function') closeAll();
+                this.hideMobileMenu();
+
+                const displayName = (sectionId === 'add-personnel' && isEditMode)
+                  ? 'Edit Personnel'
+                  : sectionName;
+                this.showLoadingState(displayName);
+                this.navigateToSection(sectionId, displayName);
+              }
             );
-            
-            if (!confirmed) {
-              console.log('Navigation cancelled by user');
-              return;
-            }
-            
-            // User confirmed, clean up edit state
-            localStorage.removeItem('editing_employee_id');
-            localStorage.removeItem('isEditMode');
-            localStorage.removeItem('navigatedFromCurrentPersonnel');
-            
-            if (window.PersonnelAPI?.setCreateMode) {
-              window.PersonnelAPI.setCreateMode();
-            }
+            return; // Wait for modal response
           }
           
           // Close all submenus
@@ -896,6 +878,34 @@ class NavigationSystem {
           await this.navigateToSection(sectionId, displayName);
         }
       });
+    });
+  }
+
+  showEditWarningModal(message, onConfirm) {
+    const modal = document.getElementById('cancelEditModal');
+    const msgEl = modal.querySelector('p');
+    const yesBtn = document.getElementById('cancelEditYes');
+    const noBtn = document.getElementById('cancelEditNo');
+
+    msgEl.textContent = message;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Clone buttons to remove old listeners
+    const newYes = yesBtn.cloneNode(true);
+    const newNo = noBtn.cloneNode(true);
+    yesBtn.replaceWith(newYes);
+    noBtn.replaceWith(newNo);
+
+    newYes.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      onConfirm();
+    });
+
+    newNo.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     });
   }
 
@@ -954,9 +964,9 @@ class NavigationSystem {
               <div class="relative w-10 h-10 mr-3">
                 <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
 
-                <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+                <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down"></div>
 
-                <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+                <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand -translate-y-1/2"></div>
               </div>
               <span class="text-gray-600">Loading...</span>
             </div>
@@ -1088,17 +1098,82 @@ class NavigationSystem {
       // Show main if it was hidden
       mainContent.style.display = 'block';
       mainContent.style.opacity = '0';
-      
+
+      // Declare helpers and variables BEFORE the template literal
+      function formatUserName(fullName) {
+        if (!fullName) return "";
+        const parts = fullName.trim().split(" ");
+        const firstName = parts[0];
+        const lastInitial = parts[1] ? parts[1][0] + "." : "";
+        return `${firstName} ${lastInitial}`;
+      }
+
+      function getCurrentTime12hr() {
+        const now = new Date();
+        return now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        }).toLowerCase();
+      }
+
+      const user = getLoggedInUser();
+      const formattedName = formatUserName(user.full_name);
+      const currentTime = getCurrentTime12hr();
+
       mainContent.innerHTML = `
         <div class="mt-6">
-          <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100"> 
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl lg:text-3xl font-bold text-navy">
+              ${sectionName}
+            </h2>
+
+            <!-- User Status Badge -->
+            <div class="flex items-center gap-2 mr-4 p-1">
+
+              <!-- Dot + Label hover group -->
+              <div class="group relative flex items-center gap-1.5 cursor-pointer">
+
+                <!-- Active Dot -->
+                <span class="relative flex h-2.5 w-2.5" id="statusDot">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+
+                <!-- Status Label — hidden until hover -->
+                <span 
+                  id="statusLabel" 
+                  class="text-xs font-semibold text-green-600 uppercase tracking-wide
+                        max-w-0 overflow-hidden opacity-0 whitespace-nowrap
+                        transition-all duration-300 ease-in-out
+                        group-hover:max-w-xs group-hover:opacity-100">
+                  Online
+                </span>
+
+              <!-- Name -->
+              <span class="font-bold text-navy">
+                ${formattedName}
+              </span>
+
+              <!-- Divider -->
+              <span class="text-gray-300">|</span>
+
+              <!-- Clock -->
+              <span id="liveClock" class="text-yellow-600 font-bold text-sm">
+                ${currentTime}
+              </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
             ${content}
           </div>
 
-          <div class="my-6">
+          <div class="my-6 flex items-center justify-between">
+            <!-- Return Button (Left) -->
             <button 
-              onclick="window.navigation.goBack()" 
+              onclick="window.navigation.handleReturnClick()"
               class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1107,6 +1182,15 @@ class NavigationSystem {
               </svg>
               Return
             </button>
+
+            <!-- Copyright (Right) -->
+            <p class="text-navy font-bold text-[10px]">
+              &copy; <span id="year"></span> 
+              <a class="text-blue-500 font-bold hover:underline" href="https://hicadsystemsltd.com/" target="_blank">
+                Hicad Systems Limited.
+              </a> 
+              All rights reserved.
+            </p>
           </div>
         </div>
       `;
@@ -1114,28 +1198,130 @@ class NavigationSystem {
       window.scrollTo({ top: 0, behavior: 'instant' });
       this.initializeLoadedScripts();
 
+      // Get copyright year
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      // startLiveClock now references getCurrentTime12hr which is already in scope
+      function startLiveClock() {
+        function updateClock() {
+          const clock = document.getElementById("liveClock");
+          if (clock) {
+            clock.textContent = getCurrentTime12hr();
+          }
+        }
+        updateClock();
+        setInterval(updateClock, 60000);
+      }
+
+      startLiveClock();
+
+      // --- Server Health Polling ---
+      function updateStatusBadge(isOnline, reason = null) {
+        const dot = document.getElementById("statusDot");
+        const label = document.getElementById("statusLabel");
+        if (!dot || !label) return;
+
+        const baseClasses = `text-xs font-semibold uppercase tracking-wide
+                            max-w-0 overflow-hidden opacity-0 whitespace-nowrap
+                            transition-all duration-300 ease-in-out
+                            group-hover:max-w-xs group-hover:opacity-100`;
+
+        if (isOnline) {
+          dot.innerHTML = `
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          `;
+          label.className = `${baseClasses} text-green-600`;
+          label.textContent = "Online";
+        } else {
+          dot.innerHTML = `
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+          `;
+          label.className = `${baseClasses} text-red-500`;
+          // Show specific reason on hover
+          label.textContent = reason === 'no-network' ? "No Network" : "Offline";
+        }
+      }
+
+      async function checkServerHealth() {
+        // 1. Check network first — instant, no fetch needed
+        if (!navigator.onLine) {
+          updateStatusBadge(false, 'no-network');
+          return;
+        }
+
+        // 2. Network exists — check if server is actually reachable
+        try {
+          const res = await fetch('/health', {
+            method: 'GET',
+            cache: 'no-store',
+            signal: AbortSignal.timeout(4000)
+          });
+          updateStatusBadge(res.ok);
+        } catch {
+          updateStatusBadge(false);
+        }
+      }
+
+      // Check immediately, then every 30 seconds
+      checkServerHealth();
+      const healthInterval = setInterval(() => {
+        if (!document.getElementById("statusDot")) {
+          clearInterval(healthInterval);
+          return;
+        }
+        checkServerHealth();
+      }, 30000);
+
+      // React instantly to network changes without waiting for next poll
+      window.addEventListener('online', () => checkServerHealth());
+      window.addEventListener('offline', () => updateStatusBadge(false, 'no-network'));
+
       // Smooth fade-in with animation
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           mainContent.style.transition = 'opacity 0.3s ease';
           mainContent.style.opacity = '1';
 
-          // Apply the fade-up animation
           const container = mainContent.querySelector('.mt-6');
           if (container) {
             container.classList.add('animate-fade-up');
 
-            // Remove fade-up transform after animation completes
             container.addEventListener('animationend', (e) => {
               if (e.animationName === 'fadeInUp' || e.animationName === 'fadeInUpInner') {
                 container.classList.remove('animate-fade-up');
-                container.style.transform = 'none'; // ensure no transform remains
+                container.style.transform = 'none';
               }
             }, { once: true });
           }
         });
       });
     }
+  }
+
+  handleReturnClick() {
+    const isEditMode = localStorage.getItem('isEditMode') === 'true';
+    const currentHash = window.location.hash.substring(1);
+
+    if (isEditMode && currentHash === 'add-personnel') {
+      this.showEditWarningModal(
+        'You are currently editing a personnel record. Any unsaved changes will be lost. Do you want to continue?',
+        () => {
+          localStorage.removeItem('editing_employee_id');
+          localStorage.removeItem('isEditMode');
+          localStorage.removeItem('navigatedFromCurrentPersonnel');
+
+          if (window.PersonnelAPI?.setCreateMode) {
+            window.PersonnelAPI.setCreateMode();
+          }
+
+          this.goBack();
+        }
+      );
+      return;
+    }
+
+    this.goBack();
   }
 
   // New method to go back to previous section
@@ -1205,20 +1391,16 @@ class NavigationSystem {
     // Execute any scripts in the newly loaded content
     const scripts = document.querySelectorAll('main script');
     scripts.forEach(script => {
+    const newScript = document.createElement('script');
       if (script.src) {
         // External script
-        const newScript = document.createElement('script');
         newScript.src = script.src;
         newScript.onload = () => console.log(`Loaded script: ${script.src}`);
-        document.head.appendChild(newScript);
       } else {
-        // Inline script
-        try {
-          eval(script.textContent);
-        } catch (error) {
-          console.error('Error executing inline script:', error);
-        }
+        newScript.textContent = `(function(){\n${script.textContent}\n})();`
       }
+      document.head.appendChild(newScript);
+      //script.remove();
     });
   }
 
@@ -1394,34 +1576,62 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = NavigationSystem;
 }
 
-// Dashboard stats update
+
+
+//---------- Dashboard stats update ------------//
 async function updateDashboardStats() {
   try {
-    // Check if the element exists before making the API call
     const personnelElement = document.getElementById('active-personnel');
     if (!personnelElement) {
       console.log('📊 Stats elements not found on this page, skipping update');
       return;
     }
 
-    // Get total personnel and nominal processed for current payroll period
-    const response = await fetch('/stats/total-personnels', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
+    // Fetch personnel count and nominal processed in parallel
+    const [personnelRes, nominalRes] = await Promise.all([
+      fetch('/stats/total-personnels', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      }),
+      fetch('/stats/nominal-processed', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
+    ]);
 
-    const result = await response.json();
-    
-    if (result.success) {
-      // Update stats cards (element already verified to exist)
-      personnelElement.textContent = result.data.totalPersonnels || '0';
-      
-      console.log('Dashboard stats updated:', result.data.totalPersonnels);
+    const [personnelResult, nominalResult] = await Promise.all([
+      personnelRes.json(),
+      nominalRes.json()
+    ]);
+
+    if (personnelResult.success) {
+      personnelElement.textContent = personnelResult.data.totalPersonnels || '0';
     }
+
+    const nominalElement = document.getElementById('nominalProcessed');
+    const nominalBadge = document.getElementById('nominalPeriodBadge');
+
+    if (nominalElement) {
+      if (nominalResult.success) {
+        nominalElement.textContent = nominalResult.data.nominalProcessed?.toLocaleString() || '0';
+
+        if (nominalBadge) {
+          const isCurrentPeriod = nominalResult.data.period === 'current';
+          nominalBadge.textContent = isCurrentPeriod ? '(Curr. Period)' : '(Prev. Period)';
+          nominalBadge.className = isCurrentPeriod
+            ? 'text-xs font-semibold text-green-700'
+            : 'text-xs font-semibold text-amber-700';
+          nominalBadge.classList.remove('hidden');
+        }
+      } else {
+        nominalElement.textContent = 'N/A';
+        if (nominalBadge) nominalBadge.classList.add('hidden');
+      }
+    }
+
+    console.log('Dashboard stats updated');
   } catch (error) {
     console.error('❌ Error updating dashboard stats:', error);
+    const nominalElement = document.getElementById('nominalProcessed');
+    if (nominalElement) nominalElement.textContent = 'Error';
   }
 }
 
@@ -1429,6 +1639,56 @@ async function updateDashboardStats() {
 document.addEventListener('DOMContentLoaded', function() {
   updateDashboardStats();
 });
+
+// Get current payroll period from database
+async function getCurrentPayrollPeriod() {
+  try {
+    const token = localStorage.getItem('token');
+    const user = getLoggedInUser();
+    const dbName = user.current_class;
+    
+    const response = await fetch('/stats/payroll-period', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update the payroll period display
+      const periodElement = document.querySelector('#current-payroll-period');
+      if (periodElement) {
+        const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June',
+                           'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        const monthName = monthNames[data.month - 1] || 'Unknown';
+        periodElement.textContent = `${monthName} ${data.year}`;
+      }
+      
+      return { month: data.month, year: data.year };
+    }
+  } catch (error) {
+    console.error('Failed to load payroll period:', error);
+  }
+}
+
+// Init only on dashboard pages
+(async function initDashboard() {
+  if (document.getElementById('dynamicGreeting') || document.getElementById('payrollClassName')) {
+    // Wait for class mappings to load BEFORE updating greeting
+    await loadClassMappings();
+    
+    // Now update greeting with populated classMapping
+    updateGreeting();
+    updateCurrentTime();
+
+    setInterval(updateCurrentTime, 1000);  // Update time every second
+    setInterval(updateGreeting, 60000);    // Refresh greeting every minute (to catch token updates)
+    await getCurrentPayrollPeriod();  // Load current payroll period
+  }
+})();
 
 
 // The user token is intentionally NOT preserved — the user must

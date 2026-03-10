@@ -9,6 +9,7 @@
     "dotenv": "^17.2.1",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.3.0",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -24,8 +25,8 @@
     "pdf-merger-js": "^5.1.2",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.26.1",
-    "redis": "^5.10.0",
     "puppeteer-core": "^24.36.0",
+    "redis": "^5.10.0",
     "serve-index": "^1.9.1",
     "socket.io": "^4.8.3",
     "tailwind-scrollbar-hide": "^4.0.0",
@@ -38,6 +39,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build:css": "tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/output.css --minify",
+    "watch:css": "tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/output.css --watch",
     "migrate:make": "node migrate.js make",
     "migrate:up": "node migrate.js up",
     "migrate:down": "node migrate.js down",
@@ -59,6 +62,6 @@
     "autoprefixer": "^10.4.23",
     "nodemon": "^3.1.11",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^3.4.19"
   }
 }

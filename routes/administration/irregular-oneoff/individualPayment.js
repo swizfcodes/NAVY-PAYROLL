@@ -18,7 +18,7 @@ router.get('/:his_empno', verifyToken, async (req, res) => {
 //get all
 router.get('/', verifyToken, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT his_empno, his_type, amtthismth FROM py_calculation');
+        const [rows] = await pool.query('SELECT pc.his_empno, pc.his_type, et.elmDesc as description, pc.amtthismth FROM py_calculation pc LEFT JOIN py_elementType et ON pc.his_type = et.PaymentType');
         res.json({ success: true, data: rows });
     } catch (error) {
         console.error('Error fetching all individual payments:', error);

@@ -69,6 +69,7 @@ class MenuHighlighter {
       'cumulative-payroll': 'data-entry',
       'input-documentation': 'data-entry',
       'arrears-calculations': 'data-entry',
+      'adjustments': 'data-entry',
       
       // File Update menu items
       'save-payroll-files': 'file-update',
@@ -113,7 +114,7 @@ class MenuHighlighter {
       //'overtime-analysis-by-dept': 'reports',
       'payroll-register': 'reports',
       //'listing-of-payroll-files': 'reports',
-      'payment-staff-list': 'reports',
+      //'payment-staff-list': 'reports',
       'national-housing-funds': 'reports',
       'nsitf': 'reports',
       'salary-summary': 'reports',
@@ -121,8 +122,9 @@ class MenuHighlighter {
       'salary-reconciliation': 'reports',
       'salary-history': 'reports',
       'control-sheet': 'reports',
-      'payment-statistics': 'reports',
+      //'payment-statistics': 'reports',
       'personnel-reports': 'reports',
+      'listof-exited-members': 'reports',
 
       
       // Audit Trail menu items
@@ -217,7 +219,7 @@ class SidebarExpandLock {
       // Click sidebar to lock expanded state
       sidebar.addEventListener('click', (e) => {
         // Don't lock if clicking on nav items or links
-        if (e.target.closest('.nav-item') || e.target.closest('a')) {
+        if (e.target.closest('.nav-item') || e.target.closest('a') || e.target.closest('.logout')) {
           return;
         }
 
