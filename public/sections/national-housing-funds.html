@@ -1,4 +1,33 @@
 <!-- National Housing Funds Report -->
+ <style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
   <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">National Housing Funds (NHF) Report</h2>
 
@@ -6,13 +35,15 @@
     <!-- Year Selection -->
     <div>
       <label for="nhfYear" class="block text-sm font-medium mb-1">Processing Year</label>
-      <input type="number" id="nhfYear" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      <input type="number" id="nhfYear"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
     </div>
 
     <!-- Processing Month -->
     <div>
       <label for="nhfMonth" class="block text-sm font-medium mb-1">Processing Month</label>
-      <select id="nhfMonth" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      <select id="nhfMonth"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
         <option>January</option>
         <option>February</option>
@@ -78,7 +109,13 @@
 <!-- Processing Modal -->
 <div id="nhfProcessingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <div class="relative w-10 h-10 mx-auto mb-4">
+      <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+      <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+      <div
+        class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2">
+      </div>
+    </div>
     <p class="text-gray-700">Generating report...</p>
   </div>
 </div>
@@ -131,14 +168,14 @@
   // Helper function to convert month name to number
   function getMonthNumber(monthName) {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+      'July', 'August', 'September', 'October', 'November', 'December'];
     return months.indexOf(monthName) + 1;
   }
 
   // Helper function to convert month number to name
   function getMonthName(monthNum) {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+      'July', 'August', 'September', 'October', 'November', 'December'];
     return months[monthNum - 1] || '';
   }
 
@@ -208,7 +245,7 @@
 
     try {
       const token = localStorage.getItem('token');
-      
+
       // Build query parameters
       const params = new URLSearchParams({
         format: format,
@@ -231,12 +268,12 @@
       // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
+
       // Open PDF in new tab
       if (format === 'pdf') {
         window.open(url, '_blank');
       }
-      
+
       // Also trigger download
       const a = document.createElement('a');
       a.href = url;
@@ -244,7 +281,7 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
-      
+
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
       nhfProcessingModal.classList.add('hidden');

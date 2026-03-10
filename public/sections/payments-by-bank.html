@@ -1,3 +1,32 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <!-- Print Options Section -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
   <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print Payments by Bank(Branch) Reports</h2>
@@ -29,32 +58,34 @@
     </div>
 
     <!-- Processing Month -->
-    <div>
-      <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
-      <select id="processingMonth" name="processingMonth"
-        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <option value="">Select Month</option>
-        <option value="1">January</option>
-        <option value="2">February</option>
-        <option value="3">March</option>
-        <option value="4">April</option>
-        <option value="5">May</option>
-        <option value="6">June</option>
-        <option value="7">July</option>
-        <option value="8">August</option>
-        <option value="9">September</option>
-        <option value="10">October</option>
-        <option value="11">November</option>
-        <option value="12">December</option>
-      </select>
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="col-span-1">
+        <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
+        <select id="processingMonth" name="processingMonth"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="">Select Month</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
 
-    <!-- Processing Year -->
-    <div>
-      <label for="processingYear" class="block text-sm font-medium mb-1">Processing Year</label>
-      <input type="number" id="processingYear" name="processingYear"
-        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        placeholder="e.g., 2025" min="2020" max="2099">
+      <!-- Processing Year -->
+      <div class="col-span-1">
+        <label for="processingYear" class="block text-sm font-medium mb-1">Processing Year</label>
+        <input type="number" id="processingYear" name="processingYear"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="e.g., 2025" min="2020" max="2099">
+      </div>
     </div>
 
     <!-- Output Format -->
@@ -115,7 +146,12 @@
   <!-- Loading Indicator -->
   <div id="bankLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-      <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <!-- Replace this spinner -->
+    <div class="relative w-10 h-10 mx-auto mb-4">
+      <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+      <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+      <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+    </div>
       <span>Generating report...</span>
     </div>
   </div>

@@ -663,48 +663,25 @@ async function findUserCandidates(user_id, databasesToSearch) {
   return candidates;
 }
 
-function checkIdentityMatch(
-  user,
-  full_name,
-  email,
-  primary_class,
-  dbToClass,
-  classToDb,
-) {
+function checkIdentityMatch(user, full_name, primary_class, dbToClass, classToDb) {
   const nameOk =
     user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
-  const emailOk =
-    user.email?.toLowerCase().trim() === email.toLowerCase().trim();
-  let classOk = true;
-  if (primary_class) {
-    const userDb = resolveToDbName(user.primary_class, dbToClass, classToDb);
-    const providedDb =
-      resolveToDbName(primary_class, dbToClass, classToDb) || primary_class;
-    classOk = userDb === providedDb;
-  }
-  return { nameOk, emailOk, classOk, ok: nameOk && emailOk && classOk };
+
+  // resolveToDbName
+  const userDbName = resolveToDbName(user.primary_class, dbToClass, classToDb) ?? user.primary_class;
+  const inputDbName = resolveToDbName(primary_class, dbToClass, classToDb) ?? primary_class;
+  const classOk = userDbName === inputDbName;
+
+  return { nameOk, classOk, ok: nameOk && classOk };
 }
 
-function identityErrorMsg(
-  candidates,
-  full_name,
-  email,
-  primary_class,
-  dbToClass,
-  classToDb,
-) {
+function identityErrorMsg(candidates, full_name, primary_class, dbToClass, classToDb) {
   const wrong = new Set();
   for (const { user } of candidates) {
-    const { nameOk, emailOk, classOk } = checkIdentityMatch(
-      user,
-      full_name,
-      email,
-      primary_class,
-      dbToClass,
-      classToDb,
+    const { nameOk, classOk } = checkIdentityMatch(
+      user, full_name, primary_class, dbToClass, classToDb
     );
     if (!nameOk) wrong.add("Full Name");
-    if (!emailOk) wrong.add("Email");
     if (!classOk) wrong.add("Payroll Class");
   }
   const list = [...wrong];
@@ -717,13 +694,13 @@ function identityErrorMsg(
 }
 
 router.post("/verify-identity", async (req, res) => {
-  const { user_id, full_name, email, primary_class } = req.body;
+  const { user_id, full_name, primary_class } = req.body;
   try {
-    if (!user_id || !full_name || !email)
+    if (!user_id || !full_name || !primary_class)
       return res
         .status(400)
         .json({
-          error: "User ID, Full Name, and Email are required for verification",
+          error: "User ID, Full Name, and Payroll Class are required for verification",
         });
 
     const { databasesToSearch, dbToClass, classToDb } =
@@ -742,7 +719,7 @@ router.post("/verify-identity", async (req, res) => {
         checkIdentityMatch(
           user,
           full_name,
-          email,
+          //email,
           primary_class,
           dbToClass,
           classToDb,
@@ -761,7 +738,7 @@ router.post("/verify-identity", async (req, res) => {
           error: identityErrorMsg(
             candidates,
             full_name,
-            email,
+            //email,
             primary_class,
             dbToClass,
             classToDb,
@@ -780,9 +757,9 @@ router.post("/verify-identity", async (req, res) => {
       user: {
         user_id: verifiedUser.user_id,
         full_name: verifiedUser.full_name,
-        email: verifiedUser.email,
+        //email: verifiedUser.email,
         primary_class: verifiedUser.primary_class,
-        database: verifiedDatabase,
+        //database: verifiedDatabase,
       },
     });
   } catch (err) {
@@ -792,9 +769,9 @@ router.post("/verify-identity", async (req, res) => {
 });
 
 router.post("/reset-password", async (req, res) => {
-  const { user_id, full_name, email, new_password, primary_class } = req.body;
+  const { user_id, full_name, new_password, primary_class } = req.body;
   try {
-    if (!user_id || !full_name || !email || !new_password)
+    if (!user_id || !full_name || !primary_class || !new_password)
       return res.status(400).json({ error: "All fields are required" });
     if (new_password.length < 6)
       return res
@@ -815,7 +792,7 @@ router.post("/reset-password", async (req, res) => {
         checkIdentityMatch(
           user,
           full_name,
-          email,
+          //email,
           primary_class,
           dbToClass,
           classToDb,
@@ -834,7 +811,7 @@ router.post("/reset-password", async (req, res) => {
           error: identityErrorMsg(
             candidates,
             full_name,
-            email,
+            //email,
             primary_class,
             dbToClass,
             classToDb,
@@ -845,6 +822,96 @@ router.post("/reset-password", async (req, res) => {
     const [result] = await pool.query(
       "UPDATE users SET password = ? WHERE user_id = ?",
       [new_password, user_id],
+    );
+
+    if (result.affectedRows === 0)
+      return res.status(500).json({ error: "Failed to update password" });
+
+    console.log(`✅ Password reset for ${user_id} in ${verifiedDatabase}`);
+    res.json({ message: "✅ Password reset successfully", user_id });
+  } catch (err) {
+    console.error("❌ Password reset error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/pre-login/verify-identity", async (req, res) => {
+  const { user_id, full_name } = req.body;
+  try {
+    if (!user_id || !full_name)
+      return res.status(400).json({ error: "User ID and Full Name are required" });
+
+    const { databasesToSearch } = await loadPayrollMapping();
+    const candidates = await findUserCandidates(user_id, databasesToSearch);
+
+    if (!candidates.length)
+      return res.status(404).json({ error: "User not found. Please check your User ID." });
+
+    let verifiedUser = null, verifiedDatabase = null;
+    for (const { user, database } of candidates) {
+      const nameOk = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
+      if (nameOk) {
+        verifiedUser = user;
+        verifiedDatabase = database;
+        break;
+      }
+    }
+
+    if (!verifiedUser)
+      return res.status(401).json({
+        error: "Identity verification failed. Incorrect: Full Name. Please check and try again.",
+      });
+
+    if (verifiedUser.status !== "active")
+      return res.status(403).json({ error: "Account is not active. Please contact administrator." });
+
+    res.json({
+      message: "Identity verified successfully",
+      user: {
+        user_id: verifiedUser.user_id,
+        full_name: verifiedUser.full_name,
+        //database: verifiedDatabase,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Identity verification error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/pre-login/reset-password", async (req, res) => {
+  const { user_id, full_name, new_password } = req.body;
+  try {
+    if (!user_id || !full_name || !new_password)
+      return res.status(400).json({ error: "All fields are required" });
+    if (new_password.length < 6)
+      return res.status(400).json({ error: "Password must be at least 6 characters long" });
+
+    const { databasesToSearch } = await loadPayrollMapping();
+    const candidates = await findUserCandidates(user_id, databasesToSearch);
+
+    if (!candidates.length)
+      return res.status(404).json({ error: "User not found" });
+
+    let verifiedUser = null, verifiedDatabase = null;
+    for (const { user, database } of candidates) {
+      const nameOk = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
+      if (nameOk) {
+        verifiedUser = user;
+        verifiedDatabase = database;
+        break;
+      }
+    }
+
+    if (!verifiedUser)
+      return res.status(401).json({
+        error: "Identity verification failed. Incorrect: Full Name. Please check and try again.",
+      });
+
+    pool.useDatabase(verifiedDatabase);
+    const [result] = await pool.query(
+      "UPDATE users SET password = ? WHERE user_id = ?",
+      [new_password, user_id]
     );
 
     if (result.affectedRows === 0)

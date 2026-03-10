@@ -9,6 +9,7 @@ const { AsyncLocalStorage } = require("async_hooks");
 const MASTER_TABLES = new Set([
   // Employee and Personal Info
   "hr_employees",
+  "py_emplhistory",
   "Spouse",
   "Children",
   "NextOfKin",
@@ -80,6 +81,17 @@ let MASTER_DB;
 function qualifyMasterTables(sql, currentDb) {
   if (currentDb === MASTER_DB) return sql;
 
+  // Handle object form: { sql: "...", values: [...] }
+  if (typeof sql === "object" && sql !== null) {
+    return {
+      ...sql,
+      sql: qualifyMasterTables(sql.sql, currentDb),
+    };
+  }
+
+  // Guard: if still not a string, return as-is
+  if (typeof sql !== "string") return sql;
+
   let processedSql = sql;
   let modificationsCount = 0;
 
@@ -88,7 +100,7 @@ function qualifyMasterTables(sql, currentDb) {
       `(?<![.\\w])\\b${table}\\b(?=\\s|,|\\)|;|$|\\b(?!\\.))`,
       "gi",
     );
-    const matches = sql.match(regex);
+    const matches = processedSql.match(regex);
     if (matches) {
       processedSql = processedSql.replace(regex, `${MASTER_DB}.${table}`);
       modificationsCount += matches.length;

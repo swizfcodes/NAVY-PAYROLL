@@ -2,6 +2,7 @@
   .dropdown-container {
     position: relative;
   }
+
   .dropdown-list {
     position: absolute;
     top: 100%;
@@ -15,14 +16,41 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     z-index: 50;
   }
+
   .dropdown-item:hover {
     background-color: #eff6ff;
+  }
+
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
   }
 </style>
 
 <!-- Input Documentation Section -->
 <div class="p-6">
-  
+
   <!-- Add New Button -->
   <div class="mb-4 flex flex-wrap gap-2 items-center justify-between">
     <h3 class="text-xl font-semibold text-gray-800 mb-4">Input Documentation Form</h3>
@@ -33,8 +61,7 @@
         <i class="fa-solid fa-print mr-2"></i>
         Print All
       </button>
-      <button type="button" id="addNewBtn"
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow">
+      <button type="button" id="addNewBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow">
         + Add New
       </button>
     </div>
@@ -49,8 +76,10 @@
         <div class="relative">
           <input type="text" id="newName" placeholder="Search employee..."
             class="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500" />
-          <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <input type="hidden" id="newNameId" />
@@ -68,15 +97,15 @@
         <select id="newMonth"
           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
           <option value="">-- Select Month --</option>
-          <option value="01">January</option>
-          <option value="02">February</option>
-          <option value="03">March</option>
-          <option value="04">April</option>
-          <option value="05">May</option>
-          <option value="06">June</option>
-          <option value="07">July</option>
-          <option value="08">August</option>
-          <option value="09">September</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
           <option value="10">October</option>
           <option value="11">November</option>
           <option value="12">December</option>
@@ -114,8 +143,10 @@
       <div class="relative w-full lg:w-1/2 md:w-1/2">
         <input type="text" id="docName" placeholder="Search employee..."
           class="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500" />
-        <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
       <input type="hidden" id="docNameId" />
@@ -134,18 +165,18 @@
         </div>
         <div>
           <label for="docMonth" class="block text-sm font-medium text-gray-700">Month</label>
-          <select id="docMonth"  placeholder="Month"
+          <select id="docMonth" placeholder="Month"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" disabled>
             <option value="">-- Select Month --</option>
-            <option value="01">January</option>
-            <option value="02">February</option>
-            <option value="03">March</option>
-            <option value="04">April</option>
-            <option value="05">May</option>
-            <option value="06">June</option>
-            <option value="07">July</option>
-            <option value="08">August</option>
-            <option value="09">September</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
             <option value="10">October</option>
             <option value="11">November</option>
             <option value="12">December</option>
@@ -167,7 +198,7 @@
       <div class="flex justify-end space-x-2 pt-4">
         <!-- View Mode Buttons -->
         <!-- Clear Button for Main Form -->
-        
+
 
 
         <div id="viewButtons" class="flex space-x-4">
@@ -203,672 +234,668 @@
 </div>
 
 <!-- Success Modal -->
-<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+<div id="successModal"
+  class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
   <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
-      <div id="loadingSpinner" class="flex justify-center mb-4">
-          <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <div id="loadingSpinner" class="flex justify-center mb-4">
+      <div class="relative w-10 h-10">
+        <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+        <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+        <div
+          class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2">
+        </div>
       </div>
-      <div id="successTick" class="hidden flex justify-center mb-4">
-          <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-          </div>
+    </div>
+    <div id="successTick" class="hidden flex justify-center mb-4">
+      <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
       </div>
-      <div id="errorIcon" class="hidden flex justify-center mb-4">
-          <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-          </div>
+    </div>
+    <div id="errorIcon" class="hidden flex justify-center mb-4">
+      <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
       </div>
-      <p id="successMessage" class="text-gray-700 font-medium">Processing...</p>
+    </div>
+    <p id="successMessage" class="text-gray-700 font-medium">Processing...</p>
   </div>
 </div>
 
 
 <script>
   const auth = window.authService;
-(function () {
-  const API_BASE = '/documentation';
+  (function () {
+    const API_BASE = '/documentation';
 
-  function getAuthToken() {
-    return localStorage.getItem('token')
-  }
+    function getAuthToken() {
+      return localStorage.getItem('token');
+    }
 
-  // State management
-  let isEditing = false;
-  let originalData = {};
-  let allEmployees = [];
-  let allDocumentation = [];
+    let isEditing = false;
+    let originalData = {};
+    let allEmployees = [];
+    let allDocumentation = [];
+    let currentPickerRecords = null;
+    let currentRecordId = null;
 
-  // Month mapping for converting 2-digit format to full names
-  const monthMap = {
-    '01': 'January', '02': 'February', '03': 'March', '04': 'April',
-    '05': 'May', '06': 'June', '07': 'July', '08': 'August',
-    '09': 'September', '10': 'October', '11': 'November', '12': 'December'
-  };
+    const monthMap = {
+      '1': 'January', '2': 'February', '3': 'March', '4': 'April',
+      '5': 'May', '6': 'June', '7': 'July', '8': 'August',
+      '9': 'September', '10': 'October', '11': 'November', '12': 'December'
+    };
 
-  // DOM elements
-  const docNameInput = document.getElementById("docName");
-  const docNameId = document.getElementById("docNameId");
-  const docNameDropdown = document.getElementById("docNameDropdown");
-  const docNameDropdownItems = document.getElementById("docNameDropdownItems");
-  const mainSelectContainer = document.getElementById("mainSelectContainer");
-  
-  const formFields = document.getElementById("formFields");
-  const addNewForm = document.getElementById("addNewForm");
-  const addNewBtn = document.getElementById("addNewBtn");
-  //const clearFormBtnContainer = document.getElementById("clearFormBtnContainer");
-  const viewButtons = document.getElementById("viewButtons");
-  const editButtons = document.getElementById("editButtons");
-  
-  // Modals
-  const confirmModal = document.getElementById("confirmModal");
-  const successModal = document.getElementById("successModal");
-  const loadingSpinner = document.getElementById("loadingSpinner");
-  const successTick = document.getElementById("successTick");
-  const errorIcon = document.getElementById("errorIcon");
-  const successMessage = document.getElementById("successMessage");
+    const docNameInput = document.getElementById("docName");
+    const docNameId = document.getElementById("docNameId");
+    const docNameDropdown = document.getElementById("docNameDropdown");
+    const docNameDropdownItems = document.getElementById("docNameDropdownItems");
+    const mainSelectContainer = document.getElementById("mainSelectContainer");
 
-  // New form elements
-  const newNameInput = document.getElementById("newName");
-  const newNameId = document.getElementById("newNameId");
-  const newNameDropdown = document.getElementById("newNameDropdown");
-  const newNameDropdownItems = document.getElementById("newNameDropdownItems");
+    const formFields = document.getElementById("formFields");
+    const addNewForm = document.getElementById("addNewForm");
+    const addNewBtn = document.getElementById("addNewBtn");
+    const viewButtons = document.getElementById("viewButtons");
+    const editButtons = document.getElementById("editButtons");
 
-  // Field elements
-  const docYear = document.getElementById("docYear");
-  const docMonth = document.getElementById("docMonth");
-  const docRef = document.getElementById("docRef");
-  const docComments = document.getElementById("docComments");
+    const successModal = document.getElementById("successModal");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const successTick = document.getElementById("successTick");
+    const errorIcon = document.getElementById("errorIcon");
+    const successMessage = document.getElementById("successMessage");
 
-  // API Functions
-  async function fetchEmployees() {
-    try {
-      const token = getAuthToken();
-      const response = await auth.fetchWithAuth('/personnel/employees-current', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const newNameInput = document.getElementById("newName");
+    const newNameId = document.getElementById("newNameId");
+    const newNameDropdown = document.getElementById("newNameDropdown");
+    const newNameDropdownItems = document.getElementById("newNameDropdownItems");
+
+    const docYear = document.getElementById("docYear");
+    const docMonth = document.getElementById("docMonth");
+    const docRef = document.getElementById("docRef");
+    const docComments = document.getElementById("docComments");
+
+    // ─── API ───────────────────────────────────────────────────────────────────
+
+    async function fetchEmployees() {
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth('/regno/employees', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+
+        if (result.data && Array.isArray(result.data)) {
+          allEmployees = result.data;
+          renderEmployeeDropdown(allEmployees, docNameDropdownItems);
+          renderEmployeeDropdown(allEmployees, newNameDropdownItems);
         }
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        allEmployees = result.data;
-        renderEmployeeDropdown(allEmployees, docNameDropdownItems);
-        renderEmployeeDropdown(allEmployees, newNameDropdownItems);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
       }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
     }
-  }
 
-  async function fetchDocumentation() {
-    try {
-      const token = getAuthToken();
-      const response = await auth.fetchWithAuth(API_BASE, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      allDocumentation = await response.json();
-    } catch (error) {
-      console.error('Error fetching documentation:', error);
-    }
-  }
-
-  async function loadDocumentation(doc_numb) {
-    try {
-      const token = getAuthToken();
-
-      // Slash handling
-      const pathSegment = `${doc_numb}`;
-      const encodedId = encodeURIComponent(pathSegment);
-      
-      const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      
-      if (data) {
-        docYear.value = data.doc_year || '';
-        docMonth.value = data.doc_month || '';       
-        docRef.value = data.doc_ref || '';
-        docComments.value = data.doc_remark || '';
-        
-        formFields.classList.remove("hidden");
-        //clearFormBtnContainer.classList.remove("hidden");
-        setViewMode();
+    async function fetchDocumentation() {
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth(API_BASE, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        allDocumentation = await response.json();
+      } catch (error) {
+        console.error('Error fetching documentation:', error);
       }
-    } catch (error) {
-      console.error('Error loading documentation:', error);
     }
-  }
 
-  async function createDocumentation(data) {
-    try {
-      const token = getAuthToken();
-      const response = await auth.fetchWithAuth(`${API_BASE}/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-      const result = await response.json();
-      
-      if (response.ok) {
-        showSuccessModal('Record created successfully!');
-        await fetchDocumentation();
-        return true;
-      } else {
-        showError(result.error || 'Failed to create record');
+    async function loadDocumentation(doc_numb) {
+      try {
+        const token = getAuthToken();
+        const encodedId = encodeURIComponent(doc_numb);
+
+        const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        // Support both array and single object responses
+        const records = Array.isArray(data) ? data : [data];
+
+        if (records.length > 1) {
+          currentPickerRecords = null; // Fresh load — reset picker state
+          showRecordPicker(records);
+        } else if (records.length === 1) {
+          currentPickerRecords = null; // Single record — no picker
+          fillForm(records[0]);
+        }
+
+      } catch (error) {
+        console.error('Error loading documentation:', error);
+      }
+    }
+
+    async function createDocumentation(data) {
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth(`${API_BASE}/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          showSuccessModal('Record created successfully!');
+          await fetchDocumentation();
+          return true;
+        } else {
+          showError(result.error || 'Failed to create record');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error creating documentation:', error);
+        showError('Error creating record');
         return false;
       }
-    } catch (error) {
-      console.error('Error creating documentation:', error);
-      showError('Error creating record');
-      return false;
     }
-  }
 
-  async function updateDocumentation(doc_numb, data) {
-    try {
-      const token = getAuthToken();
-
-      // Slash handling
-      const pathSegment = `${doc_numb}`;
-      const encodedId = encodeURIComponent(pathSegment);
-      
-      const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-      const result = await response.json();
-      
-      if (response.ok) {
-        showSuccessModal('Record updated successfully!');
-        await fetchDocumentation();
-        return true;
-      } else {
-        showError(result.error || 'Failed to update record');
+    async function updateDocumentation(id, data) {
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth(`${API_BASE}/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          showSuccessModal('Record updated successfully!');
+          await fetchDocumentation();
+          return true;
+        } else {
+          showError(result.error || 'Failed to update record');
+          return false;
+        }
+      } catch (error) {
+        showError('Error updating record');
         return false;
       }
-    } catch (error) {
-      console.error('Error updating documentation:', error);
-      showError('Error updating record');
-      return false;
     }
-  }
 
-  // UI Functions
-  function renderEmployeeDropdown(employees, containerElement) {
-    containerElement.innerHTML = '';
-    
-    // Filter employees based on which dropdown this is
-    let filteredEmployees = employees;
-    if (containerElement === docNameDropdownItems) {
-      // Main dropdown: only show employees with documentation records
-      filteredEmployees = employees.filter(emp => 
-        allDocumentation.some(doc => doc.doc_numb === emp.Empl_ID)
-      );
-    }
-    
-    filteredEmployees.forEach(emp => {
-      const div = document.createElement('div');
-      div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
-      div.setAttribute('data-value', emp.Empl_ID);
-      div.innerHTML = `
+    // ─── UI ────────────────────────────────────────────────────────────────────
+
+    function renderEmployeeDropdown(employees, containerElement) {
+      containerElement.innerHTML = '';
+
+      let filteredEmployees = employees;
+      if (containerElement === docNameDropdownItems) {
+        // Main dropdown: only show employees who have at least one documentation record
+        filteredEmployees = employees.filter(emp =>
+          allDocumentation.some(doc => doc.doc_numb === emp.Empl_ID)
+        );
+      }
+      // Add New dropdown: show all employees, no prefill
+
+      filteredEmployees.forEach(emp => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
+        div.setAttribute('data-value', emp.Empl_ID);
+        div.innerHTML = `
         <span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}
       `;
-      
-      div.addEventListener('click', function() {
-        const value = this.getAttribute('data-value');
-        const text = this.textContent.trim();
-        
-        if (containerElement === docNameDropdownItems) {
-          docNameInput.value = text;
-          docNameId.value = value;
-          docNameDropdown.classList.add('hidden');
-          loadDocumentation(value);
-        } else {
-          newNameInput.value = text;
-          newNameId.value = value;
-          newNameDropdown.classList.add('hidden');
-          prefillNewFormIfExists(value);
-        }
+
+        div.addEventListener('click', function () {
+          const value = this.getAttribute('data-value');
+          const text = this.textContent.trim();
+
+          if (containerElement === docNameDropdownItems) {
+            docNameInput.value = text;
+            docNameId.value = value;
+            docNameDropdown.classList.add('hidden');
+            loadDocumentation(value);
+          } else {
+            // Add New dropdown — always blank, no prefill
+            newNameInput.value = text;
+            newNameId.value = value;
+            newNameDropdown.classList.add('hidden');
+          }
+        });
+
+        containerElement.appendChild(div);
       });
-      
-      containerElement.appendChild(div);
-    });
-  }
-  
-  function prefillNewFormIfExists(emplId) {
-    const existingDoc = allDocumentation.find(doc => doc.doc_numb === emplId);
-    
-    if (existingDoc) {
-      document.getElementById("newYear").value = existingDoc.doc_year || '';
-      document.getElementById("newMonth").value = existingDoc.doc_month || '';
-      document.getElementById("newRef").value = existingDoc.doc_ref || '';
-      document.getElementById("newComments").value = existingDoc.doc_remark || '';
-    } else {
-      // Clear fields if no existing record
-      document.getElementById("newYear").value = '';
-      document.getElementById("newMonth").value = '';
-      document.getElementById("newRef").value = '';
-      document.getElementById("newComments").value = '';
     }
-  }
 
-  function filterDropdown(searchText, dropdownItems) {
-    const items = dropdownItems.querySelectorAll('.dropdown-item');
-    
-    items.forEach(item => {
-      const text = item.textContent.toLowerCase();
-      const shouldShow = text.includes(searchText.toLowerCase());
-      item.style.display = shouldShow ? 'block' : 'none';
-    });
-  }
+    function fillForm(record) {
+      currentRecordId = record.id;
+      docYear.value = record.doc_year || '';
+      docMonth.value = record.doc_month || '';
+      docRef.value = record.doc_ref || '';
+      docComments.value = record.doc_remark || '';
 
-  function setViewMode() {
-    isEditing = false;
-    viewButtons.classList.remove("hidden");
-    editButtons.classList.add("hidden");
-    
-    docYear.readOnly = true;
-    docMonth.disabled = true;
-    docRef.readOnly = true;
-    docComments.readOnly = true;
-    
-    [docYear, docMonth, docRef, docComments].forEach(field => {
-      field.classList.remove("bg-yellow-50", "border-yellow-300");
-    });
-  }
+      // Store current record's ref for update tracking
+      docNameId.dataset.currentRef = record.doc_ref || '';
 
-  function setEditMode() {
-    isEditing = true;
-    
-    originalData = {
-      year: docYear.value,
-      month: docMonth.value,
-      ref: docRef.value,
-      comments: docComments.value
-    };
-    
-    viewButtons.classList.add("hidden");
-    editButtons.classList.remove("hidden");
-    
-    docYear.readOnly = false;
-    docMonth.disabled = false;
-    docRef.readOnly = false;
-    docComments.readOnly = false;
-    
-    [docYear, docMonth, docRef, docComments].forEach(field => {
-      field.classList.add("bg-yellow-50", "border-yellow-300");
-    });
-  }
+      // Properly hide picker instead of display:none
+      const picker = document.getElementById("recordPickerList");
+      if (picker) picker.style.display = 'none';
 
-  async function saveChanges() {
-    const data = {
-      doc_year: docYear.value,
-      doc_month: docMonth.value,
-      doc_ref: docRef.value,
-      doc_remark: docComments.value
-    };
-    
-    const success = await updateDocumentation(docNameId.value, data);
-    if (success) {
-      setTimeout(() => {
-        setViewMode();
-      }, 2000);
+      formFields.classList.remove("hidden");
+      setViewMode();
     }
-  }
 
-  function cancelEdit() {
-    docYear.value = originalData.year;
-    docMonth.value = originalData.month;
-    docRef.value = originalData.ref;
-    docComments.value = originalData.comments;
-    
-    setViewMode();
-  }
+    function showRecordPicker(records) {
+      // Always hide form fields first
+      formFields.classList.add("hidden");
+      editButtons.classList.add("hidden");
+      viewButtons.classList.remove("hidden");
 
-  function clearMainForm() {
-    docNameInput.value = "";
-    docNameId.value = "";
-    docYear.value = "";
-    docMonth.value = "";
-    docRef.value = "";
-    docComments.value = "";
-    formFields.classList.add("hidden");
-    //clearFormBtnContainer.classList.add("hidden");
-    isEditing = false;
-  }
+      const existing = document.getElementById("recordPickerList");
+      if (existing) existing.remove();
 
-  async function saveNewRecord() {
-    const doc_numb = newNameId.value;
-    const doc_year = document.getElementById("newYear").value;
-    const doc_month = document.getElementById("newMonth").value;
-    const doc_ref = document.getElementById("newRef").value;
-    const doc_remark = document.getElementById("newComments").value;
-    
-    if (!doc_numb || !doc_year || !doc_month || !doc_ref) {
-      showError("Please fill in all required fields");
-      return;
+      currentPickerRecords = records;
+
+      const picker = document.createElement("div");
+      picker.id = "recordPickerList";
+
+      const inputWidth = mainSelectContainer.querySelector('.relative').offsetWidth;
+      picker.style.width = inputWidth + 'px';
+      picker.className = "mt-4 border border-gray-200 rounded-lg overflow-hidden";
+
+      picker.innerHTML = `
+        <div class="bg-blue-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+          <p class="text-sm font-semibold text-blue-700">
+            ${records.length} records found — select one to view or edit
+          </p>
+          <button id="printPersonRecordsBtn" type="button"
+            class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded shadow flex items-center gap-1">
+            <i class="fas fa-print"></i> Print All
+          </button>
+        </div>
+        <div class="divide-y divide-gray-100">
+          ${records.map((rec, i) => `
+            <div
+              class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors record-pick-item"
+              data-index="${i}">
+              <div class="text-sm">
+                <span class="font-semibold text-gray-800">${rec.doc_ref || '—'}</span>
+                <span class="text-gray-500 ml-3">
+                  ${monthMap[rec.doc_month] || rec.doc_month || '—'} ${rec.doc_year || ''}
+                </span>
+              </div>
+              <div class="text-xs text-gray-400 truncate max-w-xs">${rec.doc_remark || ''}</div>
+              <i class="fas fa-chevron-right text-gray-400 text-xs ml-4"></i>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      mainSelectContainer.insertAdjacentElement("afterend", picker);
+
+      // Fix 1: stopPropagation prevents bubbling that causes section refresh
+      document.getElementById("printPersonRecordsBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        printPersonRecords(records);
+      });
+
+      picker.querySelectorAll(".record-pick-item").forEach(item => {
+        item.addEventListener("click", function (e) {
+          e.stopPropagation();
+          const index = parseInt(this.dataset.index);
+          picker.style.display = 'none';
+          fillForm(records[index]);
+        });
+      });
     }
-    
-    const data = {
-      doc_numb,
-      doc_year,
-      doc_month,
-      doc_ref,
-      doc_remark
-    };
-    
-    const success = await createDocumentation(data);
-    if (success) {
-      setTimeout(() => {
-        cancelNew();
-      }, 2000);
+
+    function filterDropdown(searchText, dropdownItems) {
+      const items = dropdownItems.querySelectorAll('.dropdown-item');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchText.toLowerCase()) ? 'block' : 'none';
+      });
     }
-  }
 
-  function cancelNew() {
-    addNewForm.classList.add("hidden");
-    mainSelectContainer.classList.remove("hidden");
-    clearNewFields();
-  }
+    function setViewMode() {
+      isEditing = false;
+      viewButtons.classList.remove("hidden");
+      editButtons.classList.add("hidden");
 
-  function clearNewFields() {
-    newNameInput.value = "";
-    newNameId.value = "";
-    document.getElementById("newYear").value = "";
-    document.getElementById("newMonth").value = "";
-    document.getElementById("newRef").value = "";
-    document.getElementById("newComments").value = "";
-  }
+      docYear.readOnly = true;
+      docMonth.disabled = true;
+      docRef.readOnly = true;
+      docComments.readOnly = true;
 
-  function showSuccessModal(message, isError = false) {
-    successMessage.textContent = "Processing...";
-    loadingSpinner.classList.remove("hidden");
-    successTick.classList.add("hidden");
-    errorIcon.classList.add("hidden");
-    successModal.classList.remove("hidden");
+      [docYear, docMonth, docRef, docComments].forEach(field => {
+        field.classList.remove("bg-yellow-50", "border-yellow-300");
+      });
+    }
 
-    setTimeout(() => {
-      loadingSpinner.classList.add("hidden");
-      
-      if (isError) {
-        errorIcon.classList.remove("hidden");
-      } else {
-        successTick.classList.remove("hidden");
+    function setEditMode() {
+      isEditing = true;
+
+      originalData = {
+        year: docYear.value,
+        month: docMonth.value,
+        ref: docRef.value,
+        comments: docComments.value
+      };
+
+      viewButtons.classList.add("hidden");
+      editButtons.classList.remove("hidden");
+
+      docYear.readOnly = false;
+      docMonth.disabled = false;
+      docRef.readOnly = false;
+      docComments.readOnly = false;
+
+      [docYear, docMonth, docRef, docComments].forEach(field => {
+        field.classList.add("bg-yellow-50", "border-yellow-300");
+      });
+    }
+
+    async function saveChanges() {
+      const data = {
+        doc_year: docYear.value,
+        doc_month: docMonth.value,
+        doc_ref: docRef.value,
+        doc_remark: docComments.value
+      };
+
+      const success = await updateDocumentation(currentRecordId, data);
+      if (success) {
+        setTimeout(() => {
+          setViewMode(); // Always return to view mode after save
+        }, 2000);
       }
-      
-      successMessage.textContent = message;
-      
-      setTimeout(() => {
-        successModal.classList.add("hidden");
-      }, 2000);
-    }, 1000);
-  }
-
-  function showError(message) {
-    showSuccessModal(message, true);
-  }
-
-function printSelected() {
-    if (!docNameId.value) {
-      showError("Please select an employee first");
-      return;
     }
-    
-    const selectedEmployee = allEmployees.find(e => e.Empl_ID === docNameId.value);
-    if (!selectedEmployee) return;
-    
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    const generatedBy = localStorage.getItem('full_name') || 'System User';
-    
-    const printWindow = window.open('', '_blank');
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
-          <style>
-            @page { 
-              size: A4 portrait; 
-              margin: 0.5mm; 
-              background-color: #f8fbff;
-            }
-            
-            body { 
-              font-family: Helvetica, Arial, sans-serif; 
-              font-size: 10pt;
-              margin: 40px;
-              position: relative;
-              color: #333;
-            }
 
-            /* Faint logo overlay */
-            body::before {
-              content: "";
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background-image: url('photos/logo.png');
-              background-size: auto 100%;
-              background-repeat: no-repeat;
-              background-position: center center;
-              opacity: 0.02;
-              z-index: -1;
-              pointer-events: none;
-            }
-
-            .header-wrapper {
-              display: flex;
-              align-items: flex-start;
-              margin-bottom: 8px;
-              border-bottom: 2px solid #1a1a1a;
-              padding-bottom: 5px;
-            }
-
-            .header {
-              flex-grow: 1;
-              text-align: center;
-            }
-            
-            .header h1 {
-              font-size: 13pt;
-              font-weight: bold;
-              margin-bottom: 2px;
-              letter-spacing: 1.5px;
-              color: #1e40af;
-              font-family: 'Libre Baskerville', Georgia, serif;
-            }
-            
-            .header h2 {
-              font-size: 10pt;
-              font-weight: normal;
-              margin-top: 2px;
-              color: #4a4a4a;
-              font-family: 'Libre Baskerville', Georgia, serif;
-            }
-
-            .header-info {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin: 10px 0 20px 0;
-              font-size: 9pt;
-            }
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-              font-size: 10pt;
-            }
-
-            th {
-              color: #1e40af;
-              padding: 12px 8px;
-              text-align: left;
-              font-weight: bold;
-              font-size: 10pt;
-              text-transform: uppercase;
-              letter-spacing: 0.3px;
-              border-bottom: 1px solid #0056A0;
-              width: 30%;
-            }
-
-            td {
-              padding: 12px 8px;
-              border: none;
-              vertical-align: middle;
-              border-bottom: 0.5px solid #e5e7eb;
-            }
-
-            .footer {
-              padding-top: 10px;
-              border-top: 0.5px solid #1a1a1a;
-              text-align: center;
-              font-size: 8pt;
-              color: #64748b;
-              margin-top: 30px;
-            }
-
-            @media print {
-              body {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-              }
-              
-              body::before {
-                position: fixed;
-                display: block;
-                content: "";
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                background-image: url('photos/logo.png');
-                background-size: auto 100%;
-                background-repeat: no-repeat;
-                background-position: center center;
-                opacity: 0.02;
-                z-index: -1;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-wrapper">
-            <div class="header">
-              <h1>Nigerian Navy (Naval Headquarters)</h1>
-              <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-            </div>
-          </div>
-
-          <div class="header-info">
-            <div class="left">
-              <strong>DOCUMENTATION RECORD</strong>
-            </div>
-            <div class="center">
-              <span>PRODUCED ON</span> 
-              <strong>${dateStr}</strong> 
-              <span>AT</span> 
-              <strong>${timeStr}</strong>
-            </div>
-            <div class="right">
-              <strong>SINGLE RECORD</strong>
-            </div>
-          </div>
-
-          <table>
-            <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
-            <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
-            <tr><th>Year</th><td>${docYear.value}</td></tr>
-            <tr><th>Month</th><td>${docMonth.value}</td></tr>
-            <tr><th>Reference No</th><td>${docRef.value}</td></tr>
-            <tr><th>Comments</th><td>${docComments.value}</td></tr>
-          </table>
-
-          <div class="footer">
-            <p>Generated by: ${generatedBy}</p>
-            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    
-    printWindow.onload = function() {
-      printWindow.print();
-    };
-  }
-
-  function printAll() {
-    if (allDocumentation.length === 0) {
-      showError("No records to print");
-      return;
+    function cancelEdit() {
+      docYear.value = originalData.year;
+      docMonth.value = originalData.month;
+      docRef.value = originalData.ref;
+      docComments.value = originalData.comments;
+      setViewMode(); // Always return to view mode on cancel
     }
-    
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    const generatedBy = localStorage.getItem('full_name') || 'System User';
-    
-    const printWindow = window.open('', '_blank');
-    let tableRows = '';
-    
-    allDocumentation.forEach(doc => {
-      const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
-      const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
-      
-      let monthValue = doc.doc_month || '';
-      if (monthValue.length === 2 && monthMap[monthValue]) {
-        monthValue = monthMap[monthValue];
+
+    function clearMainForm() {
+      // Coming from picker — go back to picker
+      if (currentPickerRecords) {
+        formFields.classList.add("hidden");
+        editButtons.classList.add("hidden");
+        viewButtons.classList.remove("hidden");
+        currentRecordId = null;
+
+        const picker = document.getElementById("recordPickerList");
+        if (picker) {
+          picker.style.display = 'block';
+        } else {
+          showRecordPicker(currentPickerRecords);
+        }
+        return;
       }
-      
-      tableRows += `
+
+      // No picker — full clear
+      docNameInput.value = "";
+      docNameId.value = "";
+      docNameId.dataset.currentRef = "";
+      docYear.value = "";
+      docMonth.value = "";
+      docRef.value = "";
+      docComments.value = "";
+      formFields.classList.add("hidden");
+      isEditing = false;
+      currentPickerRecords = null;
+      currentRecordId = null;
+
+      const picker = document.getElementById("recordPickerList");
+      if (picker) picker.remove();
+    }
+
+    async function saveNewRecord() {
+      const doc_numb = newNameId.value;
+      const doc_year = document.getElementById("newYear").value;
+      const doc_month = document.getElementById("newMonth").value;
+      const doc_ref = document.getElementById("newRef").value;
+      const doc_remark = document.getElementById("newComments").value;
+
+      if (!doc_numb || !doc_year || !doc_month || !doc_ref) {
+        showError("Please fill in all required fields");
+        return;
+      }
+
+      // Check if identical record already exists
+      const existingRecord = allDocumentation.find(doc =>
+        doc.doc_numb === doc_numb &&
+        doc.doc_year === doc_year &&
+        doc.doc_month === doc_month &&
+        doc.doc_ref === doc_ref &&
+        (doc.doc_remark || '') === (doc_remark || '')
+      );
+
+      if (existingRecord) {
+        showError("No changes made — this record already exists.");
+        setTimeout(() => cancelNew(), 2000);
+        return;
+      }
+
+      const data = { doc_numb, doc_year, doc_month, doc_ref, doc_remark };
+
+      const success = await createDocumentation(data);
+      if (success) {
+        setTimeout(() => cancelNew(), 2000);
+      }
+    }
+
+    function cancelNew() {
+      addNewForm.classList.add("hidden");
+      mainSelectContainer.classList.remove("hidden");
+      clearNewFields();
+    }
+
+    function clearNewFields() {
+      newNameInput.value = "";
+      newNameId.value = "";
+      document.getElementById("newYear").value = "";
+      document.getElementById("newMonth").value = "";
+      document.getElementById("newRef").value = "";
+      document.getElementById("newComments").value = "";
+    }
+
+    function showSuccessModal(message, isError = false) {
+      successMessage.textContent = "Processing...";
+      loadingSpinner.classList.remove("hidden");
+      successTick.classList.add("hidden");
+      errorIcon.classList.add("hidden");
+      successModal.classList.remove("hidden");
+
+      setTimeout(() => {
+        loadingSpinner.classList.add("hidden");
+        if (isError) {
+          errorIcon.classList.remove("hidden");
+        } else {
+          successTick.classList.remove("hidden");
+        }
+        successMessage.textContent = message;
+
+        setTimeout(() => {
+          successModal.classList.add("hidden");
+        }, 2000);
+      }, 1000);
+    }
+
+    function showError(message) {
+      showSuccessModal(message, true);
+    }
+
+    // ─── PRINT ─────────────────────────────────────────────────────────────────
+
+    // Print single record (from the main "Print" button)
+    function printSelected() {
+      if (!docNameId.value) {
+        showError("Please select an employee first");
+        return;
+      }
+
+      const selectedEmployee = allEmployees.find(e => e.Empl_ID === docNameId.value);
+      if (!selectedEmployee) return;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const generatedBy = localStorage.getItem('full_name') || 'System User';
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+      <!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
+      <style>
+        @page { size: A4 portrait; margin: 0.5mm; background-color: #f8fbff; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 40px; color: #333; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
+          background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+        .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
+        .header { flex-grow: 1; text-align: center; }
+        .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+        .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0; font-size: 9pt; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
+        th { color: #1e40af; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 10pt;
+          text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; width: 30%; }
+        td { padding: 12px 8px; border-bottom: 0.5px solid #e5e7eb; vertical-align: middle; }
+        .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 30px; }
+        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+      </style></head><body>
+      <div class="header-wrapper"><div class="header">
+        <h1>Nigerian Navy (Naval Headquarters)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+      </div></div>
+      <div class="header-info">
+        <div><strong>DOCUMENTATION RECORD</strong></div>
+        <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+        <div><strong>SINGLE RECORD</strong></div>
+      </div>
+      <table>
+        <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
+        <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
+        <tr><th>Year</th><td>${docYear.value}</td></tr>
+        <tr><th>Month</th><td>${docMonth.value}</td></tr>
+        <tr><th>Reference No</th><td>${docRef.value}</td></tr>
+        <tr><th>Comments</th><td>${docComments.value}</td></tr>
+      </table>
+      <div class="footer">
+        <p>Generated by: ${generatedBy}</p>
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+      </div>
+      </body></html>
+    `);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
+
+    // Print multiple records for the same person (from the picker)
+    function printPersonRecords(records) {
+      const employee = allEmployees.find(e => e.Empl_ID === docNameId.value);
+      if (!employee) return;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const generatedBy = localStorage.getItem('full_name') || 'System User';
+
+      const tableRows = records.map(rec => `
+        <tr>
+          <td>${rec.doc_year || ''}</td>
+          <td>${monthMap[rec.doc_month] || rec.doc_month || ''}</td>
+          <td>${rec.doc_ref || ''}</td>
+          <td>${rec.doc_remark || ''}</td>
+        </tr>
+      `).join('');
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Documentation - ${employee.Surname} ${employee.OtherName}</title>
+        <style>
+          @page { size: A4 portrait; margin: 10mm; }
+          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #333; }
+          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
+            background-position: center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
+          .header { flex-grow: 1; text-align: center; }
+          .header h1 { font-size: 13pt; font-weight: bold; color: #1e40af; font-family: Georgia, serif; margin-bottom: 2px; }
+          .header h2 { font-size: 10pt; font-weight: normal; color: #4a4a4a; font-family: Georgia, serif; margin-top: 2px; }
+          .header-info { display: flex; justify-content: space-between; margin: 10px 0 16px; font-size: 9pt; }
+          .employee-info { margin-bottom: 16px; font-size: 10pt; }
+          table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+          th { color: #1e40af; padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase;
+            border-bottom: 1px solid #0056A0; font-size: 9pt; }
+          td { padding: 8px; border-bottom: 0.5px solid #e5e7eb; }
+          .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 24px; }
+          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+        </style></head><body>
+        <div class="header-wrapper"><div class="header">
+          <h1>Nigerian Navy (Naval Headquarters)</h1>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        </div></div>
+        <div class="header-info">
+          <div><strong>DOCUMENTATION RECORDS</strong></div>
+          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+          <div><strong>${records.length}</strong> <span>RECORDS</span></div>
+        </div>
+        <div class="employee-info">
+          <strong>Service No:</strong> ${employee.Empl_ID} &nbsp;&nbsp;
+          <strong>Name:</strong> ${employee.Surname} ${employee.OtherName}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:10%;">Year</th>
+              <th style="width:15%;">Month</th>
+              <th style="width:20%;">Ref. No</th>
+              <th style="width:55%;">Comments</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <div class="footer">
+          <p>Generated by: ${generatedBy}</p>
+          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+        </div>
+        </body></html>
+      `);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
+
+    // Print all documentation records (from the main "Print All" button)
+    function printAll() {
+      if (allDocumentation.length === 0) {
+        showError("No records to print");
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const generatedBy = localStorage.getItem('full_name') || 'System User';
+
+      const tableRows = allDocumentation.map(doc => {
+        const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
+        const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
+        const monthValue = monthMap[doc.doc_month] || doc.doc_month || '';
+
+        return `
         <tr>
           <td><strong>${doc.doc_numb}</strong></td>
           <td style="white-space: nowrap;"><strong>${empName}</strong></td>
@@ -878,254 +905,112 @@ function printSelected() {
           <td>${doc.doc_remark || ''}</td>
         </tr>
       `;
+      }).join('');
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+      <!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>All Documentation Records</title>
+      <style>
+        @page { size: A4; margin: 5mm; background-color: #f8fbff; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; margin: 0; padding: 0; color: #333; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
+          background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+        .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
+        .header { flex-grow: 1; text-align: center; }
+        .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+        .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-size: 9pt; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+        th { color: #1e40af; padding: 8px 4px; text-align: left; font-weight: bold; font-size: 12px;
+          text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; }
+        td { padding: 6px 4px; border: none; vertical-align: middle; }
+        .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 20px; }
+        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+      </style></head><body>
+      <div class="header-wrapper"><div class="header">
+        <h1>Nigerian Navy (Naval Headquarters)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+      </div></div>
+      <div class="header-info">
+        <div><strong>DOCUMENTATION RECORDS</strong></div>
+        <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+        <div><strong>${allDocumentation.length}</strong> <span>RECORDS</span></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:12%;">Service No</th>
+            <th style="width:25%;">Name</th>
+            <th style="width:8%;">Year</th>
+            <th style="width:10%;">Month</th>
+            <th style="width:15%;">Ref. No</th>
+            <th style="width:30%;">Comments</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+      <div class="footer"><p>All rights reserved &#xA9; Hicad Systems Limited.</p></div>
+      </body></html>
+    `);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
+
+    // ─── EVENT LISTENERS ───────────────────────────────────────────────────────
+
+    addNewBtn.addEventListener("click", function () {
+      formFields.classList.add("hidden");
+      addNewForm.classList.remove("hidden");
+      mainSelectContainer.classList.add("hidden");
+      docNameInput.value = "";
+      docNameId.value = "";
+      const picker = document.getElementById("recordPickerList");
+      if (picker) picker.remove();
+      clearNewFields();
     });
-    
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>All Documentation Records</title>
-          <style>
-            @page { 
-              size: A4 ; 
-              margin: 5mm; 
-              background-color: #f8fbff;
-            }
-            
-            body { 
-              font-family: Helvetica, Arial, sans-serif; 
-              font-size: 9pt;
-              margin: 0;
-              padding: 0;
-              position: relative;
-              color: #333;
-            }
 
-            /* Faint logo overlay */
-            body::before {
-              content: "";
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background-image: url('photos/logo.png');
-              background-size: auto 100%;
-              background-repeat: no-repeat;
-              background-position: center center;
-              opacity: 0.02;
-              z-index: -1;
-              pointer-events: none;
-            }
+    document.getElementById("clearBtn").addEventListener("click", clearMainForm);
+    document.getElementById("editBtn").addEventListener("click", setEditMode);
+    document.getElementById("saveBtn").addEventListener("click", saveChanges);
+    document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
+    document.getElementById("saveNewBtn").addEventListener("click", saveNewRecord);
+    document.getElementById("cancelNewBtn").addEventListener("click", cancelNew);
+    document.getElementById("printBtn").addEventListener("click", printSelected);
+    document.getElementById("printAllBtn").addEventListener("click", printAll);
 
-            .header-wrapper {
-              display: flex;
-              align-items: flex-start;
-              margin-bottom: 8px;
-              border-bottom: 2px solid #1a1a1a;
-              padding-bottom: 5px;
-            }
+    docNameInput.addEventListener('focus', () => docNameDropdown.classList.remove('hidden'));
+    docNameInput.addEventListener('input', function () {
+      filterDropdown(this.value, docNameDropdownItems);
+      docNameDropdown.classList.remove('hidden');
+    });
 
-            .header {
-              flex-grow: 1;
-              text-align: center;
-            }
-            
-            .header h1 {
-              font-size: 13pt;
-              font-weight: bold;
-              margin-bottom: 2px;
-              letter-spacing: 1.5px;
-              color: #1e40af;
-              font-family: 'Libre Baskerville', Georgia, serif;
-            }
-            
-            .header h2 {
-              font-size: 10pt;
-              font-weight: normal;
-              margin-top: 2px;
-              color: #4a4a4a;
-              font-family: 'Libre Baskerville', Georgia, serif;
-            }
+    newNameInput.addEventListener('focus', () => newNameDropdown.classList.remove('hidden'));
+    newNameInput.addEventListener('input', function () {
+      filterDropdown(this.value, newNameDropdownItems);
+      newNameDropdown.classList.remove('hidden');
+    });
 
-            .header-info {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin: 10px 0;
-              font-size: 9pt;
-            }
+    document.addEventListener('click', function (e) {
+      if (!docNameInput.contains(e.target) && !docNameDropdown.contains(e.target)) {
+        docNameDropdown.classList.add('hidden');
+      }
+      if (!newNameInput.contains(e.target) && !newNameDropdown.contains(e.target)) {
+        newNameDropdown.classList.add('hidden');
+      }
+    });
 
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
-              font-size: 11px;
-            }
+    // ─── INIT ──────────────────────────────────────────────────────────────────
 
-            th {
-              color: #1e40af;
-              padding: 8px 4px;
-              text-align: left;
-              font-weight: bold;
-              font-size: 12px;
-              text-transform: uppercase;
-              letter-spacing: 0.3px;
-              border-bottom: 1px solid #0056A0;
-            }
+    fetchDocumentation();
+    fetchEmployees();
 
-            td {
-              padding: 6px 4px;
-              border: none;
-              vertical-align: middle;
-            }
+    // Hide quick nav buttons user has no access to
+    document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
+      const menuKey = btn.id.replace('quickNav-', '');
+      window.checkMenuAccess(menuKey, btn);
+    });
 
-            .text-center {
-              text-align: center;
-            }
-
-            .footer {
-              padding-top: 10px;
-              border-top: 0.5px solid #1a1a1a;
-              text-align: center;
-              font-size: 8pt;
-              color: #64748b;
-              margin-top: 20px;
-            }
-
-            @media print {
-              body {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-              }
-              
-              body::before {
-                position: fixed;
-                display: block;
-                content: "";
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                background-image: url('photos/logo.png');
-                background-size: auto 100%;
-                background-repeat: no-repeat;
-                background-position: center center;
-                opacity: 0.02;
-                z-index: -1;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-wrapper">
-            <div class="header">
-              <h1>Nigerian Navy (Naval Headquarters)</h1>
-              <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-            </div>
-          </div>
-
-          <div class="header-info">
-            <div class="left">
-              <strong>DOCUMENTATION RECORDS</strong>
-            </div>
-            <div class="center">
-              <span>PRODUCED ON</span> 
-              <strong>${dateStr}</strong> 
-              <span>AT</span> 
-              <strong>${timeStr}</strong>
-            </div>
-            <div class="right">
-              <strong>${allDocumentation.length}</strong>
-              <span>RECORDS</span>
-            </div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 12%;">Service No</th>
-                <th style="width: 25%;">Name</th>
-                <th style="width: 8%;">Year</th>
-                <th style="width: 10%;">Month</th>
-                <th style="width: 15%;">Ref. No</th>
-                <th style="width: 30%;">Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-
-          <div class="footer">
-            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    
-    printWindow.onload = function() {
-      printWindow.print();
-    };
-  }
-
-  // Event Listeners
-  addNewBtn.addEventListener("click", function () {
-    formFields.classList.add("hidden");
-    //clearFormBtnContainer.classList.add("hidden");
-    addNewForm.classList.remove("hidden");
-    mainSelectContainer.classList.add("hidden");
-    docNameInput.value = "";
-    docNameId.value = "";
-    clearNewFields();
-  });
-
-  document.getElementById("clearBtn").addEventListener("click", clearMainForm);
-  document.getElementById("editBtn").addEventListener("click", setEditMode);
-  document.getElementById("saveBtn").addEventListener("click", saveChanges);
-  document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
-  document.getElementById("saveNewBtn").addEventListener("click", saveNewRecord);
-  document.getElementById("cancelNewBtn").addEventListener("click", cancelNew);
-  document.getElementById("printBtn").addEventListener("click", printSelected);
-  document.getElementById("printAllBtn").addEventListener("click", printAll);
-
-  // Dropdown listeners for main form
-  docNameInput.addEventListener('focus', () => {
-    docNameDropdown.classList.remove('hidden');
-  });
-
-  docNameInput.addEventListener('input', function() {
-    filterDropdown(this.value, docNameDropdownItems);
-    docNameDropdown.classList.remove('hidden');
-  });
-
-  // Dropdown listeners for new form
-  newNameInput.addEventListener('focus', () => {
-    newNameDropdown.classList.remove('hidden');
-  });
-
-  newNameInput.addEventListener('input', function() {
-    filterDropdown(this.value, newNameDropdownItems);
-    newNameDropdown.classList.remove('hidden');
-  });
-
-  // Close dropdowns on outside click
-  document.addEventListener('click', function(e) {
-    if (!docNameInput.contains(e.target) && !docNameDropdown.contains(e.target)) {
-      docNameDropdown.classList.add('hidden');
-    }
-    if (!newNameInput.contains(e.target) && !newNameDropdown.contains(e.target)) {
-      newNameDropdown.classList.add('hidden');
-    }
-  });
-
-  // Initialize
-  fetchDocumentation();
-  fetchEmployees();
-
-})();
+  })();
 </script>

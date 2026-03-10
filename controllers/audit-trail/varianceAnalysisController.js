@@ -6,6 +6,7 @@ const ExcelJS = require('exceljs');
 //const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
+const pool = require('../../config/db');
 
 class VarianceAnalysisController extends BaseReportController {
 

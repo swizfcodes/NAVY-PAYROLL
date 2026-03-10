@@ -537,7 +537,7 @@ window.viewRow = function(index) {
   const item = filteredData[index];
   let html = `
     <div class="mb-4">
-      <h4 class="text-lg font-semibold">Description: ${getElmDesc(item.one_type)}</h4>
+      <h4 class="text-lg font-semibold">Description: ${getElmDesc(item.one_type)} (${item.one_type})</h4>
     </div>
     <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -1068,7 +1068,7 @@ function generateReport() {
           ${data.map(item => `
               <div class="element-section">
                   <div class="element-title">
-                      ${getElmDesc(item.one_type)}
+                    ${item.one_type} - ${getElmDesc(item.one_type)}
                   </div>
                   
                   ${Object.entries(rankGroups).map(([groupName, ranks]) => `

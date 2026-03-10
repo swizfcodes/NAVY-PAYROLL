@@ -1,4 +1,4 @@
-tailwind.config = {
+/*tailwind.config = {
   theme: {
     extend: {
       colors: {
@@ -6,7 +6,7 @@ tailwind.config = {
       },
     },
   },
-};
+};*/
 
 // Alert Modal System
 const AlertModal = {
@@ -151,7 +151,13 @@ document
         const message = document.getElementById("loginMessage");
 
         popup.classList.remove("hidden");
-        spinner.classList.remove("hidden");
+        spinner.innerHTML = `
+          <div class="relative w-10 h-10">
+            <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+            <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down"></div>
+            <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand -translate-y-1/2"></div>
+          </div>
+        `;
         message.textContent = "Logging you in...";
 
         setTimeout(() => {
@@ -358,7 +364,7 @@ const ForgotPasswordManager = {
     const data = {
       user_id: formData.get("user_id"),
       full_name: formData.get("full_name"),
-      email: formData.get("email"),
+      //email: formData.get("email"),
       primary_class: formData.get("primary_class") || undefined,
     };
 
@@ -378,7 +384,7 @@ const ForgotPasswordManager = {
         // Populate hidden fields in reset form
         document.getElementById("reset-user-id").value = data.user_id;
         document.getElementById("reset-full-name").value = data.full_name;
-        document.getElementById("reset-email").value = data.email;
+        //document.getElementById("reset-email").value = data.email;
         document.getElementById("reset-primary-class").value =
           data.primary_class || "";
 
@@ -437,7 +443,7 @@ const ForgotPasswordManager = {
     const data = {
       user_id: document.getElementById("reset-user-id").value,
       full_name: document.getElementById("reset-full-name").value,
-      email: document.getElementById("reset-email").value,
+      //email: document.getElementById("reset-email").value,
       primary_class:
         document.getElementById("reset-primary-class").value || undefined,
       new_password: password,

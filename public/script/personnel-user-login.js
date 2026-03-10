@@ -4,6 +4,17 @@
 // to personnel-user-login.html before </body>
 // ================================================
 
+// ========= TAILWIND CONFIG ============ //
+/*tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        navy: "#1e40af",
+      },
+    },
+  },
+};*/
+
 // Alert Modal System (same as personnel-login.js)
 const AlertModal = {
   modal: null,
@@ -103,7 +114,14 @@ document.getElementById('login-form').addEventListener('submit', async function(
       const message = document.getElementById("loginMessage");
 
       popup.classList.remove("hidden");
-      spinner.classList.remove("hidden");
+      spinner.innerHTML = `
+        <div class="relative w-10 h-10">
+          <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+          <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down"></div>
+          <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand -translate-y-1/2"></div>
+        </div>
+      `;
+
       message.textContent = "Logging you in...";
 
       setTimeout(() => {
@@ -162,3 +180,260 @@ togglePassword.addEventListener("click", () => {
   eyeOpen.style.display   = isPassword ? "none"   : "inline";
   eyeClosed.style.display = isPassword ? "inline" : "none";
 });
+
+
+// Forgot Password Link
+const isLocal = window.location.hostname === "localhost";
+const BASE_URL = isLocal ? "http://localhost:5500" : "https://hicad.ng";
+
+// Forgot Password Manager
+const ForgotPasswordManager = {
+  modal: null,
+  verifyStep: null,
+  resetStep: null,
+  successModal: null,
+  verifiedData: null,
+
+  init() {
+    this.modal = document.getElementById("forgotPasswordModal");
+    this.verifyStep = document.getElementById("verify-step");
+    this.resetStep = document.getElementById("reset-step");
+    this.successModal = document.getElementById("resetSuccessModal");
+
+    // Load payroll classes for verification
+    //this.loadPayrollClasses();
+
+    // Bind events
+    document
+      .getElementById("close-forgot-modal")
+      ?.addEventListener("click", () => this.close());
+    document
+      .getElementById("close-reset-modal")
+      ?.addEventListener("click", () => this.close());
+    document
+      .getElementById("cancel-verify-btn")
+      ?.addEventListener("click", () => this.close());
+    document
+      .getElementById("back-to-verify-btn")
+      ?.addEventListener("click", () => this.backToVerify());
+    document
+      .getElementById("close-success-modal")
+      ?.addEventListener("click", () => this.closeSuccess());
+
+    // Form submissions
+    document
+      .getElementById("verify-identity-form")
+      ?.addEventListener("submit", (e) => this.verifyIdentity(e));
+    document
+      .getElementById("reset-password-form")
+      ?.addEventListener("submit", (e) => this.resetPassword(e));
+
+    // Password matching validation
+    document
+      .getElementById("confirm-new-password")
+      ?.addEventListener("input", () => this.validatePasswordMatch());
+    document
+      .getElementById("new-password")
+      ?.addEventListener("input", () => this.validatePasswordMatch());
+
+    // Password toggle
+    document.querySelectorAll(".toggle-password-reset").forEach((toggle) => {
+      toggle.addEventListener("click", function () {
+        const targetId = this.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+
+        const eyeOpen = this.querySelector(".eye-open");
+        const eyeClosed = this.querySelector(".eye-closed");
+        if (eyeOpen && eyeClosed) {
+          eyeOpen.style.display = isPassword ? "none" : "inline";
+          eyeClosed.style.display = isPassword ? "inline" : "none";
+        }
+      });
+    });
+  },
+
+  open() {
+    this.modal.classList.remove("hidden");
+    this.verifyStep.classList.remove("hidden");
+    this.resetStep.classList.add("hidden");
+    document.body.style.overflow = "hidden";
+
+    // Reset forms
+    document.getElementById("verify-identity-form")?.reset();
+    document.getElementById("reset-password-form")?.reset();
+  },
+
+  close() {
+    this.modal.classList.add("hidden");
+    document.body.style.overflow = "";
+    this.verifiedData = null;
+  },
+
+  closeSuccess() {
+    this.successModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  },
+
+  backToVerify() {
+    this.verifyStep.classList.remove("hidden");
+    this.resetStep.classList.add("hidden");
+  },
+
+  validatePasswordMatch() {
+    const password = document.getElementById("new-password")?.value || "";
+    const confirm =
+      document.getElementById("confirm-new-password")?.value || "";
+    const msg = document.getElementById("password-match-msg");
+
+    if (!msg) return true;
+
+    if (confirm === "") {
+      msg.textContent = "";
+      msg.className = "text-xs";
+      return true;
+    }
+
+    if (password === confirm) {
+      msg.textContent = "✓ Passwords match";
+      msg.className = "text-xs text-green-600";
+      return true;
+    } else {
+      msg.textContent = "✗ Passwords do not match";
+      msg.className = "text-xs text-red-600";
+      return false;
+    }
+  },
+
+  async verifyIdentity(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById("verify-btn");
+    btn.disabled = true;
+    btn.textContent = "Verifying...";
+
+    const formData = new FormData(e.target);
+    const data = {
+      user_id: formData.get("user_id"),
+      full_name: formData.get("full_name"),
+    };
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/users/pre-login/verify-identity`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        this.verifiedData = data;
+
+        document.getElementById("reset-user-id").value = data.user_id;
+        document.getElementById("reset-full-name").value = data.full_name;
+
+        this.verifyStep.classList.add("hidden");
+        this.resetStep.classList.remove("hidden");
+      } else {
+        await AlertModal.show({
+          type: "error",
+          title: "Verification Failed",
+          message: result.error || "Identity verification failed",
+        });
+      }
+    } catch (err) {
+      console.error("Verification error:", err);
+      await AlertModal.show({
+        type: "error",
+        title: "Connection Error",
+        message: "Failed to connect to server. Please try again.",
+      });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Verify Identity";
+    }
+  },
+
+  async resetPassword(e) {
+    e.preventDefault();
+
+    const password = document.getElementById("new-password").value;
+    const confirm = document.getElementById("confirm-new-password").value;
+
+    if (password.length < 6) {
+      await AlertModal.show({
+        type: "error",
+        title: "Invalid Password",
+        message: "Password must be at least 6 characters long",
+      });
+      return;
+    }
+
+    if (password !== confirm) {
+      await AlertModal.show({
+        type: "error",
+        title: "Password Mismatch",
+        message: "Passwords do not match. Please try again.",
+      });
+      return;
+    }
+
+    const btn = document.getElementById("reset-btn");
+    btn.disabled = true;
+    btn.textContent = "Resetting...";
+
+    const data = {
+      user_id: document.getElementById("reset-user-id").value,
+      full_name: document.getElementById("reset-full-name").value,
+      new_password: password,
+    };
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/users/pre-login/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        this.close();
+        this.successModal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      } else {
+        await AlertModal.show({
+          type: "error",
+          title: "Password Reset Failed",
+          message: result.error || "Password reset failed. Please try again.",
+        });
+      }
+    } catch (err) {
+      console.error("Reset error:", err);
+      await AlertModal.show({
+        type: "error",
+        title: "Connection Error",
+        message: "Failed to connect to server. Please try again.",
+      });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Reset Password";
+    }
+  },
+};
+
+// Initialize when page loads
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () =>
+    ForgotPasswordManager.init()
+  );
+} else {
+  ForgotPasswordManager.init();
+}
+
+// Expose to global scope so you can call it from login page
+window.openForgotPassword = () => ForgotPasswordManager.open();

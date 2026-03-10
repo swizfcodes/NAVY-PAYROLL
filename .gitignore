@@ -69,3 +69,5 @@ temp
 cert.pem
 key.pem
 check-db-health.js
+query
+test.html

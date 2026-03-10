@@ -2,166 +2,212 @@
   <div class="">
     <!-- Header -->
     <div class="px-6 py-2 flex flex-wrap gap-2 items-center justify-between">
-        <div class="flex items-center">
-            <h1 class="text-xl font-semibold">One-Off Fixed Amount By Rank Management</h1>
-        </div>
-            <!-- Add Button -->
-        <div class="mb-2 flex flex-wrap gap-2 justify-end">
-            <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New
-            </button>
-            <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-            <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
-        </div>
+      <div class="flex items-center">
+        <h1 class="text-xl font-semibold">One-Off Fixed Amount By Rank Management</h1>
+      </div>
+      <!-- Add Button -->
+      <div class="mb-2 flex flex-wrap gap-2 justify-end">
+        <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New
+        </button>
+        <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+          <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
+      </div>
     </div>
 
     <div class="p-6">
-        <!-- Hidden Form -->
-        <div id="rankAmountForm" class="hidden mb-2">
-            <!-- Description Section -->
-            <div class="mb-2">
-                <label class="block text-md font-bold text-gray-700 mb-2">Description or Type</label>
-                <select id="description" class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none">
-                    <option value="" disabled selected>Select Description / Type</option>
-                    <!-- populated-->
-                </select>
-            </div>
-
-            <!-- Rank Grid -->
-            <div class="mb-4">
-                <h3 class="text-lg lg:text-lg font-bold text-blue-700 mb-2">Set One-Off Fixed Amounts by Rank</h3>
-                
-                <!-- First Row -->
-                <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Trainee</label>
-                        <input type="number" id="trainee" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">OS</label>
-                        <input type="number" id="os" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">SM</label>
-                        <input type="number" id="sm" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">AB</label>
-                        <input type="number" id="ab" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">LS</label>
-                        <input type="number" id="ls" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">PO</label>
-                        <input type="number" id="po" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                </div>
-
-                <!-- Second Row -->
-                <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 pb-4">
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">WO</label>
-                        <input type="number" id="wo" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">MWO</label>
-                        <input type="number" id="mwo" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">CADET</label>
-                        <input type="number" id="cadet" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">NWO</label>
-                        <input type="number" id="nwo" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1"></label>
-                        <div class="border border-transparent rounded px-2 py-1 text-xs"></div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1"></label>
-                        <div class="border border-transparent rounded px-2 py-1 text-xs"></div>
-                    </div>
-                </div>
-
-                <!-- Third Row -->
-                <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 mb-4">
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">MIDSHIPMAN</label>
-                        <input type="number" id="midshipman" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">S/Lt</label>
-                        <input type="number" id="slt" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Lt</label>
-                        <input type="number" id="lt" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Lt/Cdr</label>
-                        <input type="number" id="ltcdr" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Cdr</label>
-                        <input type="number" id="cdr" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Capt</label>
-                        <input type="number" id="capt" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                </div>
-
-                <!-- Fourth Row -->
-                <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Cdre</label>
-                        <input type="number" id="cdre" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">R/Adm</label>
-                        <input type="number" id="radm" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">V/Adm</label>
-                        <input type="number" id="vadm" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Adm</label>
-                        <input type="number" id="adm" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Contract</label>
-                        <input type="number" id="contract" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-xs font-semibold text-gray-700 mb-1">Rtd Officers</label>
-                        <input type="number" id="rtdofficers" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Buttons -->
-            <div class="flex justify-end gap-2">
-                <button id="saveBtn" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Save</button>
-                <button id="cancelBtn" class="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500">Cancel</button>
-            </div>
+      <!-- Hidden Form -->
+      <div id="rankAmountForm" class="hidden mb-2">
+        <!-- Description Section -->
+        <div class="mb-2">
+          <label class="block text-md font-bold text-gray-700 mb-2">Description or Type</label>
+          <select id="description"
+            class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none">
+            <option value="" disabled selected>Select Description / Type</option>
+            <!-- populated-->
+          </select>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-                <thead class="bg-blue-100 text-blue-900">
-                    <tr>
-                        <th class="border px-4 py-3 text-left">Description</th>
-                        <th class="border px-4 py-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="rankAmountTable" class="text-center"></tbody>
-            </table>
+        <!-- Rank Grid -->
+        <div class="mb-4">
+          <h3 class="text-lg lg:text-lg font-bold text-blue-700 mb-2">Set One-Off Fixed Amounts by Rank</h3>
+
+          <!-- First Row -->
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Trainee</label>
+              <input type="number" id="trainee"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">OS</label>
+              <input type="number" id="os"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">SM</label>
+              <input type="number" id="sm"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">AB</label>
+              <input type="number" id="ab"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">LS</label>
+              <input type="number" id="ls"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">PO</label>
+              <input type="number" id="po"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+          </div>
+
+          <!-- Second Row -->
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 pb-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">WO</label>
+              <input type="number" id="wo"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">MWO</label>
+              <input type="number" id="mwo"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">CADET</label>
+              <input type="number" id="cadet"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">NWO</label>
+              <input type="number" id="nwo"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1"></label>
+              <div class="border border-transparent rounded px-2 py-1 text-xs"></div>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1"></label>
+              <div class="border border-transparent rounded px-2 py-1 text-xs"></div>
+            </div>
+          </div>
+
+          <!-- Third Row -->
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 mb-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">MIDSHIPMAN</label>
+              <input type="number" id="midshipman"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">S/Lt</label>
+              <input type="number" id="slt"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Lt</label>
+              <input type="number" id="lt"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Lt/Cdr</label>
+              <input type="number" id="ltcdr"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Cdr</label>
+              <input type="number" id="cdr"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Capt</label>
+              <input type="number" id="capt"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+          </div>
+
+          <!-- Fourth Row -->
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Cdre</label>
+              <input type="number" id="cdre"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">R/Adm</label>
+              <input type="number" id="radm"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">V/Adm</label>
+              <input type="number" id="vadm"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Adm</label>
+              <input type="number" id="adm"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Contract</label>
+              <input type="number" id="contract"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-semibold text-gray-700 mb-1">Rtd Officers</label>
+              <input type="number" id="rtdofficers"
+                class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="0">
+            </div>
+          </div>
         </div>
+
+        <!-- Form Buttons -->
+        <div class="flex justify-end gap-2">
+          <button id="saveBtn" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Save</button>
+          <button id="cancelBtn" class="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+          <thead class="bg-blue-100 text-blue-900">
+            <tr>
+              <th class="border px-4 py-3 text-left">Code</th>
+              <th class="border px-4 py-3 text-left">Description</th>
+              <th class="border px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rankAmountTable" class="text-center"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -170,8 +216,8 @@
 <div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
   <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
     <h3 class="text-lg font-semibold mb-2 text-green-600">Success!</h3>
-      <p class="mb-4 text-gray-700">Your changes have been saved successfully!</p>
-      <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
+    <p class="mb-4 text-gray-700">Your changes have been saved successfully!</p>
+    <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
   </div>
 </div>
 
@@ -186,7 +232,7 @@
         </svg>
       </button>
     </div>
-   <div id="viewContent"></div>
+    <div id="viewContent"></div>
   </div>
 </div>
 
@@ -195,8 +241,7 @@
   <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
     <h3 id="alertTitle" class="text-lg font-semibold text-gray-800 mb-2">Alert!</h3>
     <p id="alertMessage" class="text-gray-600 mb-4"></p>
-    <button id="alertOkBtn" 
-      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+    <button id="alertOkBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
       OK
     </button>
   </div>
@@ -208,7 +253,8 @@
     <h3 class="text-lg font-semibold text-yellow-600 mb-2">Confirm Delete</h3>
     <p id="confirmMessage" class="mb-4 text-gray-700">Are you sure you want to delete this section command?</p>
     <div class="flex justify-end gap-2">
-      <button id="cancelSectionDelete" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      <button id="cancelSectionDelete"
+        class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
       <button id="sectionConfirmAction" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete</button>
     </div>
   </div>
@@ -230,11 +276,11 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+          "Authorization": `Bearer ${token}`
         }
       });
       const data = await response.json();
@@ -262,8 +308,8 @@
   }
 
   const rankFields = [
-  'trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo', 'cadet', 'nwo',
-  'midshipman', 'slt', 'lt', 'ltcdr', 'cdr', 'capt', 'cdre', 'radm', 'vadm', 'adm', 'contract', 'rtdofficers'
+    'trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo', 'cadet', 'nwo',
+    'midshipman', 'slt', 'lt', 'ltcdr', 'cdr', 'capt', 'cdre', 'radm', 'vadm', 'adm', 'contract', 'rtdofficers'
   ];
 
   // Map frontend rank fields -> backend DB columns
@@ -347,6 +393,7 @@
     });
     return {
       one_type: item.one_type,
+      description: item.description,
       createdby: item.createdby,
       datecreated: item.datecreated,
       ranks
@@ -382,13 +429,13 @@
 
     try {
       const token = localStorage.getItem("token");
-      
+
       // Build URL with optional excludeType parameter
       let url = `/oneoffrank/check/${field}/${encodeURIComponent(value)}`;
       if (excludeType) {
         url += `?exclude=${excludeType}`;
       }
-      
+
       const res = await auth.fetchWithAuth(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -413,7 +460,7 @@
   }
 
   document.getElementById("description")?.addEventListener("blur", function () {
-      checkDuplicate(this, "one_type");
+    checkDuplicate(this, "one_type");
   });
 
 
@@ -429,7 +476,7 @@
       await loadAllDropdowns();
 
       const res = await auth.fetchWithAuth("/oneoffrank", {
-        headers: { "Authorization": `Bearer ${getToken()}`}
+        headers: { "Authorization": `Bearer ${getToken()}` }
       });
       const result = await res.json();
       data = result.map(transformFromBackend);
@@ -440,18 +487,18 @@
   }
 
   // Make functions global
-  window.viewRow = function(index) {
+  window.viewRow = function (index) {
     const item = data[index];
     let html = `
       <div class="mb-4">
-          <h4 class="text-lg font-semibold text-gray-800 mb-2">Description: ${item.one_type}</h4>
+          <h4 class="text-lg font-semibold text-gray-800 mb-2">Description: ${item.description} (${item.one_type})</h4>
       </div>
       <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
         <h5 class="font-semibold text-gray-700 mb-3">Fixed Amounts by Rank:</h5>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
   `;
 
-  for (let rank in item.ranks) {
+    for (let rank in item.ranks) {
       const displayRank = rank.charAt(0).toUpperCase() + rank.slice(1);
       const amount = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(item.ranks[rank]);
       html += `
@@ -460,47 +507,47 @@
               <span class="text-green-600 font-semibold">${amount}</span>
           </div>
       `;
-  }
+    }
 
-  html += `</div></div>`;
+    html += `</div></div>`;
     document.getElementById("viewContent").innerHTML = html;
     document.getElementById("viewModal").classList.remove("hidden");
   };
 
   //Edit Row
-  window.editRow = async function(index) {
-      const item = data[index];
+  window.editRow = async function (index) {
+    const item = data[index];
 
-      // Store original values for comparison
-      originalData = {
-          one_type: item.one_type
-      };
+    // Store original values for comparison
+    originalData = {
+      one_type: item.one_type
+    };
 
-      // Wait for dropdowns to load before setting values
-      await loadAllDropdowns();
+    // Wait for dropdowns to load before setting values
+    await loadAllDropdowns();
 
-      document.getElementById("description").value = item.description;
+    document.getElementById("description").value = item.description;
 
-      // Set the select dropdown value
-      const descriptionSelect = document.getElementById("description");
-      descriptionSelect.value = item.one_type;
-      descriptionSelect.disabled = true;
+    // Set the select dropdown value
+    const descriptionSelect = document.getElementById("description");
+    descriptionSelect.value = item.one_type;
+    descriptionSelect.disabled = true;
 
-      // Set all rank field values
-      rankFields.forEach(rank => {
-          document.getElementById(rank).value = item.ranks[rank] || 0;
-      });
+    // Set all rank field values
+    rankFields.forEach(rank => {
+      document.getElementById(rank).value = item.ranks[rank] || 0;
+    });
 
-      editingIndex = index;
-      form.classList.remove("hidden");
+    editingIndex = index;
+    form.classList.remove("hidden");
   };
 
   //  Delete
-  window.deleteRow = async function(index) {
+  window.deleteRow = async function (index) {
     const confirmed = await showConfirmModal("Are you sure you want to delete this record?");
     const item = data[index];
 
-    if(confirmed){
+    if (confirmed) {
       try {
         await auth.fetchWithAuth(`/oneoffrank/${item.one_type}`, {
           method: "DELETE",
@@ -517,10 +564,11 @@
   };
 
   function renderTable() {
-  tableBody.innerHTML = data.map((item, index) => {
+    tableBody.innerHTML = data.map((item, index) => {
       return `
           <tr class="hover:bg-gray-50">
               <td class="border px-4 py-2 text-left">${item.one_type}</td>
+              <td class="border px-4 py-2 text-left">${item.description}</td>
               <td class="border px-4 py-2 text-center">
                   <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
                   <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
@@ -528,22 +576,22 @@
               </td>
           </tr>
       `;
-  }).join("");
+    }).join("");
   }
 
   renderTable();
 
   showFormBtn.addEventListener("click", () => {
-      form.classList.remove("hidden");
-      editingIndex = null;
-      document.getElementById('description').disabled = false;
-      clearForm();
+    form.classList.remove("hidden");
+    editingIndex = null;
+    document.getElementById('description').disabled = false;
+    clearForm();
   });
 
   cancelBtn.addEventListener("click", () => {
-  form.classList.add("hidden");
-  editingIndex = null;
-  clearForm();
+    form.classList.add("hidden");
+    editingIndex = null;
+    clearForm();
   });
 
   saveBtn.addEventListener("click", async () => {
@@ -563,7 +611,7 @@
     await checkDuplicate(one_typeInput, 'one_type', currentOne_type);
 
     //check if any validation error exists
-    if(!one_typeInput.checkValidity()){
+    if (!one_typeInput.checkValidity()) {
       showAlert("Please fix the validation errors before saving.");
       return;
     }
@@ -621,7 +669,7 @@
       clearForm();
       openModal("Record Saved Sucessfully");
       editingIndex = null;
-      originalData =null;
+      originalData = null;
 
     } catch (err) {
       console.error("Save failed:", err);
@@ -630,13 +678,13 @@
   });
 
   function clearForm() {
-      document.getElementById("description").value = "";
-      rankFields.forEach(rank => {
-          const field = document.getElementById(rank);
-          if (field) {
-              field.value = "";
-          }
-      });
+    document.getElementById("description").value = "";
+    rankFields.forEach(rank => {
+      const field = document.getElementById(rank);
+      if (field) {
+        field.value = "";
+      }
+    });
   }
 
   function openModal(message, modalId = "successModal") {
@@ -681,37 +729,37 @@
   function generateReport() {
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
     const timeStr = now.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
-    
+
     const generatedBy = localStorage.getItem('full_name') || 'System User';
-    
+
     const printWindow = window.open('', '_blank');
 
     // Group ranks by category
     const rankGroups = {
-        'Non-Commissioned Officers': ['trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo'],
-        'Cadets': ['cadet', 'nwo', 'midshipman'],
-        'Junior Officers': ['slt', 'lt', 'ltcdr'],
-        'Senior Officers': ['cdr', 'capt', 'cdre'],
-        'Flag Officers': ['radm', 'vadm', 'adm'],
-        'Special Categories': ['contract', 'rtdofficers']
+      'Non-Commissioned Officers': ['trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo'],
+      'Cadets': ['cadet', 'nwo', 'midshipman'],
+      'Junior Officers': ['slt', 'lt', 'ltcdr'],
+      'Senior Officers': ['cdr', 'capt', 'cdre'],
+      'Flag Officers': ['radm', 'vadm', 'adm'],
+      'Special Categories': ['contract', 'rtdofficers']
     };
 
     const formatCurrency = (amount) => {
-        if (!amount) return '-';
-        return new Intl.NumberFormat('en-NG', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
+      if (!amount) return '-';
+      return new Intl.NumberFormat('en-NG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
     };
 
     const printContent = `
@@ -909,7 +957,7 @@
             ${data.map(item => `
                 <div class="element-section">
                     <div class="element-title">
-                        ${item.one_type}
+                        ${item.one_type} - ${item.description}
                     </div>
                     
                     ${Object.entries(rankGroups).map(([groupName, ranks]) => `
@@ -947,11 +995,11 @@
     printWindow.document.write(printContent);
     printWindow.document.close();
 
-    printWindow.onload = function() {
-        printWindow.print();
+    printWindow.onload = function () {
+      printWindow.print();
     };
   }
-  
+
   // Add event listener to generate report button
   document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 

@@ -89,9 +89,11 @@ router.get('/oneofftypes/check/:field/:value', verifyToken, async (req, res) => 
 router.get('/oneofftypes', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT one_type, one_perc, one_std, one_maxi, one_bpay, one_depend
-      FROM py_oneofftype 
-      ORDER BY one_type
+      SELECT ot.*,
+      et.elmDesc as description
+      FROM py_oneofftype ot
+      LEFT JOIN py_elementType et ON ot.one_type = et.PaymentType
+      ORDER BY ot.one_type
     `);
     
     res.json(rows);
@@ -105,7 +107,7 @@ router.get('/oneofftypes', verifyToken, async (req, res) => {
 router.get('/oneofftypes/:one_type', verifyToken, async (req, res) => {
   try {
     const { one_type } = req.params;
-    const [rows] = await pool.query('SELECT * FROM py_oneofftype WHERE one_type = ?', [one_type]);
+    const [rows] = await pool.query('SELECT ot.*, et.elmDesc as description FROM py_oneofftype ot LEFT JOIN py_elementType et ON ot.one_type = et.PaymentType WHERE ot.one_type = ?', [one_type]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'oneoff type not found' });

@@ -123,7 +123,7 @@ async function discoverMigrationTables(connection, database) {
        WHERE table_schema = ? 
        AND table_type = 'BASE TABLE'
        AND table_name LIKE 'py_%'
-       AND table_name NOT IN ('py_payrollclass', 'py_setup')
+       AND table_name NOT IN ('py_payrollclass', 'py_emplhistory', 'py_stdrate')
        ORDER BY table_name`,
       [database]
     );

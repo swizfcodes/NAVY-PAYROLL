@@ -1,3 +1,32 @@
+<style>
+  @keyframes grow-up {
+    0% { height: 0; bottom: 0; }
+    100% { height: 100%; bottom: 0; }
+  }
+  @keyframes grow-down {
+    0% { height: 0; top: 0; }
+    100% { height: 100%; top: 0; }
+  }
+  @keyframes expand {
+    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
+    100% { width: 100%; left: 0; transform: translateY(-50%); }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+
 <section class="items border rounded-lg m-6 max-w-4xl mr-auto p-4 mx-auto">
 
   <!-- Report Title -->
@@ -143,7 +172,7 @@
         </label>
         <label class="flex items-center cursor-pointer">
           <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4">
-          <span class="ml-2">Excel (.xlsx)</span>
+          <span class="ml-2">Excel</span>
         </label>
         <label class="hidden flex items-center cursor-pointer">
           <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
@@ -168,8 +197,10 @@
 <!-- Loading Modal -->
 <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-    <div class="mb-4">
-      <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
+    <div class="relative w-10 h-10 mx-auto mb-4">
+      <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
+      <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
+      <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
     </div>
     <h3 class="text-lg font-semibold mb-2">Generating Report...</h3>
     <p class="text-gray-600">Please wait while we prepare your variation report.</p>
