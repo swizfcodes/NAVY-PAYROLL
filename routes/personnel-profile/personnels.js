@@ -1,5 +1,4 @@
 const express = require('express');
-require('dotenv').config();
 const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 //const { attachPayrollClass } = require('../../middware/attachPayrollClass');
