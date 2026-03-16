@@ -3,9 +3,6 @@ const express = require("express");
 const path = require('path');
 const pool = require('../../config/db');
 const verifyToken = require('../../middware/authentication');
-const dotenv = require('dotenv');
-const envFile = 'production' ? '.env.production' : '.env.local';
-dotenv.config({ path: path.resolve(__dirname, envFile) });
 const router = express.Router();
 
 // Get all roles
