@@ -35,7 +35,6 @@ app.use(
         "'self'",
         "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
         "'unsafe-inline'",
-        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],   // ← allows blob: images

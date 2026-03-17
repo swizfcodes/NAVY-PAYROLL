@@ -13,14 +13,17 @@ const verifyToken = require("../../middware/authentication");
 const BaseReportController = require("../../controllers/Reports/reportsFallbackController");
 
 // ── Payrollclass → DB name map ────────────────────────────
-const PAYROLL_CLASS_DB_MAP = {
-  1: "hicaddata",
-  2: "hicaddata1",
-  3: "hicaddata2",
-  4: "hicaddata3",
-  5: "hicaddata4",
-  6: "hicaddata5",
-};
+async function getPayrollClassDb(classcode) {
+  const [[row]] = await pool.query(
+    `SELECT db_name
+     FROM py_payrollclass
+     WHERE classcode = ? AND status = 'active'
+     LIMIT 1`,
+    [classcode]
+  );
+
+  return row ? row.db_name : null;
+}
 
 // Lazy singleton for PDF generation
 let _controller = null;
@@ -166,7 +169,7 @@ router.post("/generate", verifyToken, async (req, res) => {
     // ── 3. Fetch employee payrollclass from master DB ──
     // hr_employees lives in hicaddata (officers / master DB)
     const [empRows] = await pool.query(
-      `SELECT payrollclass FROM hicaddata.hr_employees WHERE EMPL_ID = ? LIMIT 1`,
+      `SELECT payrollclass FROM hr_employees WHERE EMPL_ID = ? LIMIT 1`,
       [userId],
     );
 
@@ -177,7 +180,7 @@ router.post("/generate", verifyToken, async (req, res) => {
     }
 
     const payrollclass = String(empRows[0].payrollclass);
-    const targetDb = PAYROLL_CLASS_DB_MAP[payrollclass];
+    const targetDb = await getPayrollClassDb(payrollclass);
 
     if (!targetDb) {
       return res.status(400).json({
@@ -240,7 +243,7 @@ router.post("/generate", verifyToken, async (req, res) => {
 
     // ── 8. Fetch generated rows ────────────────────────
     const [monthData] = await pool.query(
-      `SELECT mthdesc FROM hicaddata.ac_months WHERE cmonth = ? LIMIT 1`,
+      `SELECT mthdesc FROM ac_months WHERE cmonth = ? LIMIT 1`,
       [inputMonth],
     );
 
