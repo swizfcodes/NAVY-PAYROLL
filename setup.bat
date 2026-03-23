@@ -565,6 +565,40 @@ if errorlevel 1 (
     echo [OK] WinSW services registered and running
 )
 
+:: ============================================================
+:: STEP 9 - Install GitHub Actions Self-Hosted Runner
+:: ============================================================
+echo.
+echo [9/9] Installing GitHub Actions Runner...
+
+set "GITHUB_PAT="
+for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
+    if /i "%%A"=="GITHUB_PAT" set "GITHUB_PAT=%%B"
+)
+
+if not defined GITHUB_PAT (
+    echo [WARN] GITHUB_PAT not set in .env.local
+    echo        Add GITHUB_PAT=your_token to .env.local then run:
+    echo        node install-runner.js
+    goto skip_runner
+)
+
+if not exist "%~dp0bin\runner\runner.part0" (
+    echo [WARN] Runner chunks not found in bin\runner\
+    echo        Run chunk-runner.ps1 on your dev machine first.
+    goto skip_runner
+)
+
+cd /d "%~dp0"
+node install-runner.js
+if errorlevel 1 (
+    echo [WARN] Runner install failed. Run manually: node install-runner.js
+) else (
+    echo [OK] GitHub Actions Runner installed
+)
+
+:skip_runner
+
 
 :: ============================================================
 :: VERIFICATION

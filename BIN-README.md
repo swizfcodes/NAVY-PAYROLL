@@ -1,44 +1,62 @@
 # bin/ — Bundled Binaries
 
-This folder contains binaries required by setup.bat.
-They are committed to the repo so servers can install without internet access.
+Committed to the repo so servers install without internet access.
+Run `chunk-runner.ps1` and copy OpenSSL/WinSW files ONCE on your dev machine,
+then commit. Every server install after that needs no internet.
+
+---
 
 ## Required Files
 
-### winsw.exe
-Windows Service Wrapper — registers Node.js processes as Windows Services.
-
-Download (pick one):
-- https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe
-
-Rename downloaded file to: winsw.exe
-Place in: bin/winsw.exe
-
-### openssl.exe (+ supporting DLLs)
-Used to generate SSL certificates.
+### bin/winsw.exe
+Windows Service Wrapper.
 
 Download:
-- https://slproweb.com/products/Win32OpenSSL.html
-  → Win64 OpenSSL v3.x.x (full version, not Light)
-  → After install, copy from: C:\Program Files\OpenSSL-Win64\bin\
-    - openssl.exe
-    - libssl-3-x64.dll
-    - libcrypto-3-x64.dll
-    - legacy.dll (if present)
+  https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe
+Rename to winsw.exe → place in bin/
 
-Place all in: bin/
+### bin/openssl.exe + DLLs
+SSL certificate generator.
 
-## After adding files
+Install OpenSSL MSI from:
+  https://slproweb.com/products/Win32OpenSSL.html  (Win64 full version)
 
-Commit to repo:
+Then copy from C:\Program Files\OpenSSL-Win64\bin\ to bin/:
+  openssl.exe
+  libssl-3-x64.dll
+  libcrypto-3-x64.dll
+
+### bin/runner/ (chunks)
+GitHub Actions self-hosted runner split into ~50MB chunks.
+
+Run this ONCE on your dev machine from the project root:
+  powershell -ExecutionPolicy Bypass -File chunk-runner.ps1
+
+This downloads the runner zip, splits it into chunks, and saves to bin/runner/.
+
+---
+
+## .env.local additions required
+
+Add these to .env.local before running setup.bat:
+
+  GITHUB_PAT=your_github_personal_access_token
+  GITHUB_REPO=hicadsystems/NAVY-PAYROLL
+
+GITHUB_PAT needs repo scope:
+  GitHub → Settings → Developer settings → Personal access tokens → Fine-grained
+  Permissions: Actions (read/write), Administration (read/write)
+
+---
+
+## After adding all files
+
   git add bin/
-  git commit -m "add bundled binaries"
+  git commit -m "add bundled binaries and runner chunks"
   git push
 
-All servers will now have these files available via git clone/pull.
-No internet required during setup.
+---
 
 ## .gitignore note
 
-Make sure bin/ is NOT in .gitignore.
-These binaries must be tracked by git.
+bin/ must NOT be in .gitignore — these files must be tracked.

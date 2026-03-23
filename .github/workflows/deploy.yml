@@ -5,33 +5,25 @@ on:
     branches:
       - master
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
-    name: SSH Deploy
-    runs-on: ubuntu-latest
+    name: Deploy
+    runs-on: self-hosted  # runs directly on the server — no SSH needed
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_SSH_PORT }}
-          script: |
-            cd "${{ secrets.SERVER_PROJECT_PATH }}"
+      - name: Install dependencies
+        run: npm install --omit=dev
 
-            echo ">> Pulling latest code..."
-            git pull origin master
+      - name: Restart app service
+        run: |
+          cd "${{ secrets.SERVER_PROJECT_PATH }}"
+          NavyPayroll-App.exe restart
 
-            echo ">> Installing dependencies..."
-            npm install --omit=dev
-
-            echo ">> Restarting app service..."
-            NavyPayroll-App.exe restart
-
-            echo ">> Deploy complete."
-            NavyPayroll-App.exe status
+      - name: Show service status
+        run: NavyPayroll-App.exe status

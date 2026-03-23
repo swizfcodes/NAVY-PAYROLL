@@ -20,7 +20,7 @@ const WATCH_DIRS = [
 const IGNORE = new Set([
   'node_modules',
   'logs',
-  'prefences',
+  'preferences',
   'notifications',
   'certs',
   'cloud_backups',
