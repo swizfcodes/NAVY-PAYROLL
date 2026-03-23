@@ -11,9 +11,18 @@ env:
 jobs:
   deploy:
     name: Deploy
-    runs-on: self-hosted  # runs directly on the server — no SSH needed
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: ${{ secrets.SERVER_PROJECT_PATH }}
 
     steps:
+      - name: Set PowerShell Execution Policy
+        shell: pwsh
+        run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
+
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
@@ -21,9 +30,7 @@ jobs:
         run: npm install --omit=dev
 
       - name: Restart app service
-        run: |
-          cd "${{ secrets.SERVER_PROJECT_PATH }}"
-          NavyPayroll-App.exe restart
+        run: NavyPayroll-App.exe restart
 
       - name: Show service status
         run: NavyPayroll-App.exe status
