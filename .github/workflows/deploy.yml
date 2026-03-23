@@ -7,23 +7,32 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PROJECT_PATH: ${{ secrets.SERVER_PROJECT_PATH }}
 
 jobs:
   deploy:
     name: Deploy
-    runs-on: self-hosted  # runs directly on the server — no SSH needed
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: powershell
 
     steps:
+      - name: Set PowerShell Execution Policy
+        run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
+
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
       - name: Install dependencies
+        working-directory: ${{ env.PROJECT_PATH }}
         run: npm install --omit=dev
 
       - name: Restart app service
-        run: |
-          cd "${{ secrets.SERVER_PROJECT_PATH }}"
-          NavyPayroll-App.exe restart
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: NavyPayroll-App.exe restart
 
       - name: Show service status
+        working-directory: ${{ env.PROJECT_PATH }}
         run: NavyPayroll-App.exe status
