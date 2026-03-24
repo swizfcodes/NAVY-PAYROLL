@@ -381,16 +381,21 @@ if not defined OPENSSL_EXE (
 
 echo [INFO] Using OpenSSL at: %OPENSSL_EXE%
 
+:: Add OpenSSL's directory to PATH so it can find its DLLs
+for %%F in ("%OPENSSL_EXE%") do set "OPENSSL_DIR=%%~dpF"
+set "PATH=%OPENSSL_DIR%;%PATH%"
+
 set MSYS_NO_PATHCONV=1
 "%OPENSSL_EXE%" req -x509 -newkey rsa:2048 ^
   -keyout "%KEY_FILE%" ^
   -out "%CERT_FILE%" ^
   -days 365 -nodes ^
   -subj "/CN=localhost" ^
-  -addext "subjectAltName=DNS:localhost,DNS:%DOMAIN%,IP:127.0.0.1,IP:%LOCAL_IP%" 2>nul
+  -addext "subjectAltName=DNS:localhost,DNS:%DOMAIN%,IP:127.0.0.1,IP:%LOCAL_IP%" 2>&1
 
 if errorlevel 1 (
     echo [ERROR] OpenSSL failed to generate certificate.
+    echo         Make sure libssl-3-x64.dll and libcrypto-3-x64.dll are in the same folder as openssl.exe
     pause
     exit /b 1
 )
@@ -571,6 +576,7 @@ if errorlevel 1 (
 echo.
 echo [9/9] Installing GitHub Actions Runner...
 
+:: Check GITHUB_PAT is set in .env.local
 set "GITHUB_PAT="
 for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
     if /i "%%A"=="GITHUB_PAT" set "GITHUB_PAT=%%B"
@@ -583,6 +589,7 @@ if not defined GITHUB_PAT (
     goto skip_runner
 )
 
+:: Check runner chunks exist
 if not exist "%~dp0bin\runner\runner.part0" (
     echo [WARN] Runner chunks not found in bin\runner\
     echo        Run chunk-runner.ps1 on your dev machine first.

@@ -123,17 +123,17 @@ function createServiceConfig({ id, name, description, script }) {
 }
 
 // ── Register a Windows Service via WinSW ──────────────────
-function installService({ id, name, description, script }) {
+async function installService({ id, name, description, script }) {
   console.log(`\n[${id}] Installing service...`);
 
   const xmlPath   = createServiceConfig({ id, name, description, script });
   const winswCopy = path.join(ROOT, `${id}.exe`);
 
   // Pre-stop via sc.exe first (works even if winswCopy doesn't exist yet)
-  run(`sc stop "${id}"`, true);
-  run(`sc delete "${id}"`, true);
+  run(`cmd /c sc stop "${id}"`, true);
+  run(`cmd /c sc delete "${id}"`, true);
   // Give Windows time to release handles
-  try { require('child_process').execSync('timeout /t 2 /nobreak > nul', { stdio: 'ignore' }); } catch {}
+  await new Promise(r => setTimeout(r, 2000));
 
   // Stop and uninstall existing service first to release file lock
   if (fs.existsSync(winswCopy)) {
@@ -144,13 +144,13 @@ function installService({ id, name, description, script }) {
     while (fs.existsSync(winswCopy)) {
       try { fs.unlinkSync(winswCopy); break; } catch { /* still locked */ }
       if (Date.now() - start > 10000) { console.error(`[${id}] Timeout waiting for file release.`); break; }
-      require('child_process').execSync('timeout /t 1 /nobreak > nul', { stdio: 'ignore' });
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
   // Also stop via sc.exe in case winsw copy is already gone but service still registered
-  run(`sc stop "${id}"`, true);
-  run(`sc delete "${id}"`, true);
+  run(`cmd /c sc stop "${id}"`, true);
+  run(`cmd /c sc delete "${id}"`, true);
 
   // WinSW requires a copy named after the service
   fs.copyFileSync(WINSW, winswCopy);
@@ -169,23 +169,24 @@ function installService({ id, name, description, script }) {
 }
 
 // ── Main ───────────────────────────────────────────────────
+(async () => {
 if (!ensureWinSW()) process.exit(1);
 
-const appOk = installService({
+const appOk = await installService({
   id:          'NavyPayroll-App',
   name:        'Navy Payroll App',
   description: 'Navy Payroll Express server (port 5500)',
   script:      path.join(ROOT, 'server.js'),
 });
 
-const proxyOk = installService({
+const proxyOk = await installService({
   id:          'NavyPayroll-Proxy',
   name:        'Navy Payroll Proxy',
   description: 'Navy Payroll HTTPS proxy (port 443)',
   script:      path.join(ROOT, 'proxy.js'),
 });
 
-const watcherOk = installService({
+const watcherOk = await installService({
   id:          'NavyPayroll-Watcher',
   name:        'Navy Payroll Watcher',
   description: 'Navy Payroll file watcher — auto-restarts app on code changes',
@@ -212,3 +213,4 @@ if (appOk && proxyOk) {
   console.log('One or more services failed. Run as Administrator and retry.');
 }
 console.log('=================================================');
+})();

@@ -5,58 +5,76 @@
  * Or add as a third WinSW service via install-service.js
  */
 
-const fs   = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
 
-const ROOT    = __dirname;
-const WINSW   = path.join(ROOT, 'NavyPayroll-App.exe');
-const DELAY   = 2000; // wait 2s after last change before restarting
+const ROOT = __dirname;
+const WINSW = path.join(ROOT, "NavyPayroll-App.exe");
+const DELAY = 2000;
 
-const WATCH_DIRS = [
-  ROOT,
-];
+// Only these extensions should trigger a restart
+// Frontend files (html, css, png, etc.) are served statically — no restart needed
+const RESTART_EXT = new Set([".js", ".json", ".env", ".cjs", ".mjs"]);
 
-const IGNORE = new Set([
-  'node_modules',
-  'logs',
-  'preferences',
-  'notifications',
-  'certs',
-  'cloud_backups',
-  'cache',
-  '.vs',
-  '.vscode',
-  'backups',
-  'restores',
-  'uploads',
-  '.gitignore',
-  'storage',
-  'query',
-  'data',
-  'temp',
-  '.git',
-  'NavyPayroll-App.exe',
-  'NavyPayroll-Proxy.exe',
-  'NavyPayroll-Watcher.exe',
-  'winsw.exe',
-  'watcher.js',
+// These specific files should never trigger a restart even if .js
+const IGNORE_FILES = new Set([
+  "watcher.js",
+  "install-service.js",
+  "uninstall-service.js",
+  "install-runner.js",
 ]);
 
-const IGNORE_EXT = new Set([
-  '.log', '.pem', '.bat', '.xml', '.md',
+// These directories should never trigger a restart
+const IGNORE_DIRS = new Set([
+  "node_modules",
+  "logs",
+  "preferences",
+  "notifications",
+  "certs",
+  "cloud_backups",
+  "cache",
+  ".vs",
+  ".vscode",
+  "backups",
+  "restores",
+  "uploads",
+  "storage",
+  "query",
+  "data",
+  "temp",
+  ".git",
+  "actions-runner",
+  "_work",
+  "bin",
+  "public", // static files — never need a restart
 ]);
 
+const IGNORE_PREFIXES = ["NavyPayroll-", "winsw", "actions-runner"];
+
+const lastModified = new Map();
 let restartTimer = null;
-let restarting   = false;
+let restarting = false;
 
 function shouldIgnore(filePath) {
+  const basename = path.basename(filePath);
+
+  // Ignore specific files
+  if (IGNORE_FILES.has(basename)) return true;
+
+  // Ignore by directory
   const parts = filePath.split(path.sep);
   for (const part of parts) {
-    if (IGNORE.has(part)) return true;
+    if (IGNORE_DIRS.has(part)) return true;
+    for (const prefix of IGNORE_PREFIXES) {
+      if (part.startsWith(prefix)) return true;
+    }
   }
+
+  // Only allow restart-worthy extensions
   const ext = path.extname(filePath).toLowerCase();
-  if (IGNORE_EXT.has(ext)) return true;
+  if (!RESTART_EXT.has(ext)) return true;
+
   return false;
 }
 
@@ -64,10 +82,12 @@ function restartService() {
   if (restarting) return;
   restarting = true;
 
-  console.log(`[${new Date().toISOString()}] File change detected — restarting NavyPayroll-App...`);
+  console.log(
+    `[${new Date().toISOString()}] File change detected — restarting NavyPayroll-App...`,
+  );
 
   try {
-    execSync(`"${WINSW}" restart`, { cwd: ROOT, encoding: 'utf8' });
+    execSync(`"${WINSW}" restart`, { cwd: ROOT, encoding: "utf8" });
     console.log(`[${new Date().toISOString()}] NavyPayroll-App restarted ✔`);
   } catch (e) {
     console.error(`[${new Date().toISOString()}] Restart failed:`, e.message);
@@ -81,21 +101,33 @@ function onFileChange(eventType, filename) {
   const fullPath = path.join(ROOT, filename);
   if (shouldIgnore(fullPath)) return;
 
+  // Verify mtime actually changed
+  try {
+    const stat = fs.statSync(fullPath);
+    const prev = lastModified.get(fullPath);
+    const curr = stat.mtimeMs;
+    if (prev === curr) return;
+    lastModified.set(fullPath, curr);
+  } catch {
+    return;
+  }
+
   console.log(`[${new Date().toISOString()}] Changed: ${filename}`);
 
-  // Debounce — wait for changes to settle
   if (restartTimer) clearTimeout(restartTimer);
   restartTimer = setTimeout(restartService, DELAY);
 }
 
-// Watch project root recursively
-console.log('Navy Payroll — File Watcher');
-console.log('============================');
+console.log("Navy Payroll — File Watcher");
+console.log("============================");
 console.log(`Watching: ${ROOT}`);
 console.log(`Restart delay: ${DELAY}ms`);
-console.log('Ignoring: node_modules, logs, public, certs, .git');
-console.log('');
+console.log("Restarting on: .js .json .env changes (backend only)");
+console.log(
+  "Ignoring: public/, node_modules/, logs/, .git, and all frontend files",
+);
+console.log("");
 
 fs.watch(ROOT, { recursive: true }, onFileChange);
 
-console.log('Watching for file changes... (Ctrl+C to stop)');
+console.log("Watching for file changes... (Ctrl+C to stop)");
