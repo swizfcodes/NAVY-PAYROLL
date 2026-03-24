@@ -14,7 +14,6 @@ const RUNNER_DIR = path.join(ROOT, "actions-runner");
 const CHUNKS_DIR = path.join(BIN, "runner");
 const RUNNER_ZIP = path.join(ROOT, "actions-runner.zip");
 const CONFIG_CMD = path.join(RUNNER_DIR, "config.cmd");
-const SVC_CMD = path.join(RUNNER_DIR, "svc.cmd");
 
 // Load env
 require("dotenv").config({ path: path.join(ROOT, ".env.local") });
@@ -53,7 +52,7 @@ function reassembleChunks() {
 
   if (!fs.existsSync(CHUNKS_DIR)) {
     console.error("[Runner] No chunks found at bin/runner/");
-    console.error("         Run the chunk script on your dev machine first.");
+    console.error("         Run chunk-runner.ps1 on your dev machine first.");
     return false;
   }
 
@@ -124,8 +123,13 @@ function getRegistrationToken() {
   }
 
   console.log("[Runner] Fetching registration token from GitHub API...");
+
+  // Use PowerShell instead of curl (curl not available on all Windows installs)
   const result = runOut(
-    `curl -s -X POST -H "Authorization: token ${GITHUB_PAT}" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${GITHUB_REPO}/actions/runners/registration-token`,
+    `powershell -NoProfile -Command "` +
+      `[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ` +
+      `$h = @{ Authorization = 'token ${GITHUB_PAT}'; Accept = 'application/vnd.github+json' }; ` +
+      `(Invoke-RestMethod -Uri 'https://api.github.com/repos/${GITHUB_REPO}/actions/runners/registration-token' -Method POST -Headers $h) | ConvertTo-Json"`,
   );
 
   if (!result) {
@@ -149,20 +153,18 @@ function getRegistrationToken() {
   }
 }
 
-// ── Configure runner ───────────────────────────────────────
+// ── Configure and install runner as Windows Service ────────
 function configureRunner(token) {
   console.log("[Runner] Configuring runner...");
-  console.log("[Runner] CONFIG_CMD:", CONFIG_CMD);
-  console.log("[Runner] RUNNER_DIR:", RUNNER_DIR);
-  console.log("[Runner] GITHUB_URL:", GITHUB_URL);
 
-  // Remove existing config
+  // Remove existing config if re-running
   spawnSync("cmd.exe", ["/c", CONFIG_CMD, "remove", "--token", token], {
     cwd: RUNNER_DIR,
     stdio: "pipe",
     shell: false,
   });
 
+  // --runasservice installs directly as Windows Service during config
   const result = spawnSync(
     "cmd.exe",
     [
@@ -178,16 +180,21 @@ function configureRunner(token) {
       "_work",
       "--unattended",
       "--replace",
-      "--runasservice", // ← installs as Windows Service directly
+      "--runasservice",
     ],
     { cwd: RUNNER_DIR, stdio: "inherit", shell: false },
   );
 
-  console.log("[Runner] Exit code:", result.status);
-  if (result.error) console.error("[Runner] Spawn error:", result.error);
+  if (result.error) {
+    console.error("[Runner] Spawn error:", result.error);
+    return false;
+  }
 
   if (result.status !== 0) {
-    console.error("[Runner] Configuration failed.");
+    console.error(
+      "[Runner] Configuration failed with exit code:",
+      result.status,
+    );
     return false;
   }
 
@@ -208,7 +215,7 @@ console.log("Navy Payroll — GitHub Actions Runner Installer");
 console.log("===============================================");
 
 if (!reassembleChunks()) process.exit(1);
-if (!extractRunner())    process.exit(1);
+if (!extractRunner()) process.exit(1);
 
 const token = getRegistrationToken();
 if (!token) process.exit(1);
