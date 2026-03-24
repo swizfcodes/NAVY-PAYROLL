@@ -19,6 +19,7 @@ const CONFIG_CMD = path.join(RUNNER_DIR, "config.cmd");
 require("dotenv").config({ path: path.join(ROOT, ".env.local") });
 
 const GITHUB_PAT = process.env.GITHUB_PAT;
+const GITHUB_RUNNER_TOKEN = process.env.GITHUB_RUNNER_TOKEN;
 const GITHUB_REPO = process.env.GITHUB_REPO || "hicadsystems/NAVY-PAYROLL";
 const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 
@@ -217,8 +218,14 @@ console.log("===============================================");
 if (!reassembleChunks()) process.exit(1);
 if (!extractRunner()) process.exit(1);
 
-const token = getRegistrationToken();
-if (!token) process.exit(1);
+// Use pre-generated token if available, otherwise fetch from API
+let token = GITHUB_RUNNER_TOKEN || null;
+if (token) {
+  console.log("[Runner] Using GITHUB_RUNNER_TOKEN from .env.local ✔");
+} else {
+  token = getRegistrationToken();
+  if (!token) process.exit(1);
+}
 
 if (!configureRunner(token)) process.exit(1);
 

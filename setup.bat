@@ -603,17 +603,23 @@ if errorlevel 1 (
 echo.
 echo [9/9] Installing GitHub Actions Runner...
 
-:: Check GITHUB_PAT is set in .env.local
+:: Check GITHUB_RUNNER_TOKEN or GITHUB_PAT is set in .env.local
 set "GITHUB_PAT="
+set "GITHUB_RUNNER_TOKEN="
 for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
-    if /i "%%A"=="GITHUB_PAT" set "GITHUB_PAT=%%B"
+    if /i "%%A"=="GITHUB_PAT"          set "GITHUB_PAT=%%B"
+    if /i "%%A"=="GITHUB_RUNNER_TOKEN" set "GITHUB_RUNNER_TOKEN=%%B"
 )
 
 if not defined GITHUB_PAT (
-    echo [WARN] GITHUB_PAT not set in .env.local
-    echo        Add GITHUB_PAT=your_token to .env.local then run:
-    echo        node install-runner.js
-    goto skip_runner
+    if not defined GITHUB_RUNNER_TOKEN (
+        echo [WARN] Neither GITHUB_RUNNER_TOKEN nor GITHUB_PAT set in .env.local
+        echo        Add one of these to .env.local:
+        echo          GITHUB_RUNNER_TOKEN=token_from_github   ^(expires in 1hr^)
+        echo          GITHUB_PAT=your_personal_access_token   ^(auto-generates token^)
+        echo        Then run: node install-runner.js
+        goto skip_runner
+    )
 )
 
 :: Check runner chunks exist
