@@ -83,3 +83,4 @@ NavyPayroll-Proxy.xml
 NavyPayroll-Watcher.exe
 actions-runner.zip
 actions-runner
+bin/openssl.cnf

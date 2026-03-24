@@ -385,13 +385,40 @@ echo [INFO] Using OpenSSL at: %OPENSSL_EXE%
 for %%F in ("%OPENSSL_EXE%") do set "OPENSSL_DIR=%%~dpF"
 set "PATH=%OPENSSL_DIR%;%PATH%"
 
+:: Generate minimal openssl.cnf if not bundled
+set "OPENSSL_CONF=%~dp0bin\openssl.cnf"
+if not exist "%OPENSSL_CONF%" (
+    if exist "%OPENSSL_DIR%openssl.cnf" (
+        set "OPENSSL_CONF=%OPENSSL_DIR%openssl.cnf"
+    ) else (
+        echo [INFO] Generating minimal openssl.cnf...
+        (
+            echo [req]
+            echo distinguished_name = req_distinguished_name
+            echo x509_extensions = v3_req
+            echo prompt = no
+            echo [req_distinguished_name]
+            echo CN = localhost
+            echo [v3_req]
+            echo keyUsage = critical, digitalSignature, keyEncipherment
+            echo extendedKeyUsage = serverAuth
+            echo subjectAltName = @alt_names
+            echo [alt_names]
+            echo DNS.1 = localhost
+            echo DNS.2 = %DOMAIN%
+            echo IP.1 = 127.0.0.1
+            echo IP.2 = %LOCAL_IP%
+        ) > "%~dp0bin\openssl.cnf"
+        echo [OK] openssl.cnf generated
+    )
+)
+
 set MSYS_NO_PATHCONV=1
 "%OPENSSL_EXE%" req -x509 -newkey rsa:2048 ^
   -keyout "%KEY_FILE%" ^
   -out "%CERT_FILE%" ^
   -days 365 -nodes ^
-  -subj "/CN=localhost" ^
-  -addext "subjectAltName=DNS:localhost,DNS:%DOMAIN%,IP:127.0.0.1,IP:%LOCAL_IP%" 2>&1
+  -config "%OPENSSL_CONF%" 2>&1
 
 if errorlevel 1 (
     echo [ERROR] OpenSSL failed to generate certificate.
@@ -576,17 +603,23 @@ if errorlevel 1 (
 echo.
 echo [9/9] Installing GitHub Actions Runner...
 
-:: Check GITHUB_PAT is set in .env.local
+:: Check GITHUB_RUNNER_TOKEN or GITHUB_PAT is set in .env.local
 set "GITHUB_PAT="
+set "GITHUB_RUNNER_TOKEN="
 for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
-    if /i "%%A"=="GITHUB_PAT" set "GITHUB_PAT=%%B"
+    if /i "%%A"=="GITHUB_PAT"          set "GITHUB_PAT=%%B"
+    if /i "%%A"=="GITHUB_RUNNER_TOKEN" set "GITHUB_RUNNER_TOKEN=%%B"
 )
 
 if not defined GITHUB_PAT (
-    echo [WARN] GITHUB_PAT not set in .env.local
-    echo        Add GITHUB_PAT=your_token to .env.local then run:
-    echo        node install-runner.js
-    goto skip_runner
+    if not defined GITHUB_RUNNER_TOKEN (
+        echo [WARN] Neither GITHUB_RUNNER_TOKEN nor GITHUB_PAT set in .env.local
+        echo        Add one of these to .env.local:
+        echo          GITHUB_RUNNER_TOKEN=token_from_github   ^(expires in 1hr^)
+        echo          GITHUB_PAT=your_personal_access_token   ^(auto-generates token^)
+        echo        Then run: node install-runner.js
+        goto skip_runner
+    )
 )
 
 :: Check runner chunks exist
