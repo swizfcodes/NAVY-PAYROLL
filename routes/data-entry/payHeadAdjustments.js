@@ -146,6 +146,15 @@ function deduplicate(rows) {
   return { cleaned, duplicates };
 }
 
+// Normalize string to datetime if possible, else return original
+function normalizeDate(dateStr) {
+  if (!dateStr || dateStr.trim() === "" || dateStr.trim().length !== 8)
+    return null;
+  const s = dateStr.trim();
+  // expects yyyymmdd
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+}
+
 router.post("/", verifyToken, upload.single("file"), async (req, res) => {
   try {
     let filePath = null;
@@ -171,21 +180,55 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
 
     const { cleaned, duplicates } = deduplicate(rawData);
 
-    const query = `SELECT Empl_id, gradelevel, payrollclass FROM hr_employees WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')`;
+    const query = `
+    SELECT Empl_id, gradelevel, payrollclass, DateLeft, exittype
+    FROM hr_employees
+    WHERE Empl_id IN (${cleaned.map(() => "?").join(",")})
+    `;
 
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, cleaned.map((r) => String(r.service_number)?.trim()));
 
-    const activeEmployeeSet = new Set(rows.map((r) => r.Empl_id));
+    const activeEmployeeSet = new Set(
+      rows
+        .filter((r) => !Boolean(r.DateLeft?.trim()) && !Boolean(r.exittype?.trim()))
+        .map((r) => r.Empl_id?.trim().toLowerCase()),);
 
-    const filtered = cleaned.filter((row) =>
-     row.service_number && activeEmployeeSet.has(String(row.service_number)?.trim()),
+    const inactiveEmployeeSet = new Set(
+      rows
+        .filter((r) => Boolean(r.DateLeft?.trim()) || Boolean(r.exittype?.trim()))
+        .map((r) => r.Empl_id?.trim().toLowerCase()),
     );
+
+    const nonExistentSet = new Set(
+      cleaned
+        .filter((r) => r.service_number &&
+          !activeEmployeeSet.has(String(r.service_number).trim().toLowerCase()) &&
+          !inactiveEmployeeSet.has(String(r.service_number).trim().toLowerCase()))
+        .map((r) => String(r.service_number).trim().toLowerCase())
+    );
+
+
+
+     const filtered = cleaned.filter((row) => {
+      return (
+        row.service_number &&
+        activeEmployeeSet.has(String(row.service_number)?.trim().toLowerCase())
+      );
+    });
+    const inactiveFiltered = cleaned.filter((row) => {
+      return (
+        row.service_number &&
+        inactiveEmployeeSet.has(String(row.service_number)?.trim().toLowerCase())
+      );
+    });
+
+
+    const nonExistentFiltered = cleaned.filter(r => r.service_number && nonExistentSet.has(String(r.service_number)?.trim().toLowerCase()))
 
     const employeeMap = new Map(
       rows.map((e) => [
         e.Empl_id.trim().toLowerCase(),
-        [e.gradelevel, e.payrollclass],
+        [e.gradelevel, e.payrollclass, e.DateLeft, e.exittype],
       ]),
     );
 
@@ -197,7 +240,18 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
       if (payclass) row.payclass = payclass;
     }
 
+    for (const row of inactiveFiltered) {
+      const [level, payclass, dateLeft, exittype] = employeeMap.get(
+        row.service_number?.trim().toLowerCase(),
+      ) || [null, null, null, null];
+      if (level) row.level = level.slice(0, 2);
+      if (payclass) row.payclass = payclass;
+      if (dateLeft) row.dateLeft = new Date(normalizeDate(dateLeft));
+      if (exittype) row.exittype = exittype;
+    }
+
     const payclassMap = new Map();
+    console.log("Filtered active records count:", filtered.length);
     for (const row of filtered) {
       const payclass = row.payclass;
       if (!payclassMap.has(payclass)) {
@@ -208,14 +262,18 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
 
     const results = {
       totalUniqueRecords: cleaned.length,
-      inactive: cleaned.length - filtered.length, //deduplicated vs active(active is used for the rest of the way)
-      uploaded: 0,
-      existing: 0,
+      inactive: inactiveEmployeeSet.size,
+      computed: 0,
+      non_exist: nonExistentSet.size,
       duplicates: duplicates.length,
-    };
+    };;
 
     const insertRecords = [];
+
+    console.log(payclassMap.entries())
     for (const [payclass, rows] of payclassMap.entries()) {
+
+      console.log(`Processing active payclass ${payclass} with ${rows.length} records`);
       const db = PAYCLASS_MAPPING[payclass];
       if (!db) {
         console.warn(`No database mapping for payclass ${payclass}, skipping`);
@@ -259,7 +317,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         if (ppr && !row.amount) {
           row.amount = ppr[`one_amount${row.level}`] || 0;
         }
- const sourceSheet = row._sourceSheet||row._sourcesheet||"Sheet1"
+        const sourceSheet = row._sourceSheet || row._sourcesheet || "Sheet1"
         insertRecords.push({
           "SVC. No.": row.service_number,
           "Payment Type": row.bp,
@@ -267,7 +325,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
           "Payment Indicator": "T",
           Ternor: 1,
           "Pay Class": `${row.payclass}`,
-         _sourceSheet: `${sourceSheet}-${row.payclass}` 
+          _sourceSheet: `${sourceSheet}-${row.payclass}`
         });
       }
 
@@ -277,6 +335,32 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         continue;
       }
     }
+
+      // Inactive employees go to a separate sheet with minimal info
+    for (const row of inactiveFiltered) {
+      const sourceSheet = row._sourceSheet || row._sourcesheet || "Sheet1";
+      insertRecords.push({
+        "SVC. No.": row.service_number,
+        "Date Left": row.dateLeft || "N/A",
+        "Exit Type": row.exittype || "N/A",
+        "Pay Class": `${row.payclass}`,
+        _sourceSheet: `${sourceSheet}-INACTIVE-${row.payclass}`,
+      });
+    }
+
+    // Non Existent employees(possibly not yet entered into DB or typos) also go to a separate sheet
+    for (const row of nonExistentFiltered) {
+      insertRecords.push({
+        "SVC. No.": row.service_number,
+        "Rank": row.rank || "N/A",
+        "Surname": row.surname || "N/A",
+        "Other Names": row.other_names || "N/A",
+        "Amount": row.amount || "N/A",
+        _sourceSheet: `NONEXISTENT`,
+      });
+    }
+
+    results.computed = activeEmployeeSet.size;
 
     // NEW: Group records by source sheet
     const recordsBySheet = {};
@@ -387,7 +471,7 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
           const cell = row.getCell(colIndex + 1);
           cell.value = record[header];
 
-          if (header === "Amount Payable" || header === "Amount To Date") {
+        if (header === "Amount Payable" || header === "Amount To Date" || header === "Amount") {
             cell.numFmt = '"₦"#,##0.00';
             cell.alignment = { horizontal: "right", vertical: "middle" };
           }
@@ -584,7 +668,7 @@ router.get("/template", verifyToken, async (req, res) => {
   instructionsSheet.getRow(1).height = 25;
   instructionsSheet.getRow(2).height = 25;
 
-   const instructions = [
+  const instructions = [
     "1. Make sure each sheet name matches the payhead code in the system for correct mapping",
     "2. Do not modify the header rows (rows 1-3) or column names",
     "3. Fill data starting from row 4",

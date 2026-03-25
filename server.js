@@ -97,10 +97,10 @@ async function startServer() {
   // mount routes
   require('./routes')(app);
 
-  const options = {
-    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
-  };
+  // const options = {
+  //   key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+  //   cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+  // };
 
   switch (SERVER_MODE) {
     case 'network':

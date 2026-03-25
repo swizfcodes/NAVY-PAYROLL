@@ -1,27 +1,55 @@
 <!-- BATCH UPLOAD SECTION -->
 <style>
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
+
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
+
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
+
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
     position: absolute;
     bottom: 0;
   }
+
   .animate-grow-down {
     animation: grow-down 0.6s ease-in-out infinite alternate;
     position: absolute;
     top: 0;
   }
+
   .animate-expand {
     animation: expand 0.6s ease-in-out infinite alternate;
   }
@@ -93,7 +121,7 @@
           <span id="total-Records" class="font-medium">0</span>
         </p>
         <p>
-          Successfully Inserted:
+          Successfully Computed:
           <span id="successRecords" class="font-medium text-green-600">0</span>
         </p>
         <p>
@@ -101,12 +129,12 @@
           <span id="duplicateRows" class="font-medium text-red-600">0</span>
         </p>
         <p>
-          Existing Records:
-          <span id="existingRecords" class="font-medium text-red-600">0</span>
-        </p>
-        <p>
           Inactive Staff:
           <span id="inactive" class="font-medium text-red-600">0</span>
+        </p>
+        <p>
+          Non-Existent Staff (No Records):
+          <span id="nonexist" class="font-medium text-red-600">0</span>
         </p>
         <div id="failedPayclasses" class="mt-3 hidden">
           <p class="font-semibold text-red-600">Failed Pay Classes:</p>
@@ -281,11 +309,11 @@
         summary.totalUniqueRecords || 0;
       document.getElementById("inactive").textContent = summary.inactive || 0;
       document.getElementById("successRecords").textContent =
-        summary.uploaded || 0;
-      document.getElementById("existingRecords").textContent =
-        summary.existing || 0;
+        summary.computed || 0;
       document.getElementById("duplicateRows").textContent =
         summary.duplicates || 0;
+      document.getElementById("nonexist").textContent =
+        summary.non_exist || 0;
 
       // Show failed pay classes if any
       if (summary.failed && Object.keys(summary.failed).length > 0) {
