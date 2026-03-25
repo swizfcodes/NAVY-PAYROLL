@@ -71,3 +71,16 @@ key.pem
 check-db-health.js
 query
 test.html
+NavyPayroll-App-launcher.bat
+NavyPayroll-Proxy-launcher.bat
+.cache
+.github/hello
+NavyPayroll-App.exe
+NavyPayroll-App.xml
+NavyPayroll-Proxy.exe
+NavyPayroll-Watcher.xml
+NavyPayroll-Proxy.xml
+NavyPayroll-Watcher.exe
+actions-runner.zip
+actions-runner
+bin/openssl.cnf
