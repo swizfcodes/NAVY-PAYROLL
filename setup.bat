@@ -530,14 +530,7 @@ if exist "%~dp0actions-runner\run.cmd" (
         echo [OK] GitHub Actions Runner already installed and service running — skipping.
         goto skip_runner
     )
-    echo [OK] Runner files found — checking service...
-    cd /d "%~dp0actions-runner"
-    call run.cmd --check >nul 2>&1
-    if not errorlevel 1 (
-        echo [OK] Runner already configured — skipping.
-        goto skip_runner
-    )
-    cd /d "%~dp0"
+    echo [INFO] Runner files found — service not running, will reinstall.
 )
 
 :: Skip if runner chunks not present — nothing to install
