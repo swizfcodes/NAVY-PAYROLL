@@ -1,32 +1,34 @@
 const path   = require('path');
 const dotenv = require('dotenv');
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
 dotenv.config({ path: path.resolve(__dirname, envFile) });
+
 const { notificationMiddleware } = require('./middware/notifications');
 const seamlessWrapper = require('./services/helpers/historicalReportWrapper');
-const express = require('express');
-const app = express();
-const session = require('express-session');
+const express  = require('express');
+const app      = express();
+const session  = require('express-session');
 const serveIndex = require('serve-index');
-const pool = require('./config/db'); 
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const fs = require('fs');
-const https = require('https');
-//const jsreport = require('jsreport-core')();
-//const multer = require("multer");
-const PORT = process.env.PORT || 5500;
+const pool     = require('./config/db');
+const cors     = require('cors');
+const helmet   = require('helmet');
+const morgan   = require('morgan');
+const fs       = require('fs');
+const https    = require('https');
+const http     = require('http');
 
+const PORT        = parseInt(process.env.PORT)        || 5500;
+const HTTPS_PORT  = parseInt(process.env.HTTPS_PORT)  || 8443;
+const HTTP_PORT   = parseInt(process.env.HTTP_PORT)   || 8080;
+const LOCAL_IP    = process.env.LOCAL_IP               || '127.0.0.1';
+const LOCAL_DOMAIN = process.env.LOCAL_DOMAIN          || 'localhost';
+const SERVER_MODE  = process.env.SERVER_MODE           || 'auto';
+const BIND_ADDRESS = process.env.BIND_ADDRESS          || '127.0.0.1';
 
-
-// Load env variables
-//dotenv.config({ path: path.resolve(__dirname, envFile) });
 console.log('Running in', process.env.NODE_ENV);
+console.log(`SERVER_MODE=${SERVER_MODE}  BIND=${BIND_ADDRESS}  PORT=${PORT}  HTTPS=${HTTPS_PORT}  HTTP=${HTTP_PORT}`);
 
-
-
-// security headers & logging
+// ── Security headers ───────────────────────────────────────
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -37,29 +39,43 @@ app.use(
         "'unsafe-inline'",
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],   // ← allows blob: images
-      frameSrc: ["'self'", "blob:", "data:"],           // ← allows blob: iframes
+      imgSrc:   ["'self'", "data:", "blob:"],
+      frameSrc: ["'self'", "blob:", "data:"],
     },
   })
 );
 
 app.use(morgan('dev'));
 
+// ── CORS ───────────────────────────────────────────────────
+const corsOrigins = [
+  'http://localhost:5500',
+  'https://localhost:5500',
+  `http://localhost:${PORT}`,
+  `https://localhost:${PORT}`,
+  `https://localhost:${HTTPS_PORT}`,
+  `http://localhost:${HTTP_PORT}`,
+  'http://127.0.0.1:5500',
+  'https://127.0.0.1:5500',
+  `http://127.0.0.1:${PORT}`,
+  `https://127.0.0.1:${PORT}`,
+  `https://127.0.0.1:${HTTPS_PORT}`,
+  LOCAL_DOMAIN ? `https://${LOCAL_DOMAIN}`                    : null,
+  LOCAL_DOMAIN ? `https://${LOCAL_DOMAIN}:${HTTPS_PORT}`      : null,
+  LOCAL_DOMAIN ? `http://${LOCAL_DOMAIN}`                     : null,
+  LOCAL_DOMAIN ? `http://${LOCAL_DOMAIN}:${HTTP_PORT}`        : null,
+  LOCAL_IP     ? `https://${LOCAL_IP}`                        : null,
+  LOCAL_IP     ? `https://${LOCAL_IP}:${HTTPS_PORT}`          : null,
+  LOCAL_IP     ? `http://${LOCAL_IP}`                         : null,
+  LOCAL_IP     ? `http://${LOCAL_IP}:${HTTP_PORT}`            : null,
+  'https://hicad.ng',
+].filter(Boolean);
 
-
-// CORS appears before session middleware if cookies are used cross-origin
-const corsOptions = {
-  origin: [
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://hicad.ng',// production
-  ].filter(Boolean),
-  methods: ['GET','POST','PUT','DELETE'],
-  credentials: true
-};
-app.use(cors(corsOptions));
-
-
+app.use(cors({
+  origin: corsOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 
 // trust proxy when behind load balancer (set in env when needed)
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
@@ -74,100 +90,115 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // true on HTTPS
+    secure:   process.env.NODE_ENV === 'production',
     sameSite: process.env.COOKIE_SAMESITE || 'lax',
-    maxAge: 24 * 60 * 60 * 1000
-  }
+    maxAge:   24 * 60 * 60 * 1000,
+  },
 }));
 
 app.use(notificationMiddleware);
 
-// Configuration via environment variable
-// Usage: SERVER_MODE=localhost node server.js
-const SERVER_MODE = process.env.SERVER_MODE || 'auto'; // Default to 'auto'
+// ── Static files ───────────────────────────────────────────
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
 
-// Health check endpoint
+// ── Health check ───────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
-async function startServer() {
-  await seamlessWrapper.initialize();
-
-  // mount routes
-  require('./routes')(app);
-
-  const LOCAL_IP = process.env.LOCAL_IP || '127.0.0.1';
-  const LOCAL_DOMAIN = process.env.LOCAL_DOMAIN || 'localhost';
-
-  const options = {
-    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
-  };
-
-  switch (SERVER_MODE) {
-    case 'network':
-      https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
-        console.log(`🔒 HTTPS server running on https://${LOCAL_IP}`);
-        console.log(`🌐 LAN domain: https://${LOCAL_DOMAIN}`);
-      });
-      break;
-
-    case "localhost":
-      app.listen(PORT, () => {
-        console.log(`🚀 Server running on http://localhost:${PORT}`);
-      });
-      break;
-
-    case 'auto':
-    default:
-      const server = https.createServer(options, app);
-
-      server.listen(PORT, '0.0.0.0', () => {
-        console.log(`🔒 HTTPS server running on https://${LOCAL_IP}`);
-        console.log(`🌐 LAN domain: https://${LOCAL_DOMAIN}`);
-      });
-
-      server.on('error', (err) => {
-        if (err.code === 'EADDRNOTAVAIL' || err.code === 'EADDRINUSE') {
-          console.warn('⚠️  Network interface unavailable, falling back to localhost');
-          
-          const fallbackServer = app
-          
-          fallbackServer.listen(PORT, 'localhost', () => {
-            console.log(`🔒 HTTPS server running on http://localhost:${PORT}`);
-          });
-
-          fallbackServer.on('error', (fallbackErr) => {
-            console.error('❌ Failed to start fallback server:', fallbackErr);
-            process.exit(1);
-          });
-        } else {
-          console.error('❌ Server error:', err);
-          process.exit(1);
-        }
-      });
-      break;
-  }
-}
-
-// static files and directory listing
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
-
-startServer().catch(err => {
-  console.error('❌ Failed to start server:', err);
-  process.exit(1);
-});
-
-// small helper to expose credentials header for some clients
+// ── Credentials header ─────────────────────────────────────
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
 });
 
-// centralized error handler
+// ── Error handler ──────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack || err);
   res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// ── SSL options ────────────────────────────────────────────
+function getSSLOptions() {
+  try {
+    return {
+      key:  fs.readFileSync(path.join(__dirname, 'key.pem')),
+      cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+    };
+  } catch {
+    console.warn('⚠️  SSL certs not found — HTTPS unavailable');
+    return null;
+  }
+}
+
+// ── Start server ───────────────────────────────────────────
+async function startServer() {
+  await seamlessWrapper.initialize();
+  require('./routes')(app);
+
+  const ssl = getSSLOptions();
+
+  switch (SERVER_MODE) {
+
+    // ── network: bind to all interfaces (proper LAN router) ──
+    case 'network': {
+      if (!ssl) { console.error('❌ network mode requires SSL certs'); process.exit(1); }
+      https.createServer(ssl, app).listen(PORT, '0.0.0.0', () => {
+        console.log(`🔒 HTTPS server → https://${LOCAL_IP}:${PORT}`);
+        console.log(`🌐 LAN domain   → https://${LOCAL_DOMAIN}:${PORT}`);
+      });
+      break;
+    }
+
+    // ── localhost: plain HTTP, no SSL, local only ─────────────
+    case 'localhost': {
+      http.createServer(app).listen(PORT, '127.0.0.1', () => {
+        console.log(`🚀 HTTP server  → http://localhost:${PORT}`);
+      });
+      break;
+    }
+
+    // ── auto: HTTPS if certs exist, fallback to HTTP ──────────
+    case 'auto':
+    default: {
+      if (ssl) {
+        const server = https.createServer(ssl, app);
+
+        server.listen(PORT, BIND_ADDRESS, () => {
+          if (BIND_ADDRESS === '0.0.0.0') {
+            console.log(`🔒 HTTPS server → https://${LOCAL_IP}:${PORT}`);
+            console.log(`🌐 LAN domain   → https://${LOCAL_DOMAIN}:${PORT}`);
+          } else {
+            console.log(`🔒 HTTPS server → https://localhost:${PORT}`);
+          }
+        });
+
+        server.on('error', (err) => {
+          if (['EADDRNOTAVAIL', 'EADDRINUSE', 'EACCES'].includes(err.code)) {
+            console.warn(`⚠️  HTTPS on ${BIND_ADDRESS}:${PORT} failed (${err.code}) — falling back to HTTP localhost`);
+            http.createServer(app).listen(PORT, '127.0.0.1', () => {
+              console.log(`🚀 Fallback HTTP → http://localhost:${PORT}`);
+            });
+          } else {
+            console.error('❌ Server error:', err);
+            process.exit(1);
+          }
+        });
+
+      } else {
+        // No certs — plain HTTP fallback
+        console.warn('⚠️  No SSL certs found — starting plain HTTP');
+        http.createServer(app).listen(PORT, '127.0.0.1', () => {
+          console.log(`🚀 HTTP server  → http://localhost:${PORT}`);
+        });
+      }
+      break;
+    }
+  }
+}
+
+startServer().catch(err => {
+  console.error('❌ Failed to start server:', err);
+  process.exit(1);
 });
