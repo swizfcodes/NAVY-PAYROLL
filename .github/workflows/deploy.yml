@@ -6,7 +6,6 @@ on:
       - master
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PROJECT_PATH: ${{ secrets.SERVER_PROJECT_PATH }}
 
 jobs:
@@ -25,14 +24,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
+      - name: Sync to project path
+        run: |
+          robocopy $env:GITHUB_WORKSPACE $env:PROJECT_PATH /E /XD .git node_modules /XF "*.log" "*.pem" "*.env*"
+          if ($LASTEXITCODE -le 7) { exit 0 }
+          exit 1
+
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_PATH }}
         run: npm install --omit=dev
 
       - name: Restart app service
         working-directory: ${{ env.PROJECT_PATH }}
-        run: NavyPayroll-App.exe restart
+        run: |
+          NavyPayroll-App.exe restart
+          Start-Sleep -Seconds 5
 
       - name: Show service status
         working-directory: ${{ env.PROJECT_PATH }}
         run: NavyPayroll-App.exe status
+
+      - name: Health check
+        run: |
+          $retries = 5
+          for ($i = 1; $i -le $retries; $i++) {
+            try {
+              [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+              $r = Invoke-WebRequest -Uri "https://localhost/health" -UseBasicParsing -TimeoutSec 5
+              Write-Host "[OK] Health check passed: $($r.Content)"
+              exit 0
+            } catch {
+              Write-Host "[WARN] Attempt $i/$retries failed: $($_.Exception.Message)"
+              Start-Sleep -Seconds 3
+            }
+          }
+          Write-Host "[ERROR] Health check failed after $retries attempts"
+          exit 1
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          Write-Host "Deploy failed at $(Get-Date)"
+          NavyPayroll-App.exe status
