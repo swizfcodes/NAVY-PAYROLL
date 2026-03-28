@@ -9,12 +9,12 @@ const envFile =
   process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-const TARGET_PORT = parseInt(process.env.PORT) || 5500;
-const HTTPS_PORT = parseInt(process.env.HTTPS_PORT) || 8443;
-const HTTP_PORT = parseInt(process.env.HTTP_PORT) || 8080;
-const LOCAL_IP = process.env.LOCAL_IP || "127.0.0.1";
-const DOMAIN = process.env.LOCAL_DOMAIN || "localhost";
-const BIND_ADDRESS = process.env.BIND_ADDRESS || "127.0.0.1";
+const TARGET_PORT = parseInt(process.env.PORT);
+const HTTPS_PORT = parseInt(process.env.HTTPS_PORT);
+const HTTP_PORT = parseInt(process.env.HTTP_PORT);
+const LOCAL_IP = process.env.LOCAL_IP;
+const DOMAIN = process.env.LOCAL_DOMAIN;
+const BIND_ADDRESS = process.env.BIND_ADDRESS;
 
 console.log("Navy Payroll — HTTPS Proxy");
 console.log("==========================");

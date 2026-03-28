@@ -38,7 +38,8 @@
   "main": "db-config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "start node proxy.js && node server.js",
+    "start": "node server.js",
+    "start:network": "start node proxy.js && node server.js",
     "dev": "nodemon server.js",
     "build:css": "tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/output.css --minify",
     "watch:css": "tailwindcss -i ./public/styles/tailwind-input.css -o ./public/styles/output.css --watch",
