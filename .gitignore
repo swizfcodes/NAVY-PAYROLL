@@ -84,3 +84,5 @@ NavyPayroll-Watcher.exe
 actions-runner.zip
 actions-runner
 bin/openssl.cnf
+NavyPayroll-mDNS.exe
+NavyPayroll-mDNS.xml

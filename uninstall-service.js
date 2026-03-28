@@ -3,9 +3,9 @@
  * Run as Administrator: node uninstall-service.js
  */
 
-const { execSync } = require('child_process');
-const path = require('path');
-const fs   = require('fs');
+const { execSync } = require("child_process");
+const path = require("path");
+const fs = require("fs");
 
 const ROOT = __dirname;
 
@@ -40,13 +40,15 @@ function removeService(id) {
   console.log(`[${id}] Removed ✔`);
 }
 
-console.log('Navy Payroll — Service Uninstaller (WinSW)');
-console.log('===========================================');
+console.log("Navy Payroll -- Service Uninstaller (WinSW)");
+console.log("===========================================");
 
-removeService('NavyPayroll-Proxy');
-removeService('NavyPayroll-App');
+removeService("NavyPayroll-Proxy");
+removeService("NavyPayroll-App");
+removeService("NavyPayroll-Watcher");
+removeService("NavyPayroll-mDNS");
 
-console.log('\n===========================================');
-console.log('Both services removed.');
-console.log('Run node install-service.js to re-register.');
-console.log('===========================================');
+console.log("\n===========================================");
+console.log("All services removed.");
+console.log("Run node install-service.js to re-register.");
+console.log("===========================================");

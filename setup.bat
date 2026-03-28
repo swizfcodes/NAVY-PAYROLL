@@ -49,7 +49,7 @@ echo.
 
 
 :: ============================================================
-:: STEP 0 — Stop existing Navy Payroll tasks and free ports
+:: STEP 0 — Stop existing Navy Payroll services and free ports
 :: ============================================================
 echo [0/8] Stopping existing Navy Payroll services...
 
@@ -74,21 +74,25 @@ if defined P443_PID (
     set "P443_NAME=unknown"
     for /f "tokens=1" %%B in ('tasklist /fi "PID eq !P443_PID!" /fo csv /nh 2^>nul') do set "P443_NAME=%%B"
     echo [WARN] Port 443 is in use by !P443_NAME! ^(PID !P443_PID!^)
-    echo   [1] Use a different HTTPS port
+    echo   [1] Use a different HTTPS port ^(recommended: 8443^)
     echo   [2] Force kill it and use 443
     echo   [3] Abort
     set /p "C443=Choose [1/2/3]: "
     if "!C443!"=="1" (
-        set /p "HTTPS_PORT=Enter alternative HTTPS port: "
+        set /p "HTTPS_PORT=Enter alternative HTTPS port [8443]: "
+        if not defined HTTPS_PORT set "HTTPS_PORT=8443"
         echo [OK] Will use HTTPS port !HTTPS_PORT!
     ) else if "!C443!"=="2" (
         taskkill /PID !P443_PID! /F >nul 2>&1
+        set "HTTPS_PORT=443"
         echo [OK] Killed PID !P443_PID! — port 443 freed
     ) else (
         echo [ABORTED] Free port 443 manually then re-run.
         pause
         exit /b 0
     )
+) else (
+    set "HTTPS_PORT=443"
 )
 
 :: Port 80 — ask if something else is using it
@@ -100,30 +104,37 @@ if defined P80_PID (
     set "P80_NAME=unknown"
     for /f "tokens=1" %%B in ('tasklist /fi "PID eq !P80_PID!" /fo csv /nh 2^>nul') do set "P80_NAME=%%B"
     echo [WARN] Port 80 is in use by !P80_NAME! ^(PID !P80_PID!^)
-    echo   [1] Use a different HTTP port
+    echo   [1] Use a different HTTP port ^(recommended: 8080^)
     echo   [2] Force kill it and use 80
     echo   [3] Abort
     set /p "C80=Choose [1/2/3]: "
     if "!C80!"=="1" (
-        set /p "HTTP_PORT=Enter alternative HTTP port: "
+        set /p "HTTP_PORT=Enter alternative HTTP port [8080]: "
+        if not defined HTTP_PORT set "HTTP_PORT=8080"
         echo [OK] Will use HTTP port !HTTP_PORT!
     ) else if "!C80!"=="2" (
         taskkill /PID !P80_PID! /F >nul 2>&1
+        set "HTTP_PORT=80"
         echo [OK] Killed PID !P80_PID! — port 80 freed
     ) else (
         echo [ABORTED] Free port 80 manually then re-run.
         pause
         exit /b 0
     )
+) else (
+    set "HTTP_PORT=80"
 )
 
-echo [OK] Ports cleared
+set "APP_PORT=5500"
+
+echo [OK] Ports — App:%APP_PORT%  HTTPS:%HTTPS_PORT%  HTTP:%HTTP_PORT%
 timeout /t 2 /nobreak >nul
 
 
 :: ============================================================
 :: STEP 1 — Verify .env.local exists
 :: ============================================================
+echo.
 echo [1/8] Checking .env.local...
 
 set "ENV_FILE=%~dp0.env.local"
@@ -189,11 +200,30 @@ if not defined GATEWAY (
 
 
 :: ============================================================
-:: STEP 3 — Prompt for friendly .local domain name
+:: STEP 3 — Network binding mode
 :: ============================================================
 echo.
-echo [3/8] Friendly LAN domain name setup...
-echo       Must end in .local (e.g. navypayroll.local)
+echo [3/8] Network binding mode...
+echo.
+echo   [1] localhost only  ^(MTN hotspot / testing — access from this machine only^)
+echo   [2] LAN ^(0.0.0.0^)  ^(proper router — access from all machines on network^)
+echo.
+set /p "BIND_CHOICE=Choose [1/2]: "
+if "!BIND_CHOICE!"=="2" (
+    set "BIND_ADDRESS=0.0.0.0"
+    echo [OK] Binding to all interfaces ^(LAN mode^)
+) else (
+    set "BIND_ADDRESS=127.0.0.1"
+    echo [OK] Binding to localhost only
+)
+
+
+:: ============================================================
+:: STEP 4 — Friendly .local domain name
+:: ============================================================
+echo.
+echo [4/8] Friendly LAN domain name setup...
+echo       Must end in .local ^(e.g. navypayroll.local^)
 echo.
 
 set "EXISTING_DOMAIN="
@@ -223,89 +253,55 @@ echo [OK] Domain = %DOMAIN%
 
 
 :: ============================================================
-:: Write LOCAL_IP and LOCAL_DOMAIN to .env.local under SERVER_MODE=
+:: Write all env vars to .env.local and .env.production
 :: ============================================================
 echo.
-echo [INFO] Writing LOCAL_IP and LOCAL_DOMAIN to .env.local...
+echo [INFO] Writing env vars to .env.local and .env.production...
 
-:: ── Write LOCAL_IP + LOCAL_DOMAIN to an env file ─────────
-:: Uses PowerShell for reliable single-pass dedup + inject
 set "TEMP_PS=%TEMP%\write_env.ps1"
 
-> "%TEMP_PS%" echo function Write-EnvVars($filePath, $ip, $domain) {
+> "%TEMP_PS%" echo function Write-EnvVars($filePath, $ip, $domain, $bindAddress, $httpsPort, $httpPort) {
 >> "%TEMP_PS%" echo     if (-not (Test-Path $filePath)) { return }
->> "%TEMP_PS%" echo     $lines = Get-Content $filePath ^| Where-Object { $_ -notmatch '^LOCAL_IP=' -and $_ -notmatch '^LOCAL_DOMAIN=' }
+>> "%TEMP_PS%" echo     $lines = Get-Content $filePath ^| Where-Object {
+>> "%TEMP_PS%" echo         $_ -notmatch '^LOCAL_IP=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^LOCAL_DOMAIN=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^BIND_ADDRESS=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^HTTPS_PORT=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^HTTP_PORT='
+>> "%TEMP_PS%" echo     }
 >> "%TEMP_PS%" echo     $out = @(); $written = $false
 >> "%TEMP_PS%" echo     foreach ($line in $lines) {
 >> "%TEMP_PS%" echo         $out += $line
 >> "%TEMP_PS%" echo         if (-not $written -and $line -match '^SERVER_MODE=') {
 >> "%TEMP_PS%" echo             $out += "LOCAL_IP=$ip"
 >> "%TEMP_PS%" echo             $out += "LOCAL_DOMAIN=$domain"
+>> "%TEMP_PS%" echo             $out += "BIND_ADDRESS=$bindAddress"
+>> "%TEMP_PS%" echo             $out += "HTTPS_PORT=$httpsPort"
+>> "%TEMP_PS%" echo             $out += "HTTP_PORT=$httpPort"
 >> "%TEMP_PS%" echo             $written = $true
 >> "%TEMP_PS%" echo         }
 >> "%TEMP_PS%" echo     }
->> "%TEMP_PS%" echo     if (-not $written) { $out += "LOCAL_IP=$ip"; $out += "LOCAL_DOMAIN=$domain" }
+>> "%TEMP_PS%" echo     if (-not $written) {
+>> "%TEMP_PS%" echo         $out += "LOCAL_IP=$ip"
+>> "%TEMP_PS%" echo         $out += "LOCAL_DOMAIN=$domain"
+>> "%TEMP_PS%" echo         $out += "BIND_ADDRESS=$bindAddress"
+>> "%TEMP_PS%" echo         $out += "HTTPS_PORT=$httpsPort"
+>> "%TEMP_PS%" echo         $out += "HTTP_PORT=$httpPort"
+>> "%TEMP_PS%" echo     }
 >> "%TEMP_PS%" echo     $out ^| Set-Content $filePath -Encoding UTF8
 >> "%TEMP_PS%" echo }
-
->> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.local' '%LOCAL_IP%' '%DOMAIN%'
->> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.production' '%LOCAL_IP%' '%DOMAIN%'
+>> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.local'      '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%'
+>> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.production' '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%'
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP_PS%"
 del "%TEMP_PS%" >nul 2>&1
 
-echo [OK] LOCAL_IP=%LOCAL_IP% written to .env.local and .env.production
-echo [OK] LOCAL_DOMAIN=%DOMAIN% written to .env.local and .env.production
-
-
-:: ============================================================
-:: STEP 4 - Lock in Static IP (preserving detected DNS)
-:: ============================================================
-echo.
-echo [4/8] Setting static IP %LOCAL_IP% on adapter "%ADAPTER%"...
-
-:: Detect current DNS before switching to static
-set "DNS1="
-for /f "tokens=2 delims=:" %%A in ('netsh interface ip show dns name^="%ADAPTER%" ^| findstr /i "DNS Servers\|statically"') do (
-    for /f "tokens=1" %%B in ("%%A") do (
-        if not defined DNS1 set "DNS1=%%B"
-    )
-)
-:: Fallback via ipconfig
-if not defined DNS1 (
-    for /f "tokens=2 delims=:" %%A in ('ipconfig /all ^| findstr /i "DNS Servers"') do (
-        for /f "tokens=1" %%B in ("%%A") do (
-            if not defined DNS1 set "DNS1=%%B"
-        )
-    )
-)
-:: Final fallback - use gateway (routers usually handle DNS)
-if not defined DNS1 set "DNS1=%GATEWAY%"
-set "DNS2=8.8.8.8"
-
-echo [OK] DNS1 = %DNS1%
-echo [OK] DNS2 = %DNS2% (Google fallback)
-
-:: Set static IP
-netsh interface ip set address name="%ADAPTER%" static %LOCAL_IP% 255.255.255.0 %GATEWAY% >nul 2>&1
-
-if errorlevel 1 (
-    echo [WARN] Failed to set static IP. Falling back to DHCP...
-    netsh interface ip set address name="%ADAPTER%" dhcp >nul 2>&1
-    if errorlevel 1 (
-        echo [ERROR] Could not set DHCP either. Check adapter manually.
-        pause
-        exit /b 1
-    )
-    echo [OK] Fallback to DHCP succeeded.
-    echo [WARN] IP may change on reconnect - re-run script if that happens.
-) else (
-    echo [OK] Static IP locked to %LOCAL_IP%
-    :: Re-apply DNS after static IP assignment (static clears DNS)
-    netsh interface ip set dns name="%ADAPTER%" static %DNS1% >nul 2>&1
-    netsh interface ip add dns name="%ADAPTER%" %DNS2% index=2 >nul 2>&1
-    echo [OK] DNS preserved: %DNS1% + %DNS2%
-)
+echo [OK] LOCAL_IP=%LOCAL_IP%
+echo [OK] LOCAL_DOMAIN=%DOMAIN%
+echo [OK] BIND_ADDRESS=%BIND_ADDRESS%
+echo [OK] HTTPS_PORT=%HTTPS_PORT%
+echo [OK] HTTP_PORT=%HTTP_PORT%
+echo [OK] Written to .env.local and .env.production
 
 
 :: ============================================================
@@ -328,7 +324,7 @@ if exist "%CERT_FILE%" (
 
 set "OPENSSL_EXE="
 
-:: 1) Check bundled bin/ folder first (always works, no internet needed)
+:: 1) Check bundled bin/ folder first
 if exist "%~dp0bin\openssl.exe" set "OPENSSL_EXE=%~dp0bin\openssl.exe"
 
 :: 2) Check system PATH
@@ -360,7 +356,7 @@ if not defined OPENSSL_EXE (
 :: 4) Last resort — try winget
 if not defined OPENSSL_EXE (
     echo [INFO] OpenSSL not found. Trying winget...
-    winget install "OpenSSL Light" --source winget --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
+    winget install ShiningLight.OpenSSL.Light --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
     for /f "skip=2 tokens=3*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH') do set "SYS_PATH=%%A %%B"
     set "PATH=%SYS_PATH%;%PATH%"
     where openssl >nul 2>&1
@@ -373,166 +369,90 @@ if not defined OPENSSL_EXE (
 
 if not defined OPENSSL_EXE (
     echo [ERROR] OpenSSL not found.
-    echo         bin\openssl.exe should be bundled in the project.
-    echo         Contact the system administrator.
+    echo         Place openssl.exe + its DLLs in %~dp0bin\
+    echo         Or install from: https://slproweb.com/products/Win32OpenSSL.html
     pause
     exit /b 1
 )
 
 echo [INFO] Using OpenSSL at: %OPENSSL_EXE%
 
-:: Add OpenSSL's directory to PATH so it can find its DLLs
+:: Add OpenSSL dir to PATH so it finds its DLLs
 for %%F in ("%OPENSSL_EXE%") do set "OPENSSL_DIR=%%~dpF"
 set "PATH=%OPENSSL_DIR%;%PATH%"
 
-:: Generate minimal openssl.cnf if not bundled
+:: Generate openssl.cnf with correct domain and IPs
 set "OPENSSL_CONF=%~dp0bin\openssl.cnf"
-if not exist "%OPENSSL_CONF%" (
-    if exist "%OPENSSL_DIR%openssl.cnf" (
-        set "OPENSSL_CONF=%OPENSSL_DIR%openssl.cnf"
-    ) else (
-        echo [INFO] Generating minimal openssl.cnf...
-        (
-            echo [req]
-            echo distinguished_name = req_distinguished_name
-            echo x509_extensions = v3_req
-            echo prompt = no
-            echo [req_distinguished_name]
-            echo CN = localhost
-            echo [v3_req]
-            echo keyUsage = critical, digitalSignature, keyEncipherment
-            echo extendedKeyUsage = serverAuth
-            echo subjectAltName = @alt_names
-            echo [alt_names]
-            echo DNS.1 = localhost
-            echo DNS.2 = %DOMAIN%
-            echo IP.1 = 127.0.0.1
-            echo IP.2 = %LOCAL_IP%
-        ) > "%~dp0bin\openssl.cnf"
-        echo [OK] openssl.cnf generated
-    )
-)
+echo [INFO] Generating openssl.cnf with domain and IP SANs...
+(
+    echo [req]
+    echo distinguished_name = req_distinguished_name
+    echo x509_extensions = v3_req
+    echo prompt = no
+    echo [req_distinguished_name]
+    echo CN = %DOMAIN%
+    echo [v3_req]
+    echo keyUsage = critical, digitalSignature, keyEncipherment
+    echo extendedKeyUsage = serverAuth
+    echo subjectAltName = @alt_names
+    echo [alt_names]
+    echo DNS.1 = localhost
+    echo DNS.2 = %DOMAIN%
+    echo IP.1 = 127.0.0.1
+    echo IP.2 = %LOCAL_IP%
+) > "%OPENSSL_CONF%"
+echo [OK] openssl.cnf generated
 
 set MSYS_NO_PATHCONV=1
 "%OPENSSL_EXE%" req -x509 -newkey rsa:2048 ^
   -keyout "%KEY_FILE%" ^
   -out "%CERT_FILE%" ^
-  -days 365 -nodes ^
+  -days 3650 -nodes ^
   -config "%OPENSSL_CONF%" 2>&1
 
 if errorlevel 1 (
     echo [ERROR] OpenSSL failed to generate certificate.
-    echo         Make sure libssl-3-x64.dll and libcrypto-3-x64.dll are in the same folder as openssl.exe
+    echo         Ensure libssl-3-x64.dll and libcrypto-3-x64.dll are alongside openssl.exe
     pause
     exit /b 1
 )
 
-echo [OK] cert.pem and key.pem generated
+echo [OK] cert.pem and key.pem generated ^(valid 10 years^)
 
 
 :: ============================================================
-:: STEP 6 — Port conflict check + Firewall rules
+:: STEP 7 — Firewall rules
 :: ============================================================
 echo.
-echo [6/8] Configuring ports and firewall...
+echo [6/8] Configuring firewall rules...
 
-:: Default ports
-set "APP_PORT=5500"
-set "HTTPS_PORT=443"
-set "HTTP_PORT=80"
-
-:: Check for conflicts on all three ports
-echo [INFO] Checking for port conflicts...
-set "PORT_CONFLICT=0"
-
-for %%P in (%HTTP_PORT% %HTTPS_PORT% %APP_PORT%) do (
-    set "PORT_PID="
-    for /f "tokens=5" %%A in ('netstat -ano ^| findstr /i "0.0.0.0:%%P " ^| findstr /i "LISTENING"') do (
-        if not defined PORT_PID set "PORT_PID=%%A"
-    )
-    if defined PORT_PID (
-        set "PORT_CONFLICT=1"
-        set "PORT_NAME=unknown"
-        if "%%P"=="%HTTP_PORT%"  set "PORT_NAME=HTTP redirect"
-        if "%%P"=="%HTTPS_PORT%" set "PORT_NAME=HTTPS proxy"
-        if "%%P"=="%APP_PORT%"   set "PORT_NAME=Node app"
-        echo [WARN] Port %%P ^(!PORT_NAME!^) is already in use by PID !PORT_PID!
-        for /f "tokens=1" %%B in ('tasklist /fi "PID eq !PORT_PID!" /fo csv /nh 2^>nul') do (
-            echo       Process: %%B
-        )
-    )
-)
-
-if "!PORT_CONFLICT!"=="1" (
-    echo.
-    echo [WARN] One or more ports are in use.
-    echo.
-    echo   [1] Enter alternative ports
-    echo   [2] Continue anyway ^(may cause startup errors^)
-    echo   [3] Abort
-    echo.
-    set /p "PORT_CHOICE=Choose [1/2/3]: "
-
-    if "!PORT_CHOICE!"=="1" (
-        echo.
-        echo   Current: App=%APP_PORT%  HTTPS=%HTTPS_PORT%  HTTP=%HTTP_PORT%
-        echo   Press ENTER to keep existing value.
-        echo.
-
-        set /p "NEW_APP=New App port [%APP_PORT%]: "
-        if defined NEW_APP set "APP_PORT=!NEW_APP!"
-
-        set /p "NEW_HTTPS=New HTTPS proxy port [%HTTPS_PORT%]: "
-        if defined NEW_HTTPS set "HTTPS_PORT=!NEW_HTTPS!"
-
-        set /p "NEW_HTTP=New HTTP redirect port [%HTTP_PORT%]: "
-        if defined NEW_HTTP set "HTTP_PORT=!NEW_HTTP!"
-
-        echo.
-        echo [OK] Using — App:%APP_PORT%  HTTPS:%HTTPS_PORT%  HTTP:%HTTP_PORT%
-
-        :: Save updated PORT to .env.local
-        set "TEMP_ENV2=%TEMP%\env_port_temp.txt"
-        findstr /v /i "^PORT=" "%ENV_FILE%" > "%TEMP_ENV2%"
-        echo PORT=%APP_PORT%>> "%TEMP_ENV2%"
-        copy /y "%TEMP_ENV2%" "%ENV_FILE%" >nul
-        echo [OK] PORT=%APP_PORT% saved to .env.local
-
-    ) else if "!PORT_CHOICE!"=="3" (
-        echo [ABORTED] Free up conflicting ports then re-run setup.
-        pause
-        exit /b 0
-    ) else (
-        echo [INFO] Continuing with current ports.
-    )
-) else (
-    echo [OK] No port conflicts detected
-)
-
-:: Clear existing Navy Payroll firewall rules
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_SSL"   >nul 2>&1
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_PROXY" >nul 2>&1
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_HTTP"  >nul 2>&1
-echo [INFO] Cleared existing NAVY_PAYROLL rules (if any)
+netsh advfirewall firewall delete rule name="NAVY_PAYROLL_MDNS"  >nul 2>&1
+echo [INFO] Cleared existing NAVY_PAYROLL firewall rules
 
-:: Port APP_PORT — Node app
-netsh advfirewall firewall add rule name="NAVY_PAYROLL_SSL" dir=in action=allow protocol=TCP localport=%APP_PORT% profile=any >nul 2>&1
-if errorlevel 1 ( echo [ERROR] Failed port %APP_PORT% firewall rule. & pause & exit /b 1 )
-echo [OK] Firewall — port %APP_PORT% (Node app)
+netsh advfirewall firewall add rule name="NAVY_PAYROLL_SSL"   dir=in action=allow protocol=TCP localport=%APP_PORT%   profile=any >nul 2>&1
+echo [OK] Firewall — port %APP_PORT% ^(Node app^)
 
-:: Port HTTPS_PORT — HTTPS proxy
 netsh advfirewall firewall add rule name="NAVY_PAYROLL_PROXY" dir=in action=allow protocol=TCP localport=%HTTPS_PORT% profile=any >nul 2>&1
-if errorlevel 1 ( echo [ERROR] Failed port %HTTPS_PORT% firewall rule. & pause & exit /b 1 )
-echo [OK] Firewall — port %HTTPS_PORT% (HTTPS proxy)
+echo [OK] Firewall — port %HTTPS_PORT% ^(HTTPS proxy^)
 
-:: Port HTTP_PORT — HTTP redirect
-netsh advfirewall firewall add rule name="NAVY_PAYROLL_HTTP" dir=in action=allow protocol=TCP localport=%HTTP_PORT% profile=any >nul 2>&1
-if errorlevel 1 ( echo [ERROR] Failed port %HTTP_PORT% firewall rule. & pause & exit /b 1 )
-echo [OK] Firewall — port %HTTP_PORT% (HTTP redirect)
+netsh advfirewall firewall add rule name="NAVY_PAYROLL_HTTP"  dir=in action=allow protocol=TCP localport=%HTTP_PORT%  profile=any >nul 2>&1
+echo [OK] Firewall — port %HTTP_PORT% ^(HTTP redirect^)
+
+:: Allow mDNS multicast (UDP 5353) so .local resolves on the LAN
+netsh advfirewall firewall add rule name="NAVY_PAYROLL_MDNS"  dir=in action=allow protocol=UDP localport=5353        profile=any >nul 2>&1
+echo [OK] Firewall — port 5353 UDP ^(mDNS^)
+
+echo [INFO] Reserving ports for NETWORK SERVICE...
+netsh http add urlacl url=http://+:%HTTP_PORT%/   user="NT AUTHORITY\NETWORK SERVICE" >nul 2>&1
+netsh http add urlacl url=https://+:%HTTPS_PORT%/ user="NT AUTHORITY\NETWORK SERVICE" >nul 2>&1
+echo [OK] Port reservations set
 
 
 :: ============================================================
-:: STEP 7 — Add friendly domain to Windows hosts file
+:: STEP 8 — Add friendly domain to Windows hosts file
 :: ============================================================
 echo.
 echo [7/8] Updating Windows hosts file...
@@ -544,11 +464,12 @@ set "TEMP_HOSTS=%TEMP%\hosts_temp.txt"
 findstr /v /i "%DOMAIN%" "%HOSTS_FILE%" > "%TEMP_HOSTS%"
 copy /y "%TEMP_HOSTS%" "%HOSTS_FILE%" >nul
 echo %HOSTS_ENTRY%>> "%HOSTS_FILE%"
+del "%TEMP_HOSTS%" >nul 2>&1
 echo [OK] Hosts file updated: %HOSTS_ENTRY%
 
 
 :: ============================================================
-:: STEP 8 - Install OpenSSH + PM2 + Register autostart
+:: STEP 9 — Install services
 :: ============================================================
 echo.
 echo [8/8] Installing services...
@@ -572,7 +493,7 @@ echo [OK] SSH service enabled and set to auto-start
 :: Allow SSH through firewall
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_SSH" >nul 2>&1
 netsh advfirewall firewall add rule name="NAVY_PAYROLL_SSH" dir=in action=allow protocol=TCP localport=22 profile=any >nul 2>&1
-echo [OK] Firewall rule added -- port 22 (SSH)
+echo [OK] Firewall — port 22 ^(SSH^)
 
 echo.
 echo   SSH Connection Details:
@@ -584,10 +505,11 @@ echo   Add these to GitHub Secrets:
 echo     SERVER_HOST     = %LOCAL_IP%
 echo     SERVER_USER     = %USERNAME%
 echo     SERVER_SSH_PORT = 22
-echo     SERVER_SSH_KEY  = (your private key - see below)
+echo     SERVER_SSH_KEY  = ^(your private key^)
 echo.
 
-:: Install PM2 and start services
+:: Install WinSW services
+echo.
 echo [INFO] Setting up WinSW services...
 cd /d "%~dp0"
 node install-service.js
@@ -597,13 +519,28 @@ if errorlevel 1 (
     echo [OK] WinSW services registered and running
 )
 
-:: ============================================================
-:: STEP 9 - Install GitHub Actions Self-Hosted Runner
-:: ============================================================
+:: Install GitHub Actions Runner
 echo.
-echo [9/9] Installing GitHub Actions Runner...
+echo [INFO] Checking GitHub Actions Runner...
 
-:: Check GITHUB_RUNNER_TOKEN or GITHUB_PAT is set in .env.local
+:: Skip if runner is already installed and service is running
+if exist "%~dp0actions-runner\run.cmd" (
+    powershell -NoProfile -Command "if (Get-Service | Where-Object {$_.Name -like 'actions.runner*'}) { exit 0 } else { exit 1 }" >nul 2>&1
+    if not errorlevel 1 (
+        echo [OK] GitHub Actions Runner already installed and service running — skipping.
+        goto skip_runner
+    )
+    echo [INFO] Runner files found — service not running, will reinstall.
+)
+
+:: Skip if runner chunks not present — nothing to install
+if not exist "%~dp0bin\runner\runner.part0" (
+    echo [WARN] Runner chunks not found in bin\runner\ — skipping.
+    echo        Run chunk-runner.ps1 on your dev machine first.
+    goto skip_runner
+)
+
+:: Skip if no token available
 set "GITHUB_PAT="
 set "GITHUB_RUNNER_TOKEN="
 for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
@@ -613,20 +550,13 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
 
 if not defined GITHUB_PAT (
     if not defined GITHUB_RUNNER_TOKEN (
-        echo [WARN] Neither GITHUB_RUNNER_TOKEN nor GITHUB_PAT set in .env.local
+        echo [WARN] Neither GITHUB_RUNNER_TOKEN nor GITHUB_PAT set in .env.local — skipping.
         echo        Add one of these to .env.local:
         echo          GITHUB_RUNNER_TOKEN=token_from_github   ^(expires in 1hr^)
         echo          GITHUB_PAT=your_personal_access_token   ^(auto-generates token^)
         echo        Then run: node install-runner.js
         goto skip_runner
     )
-)
-
-:: Check runner chunks exist
-if not exist "%~dp0bin\runner\runner.part0" (
-    echo [WARN] Runner chunks not found in bin\runner\
-    echo        Run chunk-runner.ps1 on your dev machine first.
-    goto skip_runner
 )
 
 cd /d "%~dp0"
@@ -654,15 +584,25 @@ echo.
 echo [TEST] Pinging %LOCAL_IP%...
 ping -n 2 %LOCAL_IP% >nul 2>&1
 if errorlevel 1 (
-    echo [WARN] Ping failed - network may still be settling.
+    echo [WARN] Ping failed — network may still be settling.
 ) else (
     echo [OK] Ping successful
 )
 
 echo.
-echo [TEST] https://%DOMAIN%/health
+echo [TEST] Health check via localhost...
+powershell -NoProfile -Command ^
+  "try { [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $r = Invoke-WebRequest -Uri 'https://localhost:%HTTPS_PORT%/health' -TimeoutSec 8 -UseBasicParsing; Write-Host '[OK] localhost:' $r.Content } catch { Write-Host '[WARN] localhost failed:' $_.Exception.Message }"
+
 echo.
-powershell -NoProfile -Command "try { $r = Invoke-WebRequest -Uri 'https://%DOMAIN%/health' -SkipCertificateCheck -TimeoutSec 8 -UseBasicParsing; Write-Host $r.Content } catch { Write-Host '[WARN] Health check failed - services may still be starting.' }" 
+echo [TEST] Health check via domain ^(%DOMAIN%^)...
+powershell -NoProfile -Command ^
+  "try { [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $r = Invoke-WebRequest -Uri 'https://%DOMAIN%/health' -TimeoutSec 8 -UseBasicParsing; Write-Host '[OK] domain:' $r.Content } catch { Write-Host '[WARN] domain failed:' $_.Exception.Message }"
+
+echo.
+echo [TEST] Internet connectivity...
+powershell -NoProfile -Command ^
+  "try { Invoke-WebRequest -Uri 'https://www.google.com' -TimeoutSec 5 -UseBasicParsing >$null; Write-Host '[OK] Internet reachable' } catch { Write-Host '[WARN] Internet check failed — verify gateway and DNS' }"
 
 
 :: ============================================================
@@ -673,36 +613,49 @@ echo ============================================================
 echo   Setup Complete!
 echo ============================================================
 echo.
-echo   Adapter     : %ADAPTER%
-echo   Static IP   : %LOCAL_IP%
-echo   Gateway     : %GATEWAY%
+echo   Adapter      : %ADAPTER%
+echo   IP           : %LOCAL_IP% ^(DHCP — may change on reconnect^)
+echo   Gateway      : %GATEWAY%
+echo   Bind Address : %BIND_ADDRESS%
 echo.
 echo   Ports:
-echo     App (Node)    : %APP_PORT%
+echo     App ^(Node^)    : %APP_PORT%
 echo     HTTPS proxy   : %HTTPS_PORT%
 echo     HTTP redirect : %HTTP_PORT%
+echo     mDNS          : 5353 UDP
 echo.
-echo   Access your app at:
-echo     https://%DOMAIN%       (LAN domain)
-echo     http://%DOMAIN%        (auto-redirects to HTTPS)
-echo     https://%LOCAL_IP%     (by IP)
-echo     http://localhost:%APP_PORT%  (local dev)
+if "%BIND_ADDRESS%"=="0.0.0.0" (
+    echo   Access your app at:
+    echo     https://%DOMAIN%         ^(LAN domain — no client config needed^)
+    echo     http://%DOMAIN%          ^(redirects to HTTPS^)
+    echo     https://%LOCAL_IP%:%HTTPS_PORT% ^(by IP^)
+    echo     https://localhost:%HTTPS_PORT%  ^(this machine^)
+) else (
+    echo   Access your app at ^(localhost only — MTN/hotspot mode^):
+    echo     https://localhost:%HTTPS_PORT%
+    echo     http://localhost:%HTTP_PORT%    ^(redirects to HTTPS^)
+    echo.
+    echo   To enable LAN access later:
+    echo     Set BIND_ADDRESS=0.0.0.0 in .env.local
+    echo     Then restart NavyPayroll-Proxy service
+)
 echo.
-echo   Windows Services (WinSW):
+echo   Windows Services ^(WinSW^):
 echo     NavyPayroll-App.exe     status/start/stop/restart
 echo     NavyPayroll-Proxy.exe   status/start/stop/restart
 echo     NavyPayroll-Watcher.exe status/start/stop/restart
-echo     services.msc            (Windows Service Manager GUI)
+echo     NavyPayroll-mDNS.exe    status/start/stop/restart
+echo     services.msc            ^(Windows Service Manager GUI^)
 echo.
-echo   Deploy (automatic on git push to master):
-echo     GitHub Actions SSH deploys automatically
+echo   Deploy ^(automatic on git push to master^):
+echo     GitHub Actions deploys automatically via self-hosted runner
 echo.
 echo   Manual deploy on server:
 echo     git pull ^&^& npm install ^&^& NavyPayroll-App.exe restart
 echo.
 echo   Manage:
-echo     node install-service.js    (reinstall WinSW services)
-echo     node uninstall-service.js  (remove WinSW services)
+echo     node install-service.js    ^(reinstall WinSW services^)
+echo     node uninstall-service.js  ^(remove WinSW services^)
 echo.
 echo   .gitignore reminder:
 echo     key.pem
