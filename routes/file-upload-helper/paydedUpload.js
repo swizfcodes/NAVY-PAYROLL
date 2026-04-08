@@ -665,22 +665,24 @@ router.get("/batch-template", verifyToken, async (req, res) => {
 });
 
 // GET: Batch upload history
-router.get("/batch-history", verifyToken, async (req, res) => {
+router.get("/batch-list", verifyToken, async (req, res) => {
   try {
     const query = `
-      SELECT 
-        id,
-        filename,
-        total_records,
-        successful_records,
-        failed_records,
-        uploaded_by,
-        upload_date,
-        status,
-        batchName
-      FROM tblBatchDeductionUploads
-      ORDER BY upload_date DESC
-      LIMIT 50
+     SELECT batchName,
+
+      GROUP_CONCAT(
+        DISTINCT LOWER(TRIM(createdby))
+        ORDER BY LOWER(TRIM(createdby))
+        SEPARATOR ', '
+      ) AS createdByList,
+
+      MAX(datecreated) AS latestDateCreated
+
+    FROM py_payded
+
+    GROUP BY batchName
+
+    ORDER BY latestDateCreated DESC;
     `;
     const [results] = await pool.query(query);
 
@@ -698,7 +700,7 @@ router.get("/batch-history", verifyToken, async (req, res) => {
 });
 
 // DELETE: Delete Batch Payded
-router.delete("/batch", verifyToken, async (req, res) => {
+router.delete("/batch-delete", verifyToken, async (req, res) => {
   try {
 
     const batchName = req?.body?.batchName // to be sanitized
@@ -722,10 +724,14 @@ router.delete("/batch", verifyToken, async (req, res) => {
     }
 
 
-   
-    const deleteQuery = `DELETE FROM py_payded WHERE batchName = ?`;
-    const [deleteResult] = await pool.query(deleteQuery, [batchName]);
 
+    const deleteQuery = `DELETE FROM py_payded WHERE batchName = ?`;
+    await pool.query(deleteQuery, [batchName]);
+
+    return res.status(204).json({
+      success: true,
+      message: `Batch "${batchName}" deleted successfully`,
+    });
 
   } catch (error) {
     console.error("Failed to delete batch:", error);
