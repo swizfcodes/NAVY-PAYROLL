@@ -1,385 +1,335 @@
-const BaseReportController = require('../Reports/reportsFallbackController');
-const reconciliationService = require('../../services/Reports/reconciliationService');
-const companySettings = require('../helpers/companySettings');
-//const jsreport = require('jsreport-core')();
-const fs = require('fs');
-const path = require('path');
-const pool = require('../../config/db');
+const BaseReportController = require("../Reports/reportsFallbackController");
+const reconciliationService = require("../../services/Reports/reconciliationService");
+const companySettings = require("../helpers/companySettings");
+const fs = require("fs");
+const path = require("path");
+const pool = require("../../config/db");
 
 class ReconciliationController extends BaseReportController {
-
   constructor() {
-    super(); // Initialize base class
+    super();
   }
 
-  
+  // ─── shared error handler ──────────────────────────────────────────────────
+  _handleError(res, error, fallbackMessage) {
+    console.error(fallbackMessage, error);
+    if (res.headersSent) return;
+
+    if (error.message?.includes("Calculation not completed")) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          error: error.message,
+          errorType: "CALCULATION_INCOMPLETE",
+        });
+    }
+    if (error.message?.includes("No payroll data found")) {
+      return res
+        .status(404)
+        .json({ success: false, error: error.message, errorType: "NO_DATA" });
+    }
+    if (error.message?.includes("No salary variance detected")) {
+      return res
+        .status(400)
+        .json({ success: false, error: error.message, errorType: "BALANCED" });
+    }
+    return res
+      .status(500)
+      .json({ success: false, error: fallbackMessage, details: error.message });
+  }
+
   /**
    * GET /api/reconciliation/summary
-   * Get overall reconciliation summary
    */
   async getSummary(req, res) {
     try {
       const { year, month } = req.query;
       const database = req.current_class;
-      
-      const summary = await reconciliationService.getSalaryReconciliationSummary({
-        year,
-        month,
-        database
-      });
-      
-      res.json({
-        success: true,
-        data: summary
-      });
+
+      const summary =
+        await reconciliationService.getSalaryReconciliationSummary({
+          year,
+          month,
+          database,
+        });
+      res.json({ success: true, data: summary });
     } catch (error) {
-      console.error('Error getting reconciliation summary:', error);
-      
-      // Check if it's a calculation incomplete error
-      if (error.message && error.message.includes('Calculation not completed')) {
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-          errorType: 'CALCULATION_INCOMPLETE'
-        });
-      }
-      
-      // Check if it's a no data error
-      if (error.message && error.message.includes('No payroll data found')) {
-        return res.status(404).json({
-          success: false,
-          error: error.message,
-          errorType: 'NO_DATA'
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get reconciliation summary',
-        details: error.message
-      });
+      this._handleError(res, error, "Failed to get reconciliation summary");
     }
   }
 
   /**
    * GET /api/reconciliation/employees
-   * Get employee-level reconciliation details
+   *
+   * FIX: Run the summary check FIRST.  If variance is 0.00 return immediately
+   * with an empty array — no employee loop, no 87-second wait.
    */
   async getEmployeeReconciliation(req, res) {
     try {
       const { year, month, showErrorsOnly } = req.query;
       const database = req.current_class;
-      const filters = { year, month, database, showErrorsOnly: showErrorsOnly !== 'false' };
-      
-      const result = await reconciliationService.getEmployeeReconciliation(filters);
-      
-      res.json({
-        success: true,
-        count: result.length,
-        data: result
-      });
+      const filters = {
+        year,
+        month,
+        database,
+        showErrorsOnly: showErrorsOnly !== "false",
+      };
 
+      // ── Variance pre-check ─────────────────────────────────────────────────
+      // getSalaryReconciliationSummary also validates that calculation is complete,
+      // so we get that guard for free here too.
+      const summary =
+        await reconciliationService.getSalaryReconciliationSummary(filters);
+      const summaryData = summary[0] || null;
+
+      if (!summaryData) {
+        return res.json({
+          success: true,
+          count: 0,
+          data: [],
+          status: "NO_DATA",
+        });
+      }
+
+      if (!summaryData.has_variance) {
+        const monthName = reconciliationService.getMonthName(summaryData.month);
+        console.log(
+          `✅ No variance for ${monthName} ${summaryData.year} — skipping employee loop`,
+        );
+        return res.json({
+          success: true,
+          count: 0,
+          data: [],
+          status: "BALANCED",
+          summary: summaryData,
+        });
+      }
+      // ── Variance detected — run the loop ──────────────────────────────────
+      console.log(`⚠️  Variance detected — running employee reconciliation...`);
+      const result =
+        await reconciliationService.getEmployeeReconciliation(filters);
+
+      res.json({ success: true, count: result.length, data: result });
     } catch (error) {
-      console.error('Error getting employee reconciliation:', error);
-      
-      // Check if it's a calculation incomplete error
-      if (error.message && error.message.includes('Calculation not completed')) {
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-          errorType: 'CALCULATION_INCOMPLETE'
-        });
-      }
-      
-      // Check if it's a no data error
-      if (error.message && error.message.includes('No payroll data found')) {
-        return res.status(404).json({
-          success: false,
-          error: error.message,
-          errorType: 'NO_DATA'
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get employee reconciliation',
-        details: error.message
-      });
+      this._handleError(res, error, "Failed to get employee reconciliation");
     }
   }
 
   /**
    * GET /api/reconciliation/report
-   * Get complete reconciliation report
    */
   async getReport(req, res) {
     try {
       const { year, month } = req.query;
       const database = req.current_class;
-      
+
       const report = await reconciliationService.getReconciliationReport({
         year,
         month,
-        database
+        database,
       });
-      
-      res.json({
-        success: true,
-        data: report
-      });
+      res.json({ success: true, data: report });
     } catch (error) {
-      console.error('Error generating reconciliation report:', error);
-      
-      // Check if it's a calculation incomplete error
-      if (error.message && error.message.includes('Calculation not completed')) {
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-          errorType: 'CALCULATION_INCOMPLETE'
-        });
-      }
-      
-      // Check if it's a no data error
-      if (error.message && error.message.includes('No payroll data found')) {
-        return res.status(404).json({
-          success: false,
-          error: error.message,
-          errorType: 'NO_DATA'
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to generate reconciliation report',
-        details: error.message
+      this._handleError(res, error, "Failed to generate reconciliation report");
+    }
+  }
+
+  /**
+   * GET /api/reconciliation/quick-check
+   * Lightweight status check — never triggers the employee loop.
+   */
+  async quickCheck(req, res) {
+    try {
+      const { year, month } = req.query;
+      const database = req.current_class;
+
+      const result = await reconciliationService.quickReconciliationCheck({
+        year,
+        month,
+        database,
       });
+      res.json({ success: true, data: result });
+    } catch (error) {
+      this._handleError(res, error, "Failed to run quick reconciliation check");
     }
   }
 
   /**
    * GET /api/reconciliation/payment-type-analysis
-   * Get analysis of which payment types are causing errors
    */
   async getPaymentTypeAnalysis(req, res) {
     try {
       const { year, month } = req.query;
       const database = req.current_class;
-      
+
       const analysis = await reconciliationService.getPaymentTypeErrorAnalysis({
         year,
         month,
-        database
+        database,
       });
-      
-      res.json({
-        success: true,
-        data: analysis
-      });
+      res.json({ success: true, data: analysis });
     } catch (error) {
-      console.error('Error getting payment type analysis:', error);
-      
-      // Check if it's a calculation incomplete error
-      if (error.message && error.message.includes('Calculation not completed')) {
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-          errorType: 'CALCULATION_INCOMPLETE'
-        });
-      }
-      
-      // Check if it's a no data error
-      if (error.message && error.message.includes('No payroll data found')) {
-        return res.status(404).json({
-          success: false,
-          error: error.message,
-          errorType: 'NO_DATA'
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get payment type analysis',
-        details: error.message
-      });
+      this._handleError(res, error, "Failed to get payment type analysis");
     }
   }
 
   /**
-   * NEW: Export reconciliation report as PDF
    * GET /api/reconciliation/export
+   * Export reconciliation report as PDF.
+   * Also guarded — will not generate a PDF if payroll is balanced.
    */
   async exportReconciliationPDF(req, res) {
     try {
       const { year, month, showErrorsOnly } = req.query;
       const database = req.current_class;
+      const errorsOnly = showErrorsOnly === "false" ? false : true;
 
       if (!year || !month) {
-        return res.status(400).json({
-          success: false,
-          error: 'Year and month are required'
-        });
+        return res
+          .status(400)
+          .json({ success: false, error: "Year and month are required" });
       }
 
-      // Convert showErrorsOnly to boolean (defaults to true)
-      const errorsOnly = showErrorsOnly === 'false' ? false : true;
+      console.log(
+        `📄 Export: year=${year}, month=${month}, errorsOnly=${errorsOnly}, db=${database}`,
+      );
 
-      console.log(` Export request: year=${year}, month=${month}, errorsOnly=${errorsOnly}, database=${database}`);
+      const filters = { year, month, database, showErrorsOnly: false };
+      const result =
+        await reconciliationService.getReconciliationReport(filters);
 
-      // Get reconciliation data
-      const filters = {
-        year,
-        month,
-        database,
-        showErrorsOnly: false
-      };
+      if (result.status === "BALANCED") {
+        throw new Error(
+          `No salary variance detected for ${reconciliationService.getMonthName(result.summary.month)}, ${result.summary.year}.`,
+        );
+      }
 
-      const result = await reconciliationService.getReconciliationReport(filters);
-
-      console.log(` Export data - Total: ${result.total_employees_checked}, Errors: ${result.employees_with_errors}`);
-
-      // Generate PDF with filter applied
       await this.generateSalaryReconciliationPDF(req, res, result, {
         ...filters,
-        showErrorsOnly: errorsOnly // Apply filter for PDF
+        showErrorsOnly: errorsOnly,
       });
-
     } catch (error) {
-      console.error('❌ Export error:', error);
-      
-      if (!res.headersSent) {
-        // Check if it's a calculation incomplete error
-        if (error.message && error.message.includes('Calculation not completed')) {
-          return res.status(400).json({
-            success: false,
-            error: error.message,
-            errorType: 'CALCULATION_INCOMPLETE'
-          });
-        }
-        
-        // Check if it's a no data error
-        if (error.message && error.message.includes('No payroll data found')) {
-          return res.status(404).json({
-            success: false,
-            error: error.message,
-            errorType: 'NO_DATA'
-          });
-        }
-        
-        res.status(500).json({
-          success: false,
-          error: error.message
-        });
-      }
+      this._handleError(res, error, "Failed to export reconciliation PDF");
     }
   }
 
-  /**
-   * Helper to generate PDF from report data
-   */
+  // ─── PDF generation helper ─────────────────────────────────────────────────
   async generateSalaryReconciliationPDF(req, res, result, filters) {
     try {
-      if (!result || (!result.details && !result.all_details)) {
-        throw new Error('Control Sheet balanced no variance this month');
-      }
-      
-      // Ensure result has the expected structure
-      if (!result.details && !result.all_details) {
-        throw new Error('Invalid data structure returned from reconciliation service');
-      }
-      
-      // Determine which data to use based on showErrorsOnly filter
-      const showErrorsOnly = filters.showErrorsOnly !== false; // defaults to true
-      const data = showErrorsOnly ? (result.details || []) : (result.all_details || []);
-      
-      console.log(` PDF Generation - Filter: ${showErrorsOnly ? 'Errors Only' : 'All Employees'}`);
-      console.log(` PDF Generation - Data rows: ${data.length}`);
+      const showErrorsOnly = filters.showErrorsOnly !== false;
+      const data = showErrorsOnly
+        ? result.details || []
+        : result.all_details || [];
 
-      // Calculate grand totals from the filtered data
+      if (!data.length) {
+        throw new Error("No data available for PDF generation");
+      }
+
+      console.log(
+        `📄 PDF: ${showErrorsOnly ? "errors only" : "all employees"}, rows=${data.length}`,
+      );
+
       const grandTotals = {
         total_employees: data.length,
-        employees_with_errors: data.filter(d => d.status === 'ERROR').length,
-        employees_with_errors: result.employees_with_errors || data.filter(d => d.status === 'ERROR').length,
-        total_error_amount: result.total_error_amount || data.reduce((sum, d) => sum + Math.abs(d.error_amount || 0), 0),
-        
-        // Sum up financial totals from filtered data
-        total_earnings: data.reduce((sum, d) => sum + (d.total_earnings || 0), 0),
-        total_allowances: data.reduce((sum, d) => sum + (d.total_allowances || 0), 0),
-        total_deductions: data.reduce((sum, d) => sum + (d.total_deductions || 0), 0),
-        total_gross_cum: data.reduce((sum, d) => sum + (d.gross_from_cum || 0), 0),
-        total_net_cum: data.reduce((sum, d) => sum + (d.net_from_cum || 0), 0),
-        total_tax_cum: data.reduce((sum, d) => sum + (d.tax_from_cum || 0), 0),
-        total_roundup: data.reduce((sum, d) => sum + (d.roundup || 0), 0)
+        employees_with_errors:
+          result.employees_with_errors ??
+          data.filter((d) => d.status === "ERROR").length,
+        total_error_amount:
+          result.total_error_amount ??
+          data.reduce((s, d) => s + Math.abs(d.error_amount || 0), 0),
+        total_earnings: data.reduce((s, d) => s + (d.total_earnings || 0), 0),
+        total_allowances: data.reduce(
+          (s, d) => s + (d.total_allowances || 0),
+          0,
+        ),
+        total_deductions: data.reduce(
+          (s, d) => s + (d.total_deductions || 0),
+          0,
+        ),
+        total_gross_cum: data.reduce((s, d) => s + (d.gross_from_cum || 0), 0),
+        total_net_cum: data.reduce((s, d) => s + (d.net_from_cum || 0), 0),
+        total_tax_cum: data.reduce((s, d) => s + (d.tax_from_cum || 0), 0),
+        total_roundup: data.reduce((s, d) => s + (d.roundup || 0), 0),
       };
 
-      console.log(' PDF Generation - Grand Totals:', grandTotals);
+      const templatePath = path.join(
+        __dirname,
+        "../../templates/salary-reconciliation.html",
+      );
+      const image = await companySettings.getSettingsFromFile(
+        "./public/photos/logo.png",
+      );
 
-      const templatePath = path.join(__dirname, '../../templates/salary-reconciliation.html');
-      const templateContent = fs.readFileSync(templatePath, 'utf8');
-
-      //Load image
-      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');    
-
-      // Format period for display
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      let period = 'N/A';
-      if (filters.month && filters.year) {
-        const monthStr = filters.month.toString();
-        // Extract month number (last 2 digits if YYYYMM format, otherwise the whole string)
-        const monthNum = monthStr.length === 6 ? parseInt(monthStr.substring(4, 6)) : parseInt(monthStr);
-        const monthName = monthNames[monthNum - 1] || filters.month;
-        period = `${monthName}, ${filters.year}`;
-      }
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      const monthStr = filters.month?.toString() ?? "";
+      const monthNum =
+        monthStr.length === 6
+          ? parseInt(monthStr.substring(4, 6))
+          : parseInt(monthStr);
+      const period =
+        filters.month && filters.year
+          ? `${monthNames[monthNum - 1] ?? filters.month}, ${filters.year}`
+          : "N/A";
 
       const pdfBuffer = await this.generatePDFWithFallback(
         templatePath,
         {
-          data: data,
-          grandTotals: grandTotals,
+          data,
+          grandTotals,
           reportDate: new Date(),
-          period: period,
+          period,
           year: filters.year,
           month: filters.month,
           className: await this.getDatabaseNameFromRequest(req),
-          showErrorsOnly: showErrorsOnly,
-          ...image
+          showErrorsOnly,
+          ...image,
         },
         {
-          format: 'A4',
+          format: "A4",
           landscape: true,
-          marginTop: '5mm',
-          marginBottom: '5mm',
-          marginLeft: '5mm',
-          marginRight: '5mm'
-        }        
+          marginTop: "5mm",
+          marginBottom: "5mm",
+          marginLeft: "5mm",
+          marginRight: "5mm",
+        },
       );
 
-      // Set response headers with appropriate filename
-      const filterSuffix = showErrorsOnly ? 'errors_only' : 'all_employees';
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 
-        `attachment; filename=salary_reconciliation_${filterSuffix}_${filters.month}_${filters.year}.pdf`
+      const suffix = showErrorsOnly ? "errors_only" : "all_employees";
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=salary_reconciliation_${suffix}_${filters.month}_${filters.year}.pdf`,
       );
       res.send(pdfBuffer);
 
-      console.log('✅ PDF generated and sent successfully');
-
+      console.log("✅ PDF sent");
     } catch (error) {
-      console.error('❌ Salary Reconciliation PDF generation error:', error);
+      console.error("❌ PDF generation error:", error);
       throw error;
     }
   }
 
   async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    if (!currentDb) return 'OFFICERS';
-
+    if (!currentDb) return "OFFICERS";
     const [classInfo] = await pool.query(
-      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
-      [currentDb]
+      "SELECT classname FROM py_payrollclass WHERE db_name = ?",
+      [currentDb],
     );
-
     return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }

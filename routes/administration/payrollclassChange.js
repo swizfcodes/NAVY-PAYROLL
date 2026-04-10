@@ -5,7 +5,6 @@ const verifyToken = require('../../middware/authentication');
 const pool  = require('../../config/db'); // mysql2 pool
 
 // ==================== DATABASE CONFIGURATION ====================
-// ==================== DATABASE CONFIGURATION ====================
 let DATABASE_MAP = {};
 let PAYROLL_CLASS_TO_DB_MAP = {};
 
@@ -346,9 +345,9 @@ router.get('/active-employees', verifyToken, async (req, res) => {
 
     // Build WHERE clause with search
     let whereClause = `
-      WHERE (DateLeft IS NULL OR DateLeft = '')
+      WHERE ((DateLeft IS NULL OR DateLeft = '' OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d'))
         AND (exittype IS NULL OR exittype = '')
-        AND payrollclass = ?
+        AND payrollclass = ?)
     `;
     
     const queryParams = [payrollClass];
@@ -416,10 +415,10 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
       LEFT JOIN py_payrollclass pc 
         ON e.payrollclass = pc.classcode
       WHERE 
-        (e.DateLeft IS NULL OR e.DateLeft = '')
+        ((e.DateLeft IS NULL OR e.DateLeft = '' OR e.DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d'))
         AND (e.exittype IS NULL OR e.exittype = '')
         AND e.payrollclass IS NOT NULL
-        AND e.payrollclass != ''
+        AND e.payrollclass != '')
       GROUP BY 
         e.payrollclass, pc.classname
       ORDER BY 
@@ -469,7 +468,7 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
   const employeeId = Empl_ID.trim();
   const payrollClassInput = PayrollClass.toString().trim();
   const targetDb = getDbNameFromPayrollClass(payrollClassInput);
-  const officersDb = process.env.DB_OFFICERS || 'hicaddata';
+  const officersDb = process.env.DB_OFFICERS;
 
   console.log(`   Payroll class mapping:`);
   console.log(`   Input: ${payrollClassInput}`);

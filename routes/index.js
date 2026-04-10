@@ -79,7 +79,7 @@ const payrollRegisterRoutes = require("./reports/payrollRegister");
 const payslipsRoutes = require("./reports/payslips");
 const salaryReconcileRoutes = require("./reports/salaryReconcile");
 const salarySummaryRoutes = require("./reports/salarySummary");
-const staffpayListRoutes = require("./reports/staffpayList");
+const salaryHistoryRoutes = require("./reports/salaryHistory");
 const taxstatePayRoutes = require("./reports/taxstatePay");
 
 //Audit Trail
@@ -91,10 +91,13 @@ const variationInputRoutes = require("./audit-trail/variationInput");
 const rangePaymentRoutes = require("./audit-trail/rangePayments");
 
 //User Dashboard
-const mailSystemRoutes = require("../routes/user-dashboard/mailSystem");
-const userPayslipRoutes = require('../routes/user-dashboard/userpayslip');
+//email
+const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
+//payslip
+const userPayslipRoutes = require('../routes/user-dashboard/payslips/userpayslip');
+const adminPayslip = require("../routes/user-dashboard/payslips/adminpayslip");
 const cron = require("node-cron");
-const { cleanupOrphanedAttachments } = require("./user-dashboard/mailSystem");
+const { cleanupOrphanedAttachments } = require("./user-dashboard/email/mailSystem");
 
 //file-upload-helper
 const salaryscaleuploadRoutes = require("./file-upload-helper/salaryscaleupload");
@@ -186,7 +189,7 @@ module.exports = (app) => {
   app.use("/payslips", payslipsRoutes);
   app.use("/salaryreconcile", salaryReconcileRoutes);
   app.use("/salarysummary", salarySummaryRoutes);
-  app.use("/staffpaylist", staffpayListRoutes);
+  app.use("/salary-history", salaryHistoryRoutes);
   app.use("/taxstatepay", taxstatePayRoutes);
   app.use("/personnel-report", personnelReportRoutes);
 
@@ -201,6 +204,7 @@ module.exports = (app) => {
   //user-dashboard
   app.use("/messages", mailSystemRoutes);
   app.use('/payslip', userPayslipRoutes);
+  app.use("/admin/payslip", adminPayslip);
   // Every hour at :00
   cron.schedule("0 * * * *", () => {
     cleanupOrphanedAttachments();

@@ -8,9 +8,9 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs");
-const pool = require("../../config/db");
-const verifyToken = require("../../middware/authentication");
-const BaseReportController = require("../../controllers/Reports/reportsFallbackController");
+const pool = require("../../../config/db");
+const verifyToken = require("../../../middware/authentication");
+const BaseReportController = require("../../../controllers/Reports/reportsFallbackController");
 
 // ── Payrollclass → DB name map ────────────────────────────
 async function getPayrollClassDb(classcode) {
@@ -298,11 +298,11 @@ router.post("/pdf", verifyToken, async (req, res) => {
   try {
     const templatePath = path.join(
       __dirname,
-      "../../templates/user-payslip.html",
+      "../../../templates/user-payslip.html",
     );
 
     // Load logo as base64
-    const logoPath = path.join(__dirname, "../../public/photos/logo.png");
+    const logoPath = path.join(__dirname, "../../../public/photos/logo.png");
     let logoDataUrl = "";
     if (fs.existsSync(logoPath)) {
       const buf = fs.readFileSync(logoPath);

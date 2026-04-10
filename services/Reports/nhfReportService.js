@@ -45,7 +45,7 @@ class NHFReportService {
       
     } else {
       // Detailed query - process in batches for better performance
-      const BATCH_SIZE = 1000;
+      const BATCH_SIZE = 100;
       
       // First, get the total count
       const countQuery = `

@@ -86,39 +86,28 @@ router.get("/my-menus", verifyToken, async (req, res) => {
 // Save role permissions (bulk update)
 router.post("/role-permissions/:roleId", verifyToken, async (req, res) => {
   const { roleId } = req.params;
-  const { menuItemIds } = req.body; // Array of menu item IDs
-  
+  const { menuItemIds } = req.body;
+
   if (!Array.isArray(menuItemIds)) {
     return res.status(400).json({ error: "menuItemIds must be an array" });
   }
-  
-  const connection = await pool.getConnection();
-  
+
   try {
-    await connection.beginTransaction();
-    
-    // Delete existing permissions for this role
-    await connection.query(`
-      DELETE FROM role_menu_permissions WHERE role_id = ?
-    `, [roleId]);
-    
-    // Insert new permissions
+    await pool.query("DELETE FROM role_menu_permissions WHERE role_id = ?", [roleId]);
+
     if (menuItemIds.length > 0) {
-      const values = menuItemIds.map(menuId => [roleId, menuId]);
-      await connection.query(`
-        INSERT INTO role_menu_permissions (role_id, menu_item_id) VALUES ?
-      `, [values]);
+      for (const menuId of menuItemIds) {
+        await pool.query(
+          "INSERT INTO role_menu_permissions (role_id, menu_item_id) VALUES (?, ?)",
+          [roleId, menuId]
+        );
+      }
     }
-    
-    await connection.commit();
+
     res.json({ message: "Permissions updated successfully" });
-    
   } catch (err) {
-    await connection.rollback();
     console.error("❌ Failed to save role permissions:", err.message);
     res.status(500).json({ error: "Failed to save role permissions" });
-  } finally {
-    connection.release();
   }
 });
 

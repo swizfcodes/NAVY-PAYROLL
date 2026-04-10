@@ -6,7 +6,7 @@ const ExcelJS = require("exceljs");
 const path = require("path");
 
 // Batch processing size
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 // ============================================
 // Helper: Fetch payroll period from py_stdrate

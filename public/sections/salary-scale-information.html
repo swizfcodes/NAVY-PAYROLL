@@ -1612,7 +1612,7 @@ function generateReport() {
         }
 
         .step-value {
-          text-align: right;
+          text-align: center;
           font-family: 'Courier New', monospace;
           font-weight: 600;
           font-size: 6pt;
@@ -1759,27 +1759,27 @@ function generateScaleReport() {
             
             <table class="report-table">
               <tr>
-                <th style="width: 7%;">Step</th>
+                <!-- <th style="width: 7%;">Step</th> -->
                 ${Array.from({length: 10}, (_, i) => `<th style="width: 9.3%;" class="step-value">Step ${i + 1}</th>`).join('')}
               </tr>
               <tr>
-                <td><strong>Amount (₦)</strong></td>
+                <!-- <td><strong>Amount (₦)</strong></td> -->
                 ${scale.steps.slice(0, 10).map(step => `
-                  <td class="step-value">${formatCurrency(step)}</td>
+                  <td class="step-value">₦${formatCurrency(step)}</td>
                 `).join('')}
               </tr>
             </table>
 
             <table class="report-table">
               <tr>
-                <th style="width: 7%;">Step</th>
+                <!-- <th style="width: 7%;">Step</th> -->
                 ${Array.from({length: 9}, (_, i) => `<th style="width: 9.3%;" class="step-value">Step ${i + 11}</th>`).join('')}
                 <th style="width: 9.3%;" class="step-value">Max</th>
               </tr>
               <tr>
-                <td><strong>Amount (₦)</strong></td>
+                <!-- <td><strong>Amount (₦)</strong></td> -->
                 ${scale.steps.slice(10).map(step => `
-                  <td class="step-value">${formatCurrency(step)}</td>
+                  <td class="step-value">₦${formatCurrency(step)}</td>
                 `).join('')}
               </tr>
             </table>
