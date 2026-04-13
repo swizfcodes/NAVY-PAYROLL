@@ -14,7 +14,7 @@ const config = require("../../config");
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd, "../uploads");
+    const uploadDir = path.join(process.cwd(), "uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -127,8 +127,6 @@ function parseExcelFile(filePath) {
                 : "";
           }
         });
-
-        console.log(`📊 Row ${rowIndex + 5}:`, obj);
         return obj;
       });
 
@@ -393,7 +391,6 @@ router.post(
         successful: 0,
         failed: 0,
         errors: [],
-        batchName,
       };
 
       // Insert only unique deductions
@@ -436,7 +433,7 @@ router.post(
 
       return res.status(200).json({
         message: "Batch payment and deduction upload completed",
-        summary: results,
+        summary: { ...results, batchName: results.successful > 0 ? batchName : undefined }, // show batchName only when successful > 0
       });
     } catch (error) {
       console.error("Batch payment and deduction upload error:", error);

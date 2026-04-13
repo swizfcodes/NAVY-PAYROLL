@@ -29,13 +29,23 @@
 
 
 <div id="section-batch" class="p-6">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4 gap-2">
     <!-- Left: quick nav (may be hidden) -->
     <div>
       <button id="quickNav-payments-deductions"
         onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')"
         class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700">
-        Payments/Deductions
+        Payments/Deductio1ns 
+      </button>
+
+  
+    </div>
+    <div>
+      <!-- fix batch list -->
+      <button id="batch-list"
+        onclick="window.navigation.navigateToSection('payded-batch-list', 'Payments/Deductions Batch List')"
+        class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700">
+        Batch List
       </button>
     </div>
 
@@ -115,6 +125,7 @@
         <p>Total Records: <span id="total-Records" class="font-medium">0</span></p>
         <p>Successfully Inserted: <span id="successRecords" class="font-medium text-green-600">0</span></p>
         <p>Duplicates/Failed: <span id="failedRecords" class="font-medium text-red-600">0</span></p>
+        <p>Batch Name: <span id="batchName" class="font-medium hidden">Unknown</span></p>
       </div>
       <button id="closeModalBtn"
         class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">OK</button>
@@ -559,6 +570,10 @@
       document.getElementById("total-Records").textContent = summary.totalRecords || 0;
       document.getElementById("successRecords").textContent = summary.successful || 0;
       document.getElementById("failedRecords").textContent = summary.failed || 0;
+      if (summary.batchName?.trim() && summary.batchName !=="Unknown") {
+        document.getElementById("batchName").classList.remove("hidden");
+        document.getElementById("batchName").textContent = summary.batchName;
+      }
       uploadSummary.classList.remove("hidden");
 
       // Show errors if any
