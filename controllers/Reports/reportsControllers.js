@@ -218,7 +218,7 @@ class ReportController extends BaseReportController {
 
       console.log(`📄 Generating payslips for ${mappedData.length} employees`);
 
-      const BATCH_SIZE = 500;
+      const BATCH_SIZE = 100;
       
       const pdfBuffer = await this.generateBatchedPDF(
         templatePath,
@@ -769,7 +769,7 @@ class ReportController extends BaseReportController {
       const isMultiClass = filters.allClasses === 'true' || filters.allClasses === true;
       const isSummary = filters.summaryOnly === 'true' || filters.summaryOnly === true;
 
-      //const BATCH_SIZE = 500;
+      //const BATCH_SIZE = 100;
 
       let templateData = {
         reportDate: new Date(),

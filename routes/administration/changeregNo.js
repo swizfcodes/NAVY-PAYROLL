@@ -162,9 +162,9 @@ router.get('/employees', verifyToken, async (req, res) => {
     const [rows] = await pool.query(
       `SELECT Empl_ID, Title, Surname, OtherName
        FROM hr_employees
-       WHERE (DateLeft IS NULL OR DateLeft = '')
+       WHERE ((DateLeft IS NULL OR DateLeft = '' OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d'))
          AND (exittype IS NULL OR exittype = '')
-         AND payrollclass = ?`,
+         AND payrollclass = ?)`,
       [payrollClass]
     );
 

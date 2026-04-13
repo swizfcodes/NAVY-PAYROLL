@@ -183,7 +183,7 @@ class ConsolidatedPayslipController extends BaseReportController {
       
       console.log(`📄 Generating consolidated payslips for ${mappedData.length} employees`);
 
-      const BATCH_SIZE = 500;
+      const BATCH_SIZE = 100;
       
       const pdfBuffer = await this.generateBatchedPDF(
         templatePath,
