@@ -3,7 +3,7 @@ const router = express.Router();
 const verifyToken = require('../../middware/authentication');
 const historicalReportMiddleware = require('../../middware/historicalReportsmiddleware');
 
-const reportsController = require('../../controllers/Reports/reportsControllers');
+const reportsController = require('../../controllers/Reports/payrollRegisterController');
 
 // PAYROLL REGISTER REPORT - DATA GENERATION (Returns JSON data)
 router.get('/generate', verifyToken, historicalReportMiddleware, reportsController.generatePayrollRegister.bind(reportsController));

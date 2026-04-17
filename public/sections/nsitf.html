@@ -27,7 +27,7 @@
 </style>
 
 <!-- NSITF REPORT -->
-<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+<section class="items border rounded-lg m-6 max-w-xl mr-auto p-6 mx-auto">
   <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print NSITF Reports</h2>
 
   <form id="nsitfPfaForm" class="space-y-4">
@@ -51,7 +51,15 @@
     </div>
 
     <!-- Processing Month + Year -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="col-span-1">
+        <label for="pfaType" class="block text-sm font-medium mb-1">PFA Payment Type</label>
+        <select id="pfaType"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="">Select Type</option>
+          <!-- Options populated from database -->
+        </select>
+      </div>
       <div class="col-span-1">
         <label for="pfaMonth" class="block text-sm font-medium mb-1">Processing Month</label>
         <select id="pfaMonth"
@@ -167,6 +175,7 @@
   const pfaDropdown = document.getElementById('pfaDropdown');
   const pfaMonth = document.getElementById('pfaMonth');
   const pfaYear = document.getElementById('year');
+  const pfaType = document.getElementById('pfaType');
   const pfaPrintBtn = document.getElementById('pfaPrintBtn');
   const pfaClearBtn = document.getElementById('pfaClearBtn');
 
@@ -235,6 +244,28 @@
     } catch (error) { console.error('Error loading current period:', error); }
   }
 
+  // ── Load PFA Types ─────────────────────────────────────────────
+  async function loadPfaTypes() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.paymentCodes) {
+          pfaType.innerHTML = '<option value="">Select Type</option>';
+          result.data.paymentCodes.forEach(code => {
+            const option = document.createElement('option');
+            option.value = code.payment_code;
+            option.textContent = code.payment_description;
+            pfaType.appendChild(option);
+          });
+        }
+      }
+    } catch (error) { console.error('Error loading PFA types:', error); }
+  }
+
   // ── Toggles ─────────────────────────────────────────────────────
   function togglePfaSelect() {
     pfaDropdown.disabled = allPfas.checked;
@@ -253,6 +284,10 @@
       pfaErrorText.textContent = 'Please choose a PFA when "Specific Pfa" is selected.';
       pfaErrorModal.classList.remove('hidden'); return;
     }
+    if (!pfaType.value) {
+      pfaErrorText.textContent = 'Please select a PFA payment type.';
+      pfaErrorModal.classList.remove('hidden'); return;
+    }
     pfaConfirmModal.classList.remove('hidden');
   });
 
@@ -268,11 +303,12 @@
     const summary = document.getElementById('pfaSummary').checked;
     const monthNum = getMonthNumber(pfaMonth.value);
     const year = pfaYear.value || new Date().getFullYear();
+    const type = pfaType.value;
 
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams({
-        format, month: monthNum, year,
+        format, month: monthNum, year, payment_codes: type,
         summaryOnly: summary ? 'true' : 'false'
       });
       if (specificPfa.checked && pfaDropdown.value) params.append('pfa_code', pfaDropdown.value);
@@ -382,4 +418,5 @@
   togglePfaSelect();
   loadPfas();
   loadCurrentPeriod();
+  loadPfaTypes();
 </script>

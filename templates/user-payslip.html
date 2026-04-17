@@ -381,11 +381,17 @@
       font-weight: 700;
     }
 
+    /* ── NET PAY — wrapper is relative so stamp can anchor to it ── */
+    .net-pay-wrapper {
+      position: relative;
+      width: 100%;
+      margin: 4px 0;
+    }
+
     .net-pay {
       background-color: #f0f0f0;
       border: 2px solid #1a1a1a;
       padding: 5px 6px;
-      margin: 4px 0;
       display: flex;
       justify-content: space-between;
       font-size: 9pt;
@@ -405,25 +411,30 @@
       font-weight: 800;
     }
 
-    /* ── STAMP ── */
-    .stamp-area {
-      margin-top: 6px;
-      width: 70%;
-      display: flex;
-      justify-content: flex-end;
-    }
-
+    /* ── STAMP — positioned to the right of the net-pay box, tilted 30° ── */
     .stamp-box {
-      border: 2px dashed #1e40af;
-      width: 90px;
-      height: 50px;
+      position: absolute;
+      /* sits to the right of the 70%-wide net-pay box */
+      left: calc(70% - 7px);
+      top: 50%;
+      transform: translateY(-50%) rotate(-15deg);
+      transform-origin: center center;
+
+      border: 3px solid #1e40af;
+      border-radius: 6px;
+      width: 95px;
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 6pt;
-      color: #9ca3af;
+      font-size: 6.5pt;
+      font-weight: bold;
+      color: #1e40af;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+      background: rgba(255, 255, 255, 0.55);
+      text-align: center;
+      line-height: 1.3;
     }
 
     /* ── FOOTER ── */
@@ -640,18 +651,18 @@
     </div>
     {{/if}}
 
-    <!-- NET PAY -->
-    <div class="net-pay">
-      <span class="label">Net Payment This Month</span>
-      <span class="amount">₦{{formatCurrency net_pay}}</span>
-    </div>
+    <!-- NET PAY + STAMP (stamp anchored to this wrapper) -->
+    <div class="net-pay-wrapper">
+      <div class="net-pay">
+        <span class="label">Net Payment This Month</span>
+        <span class="amount">₦{{formatCurrency net_pay}}</span>
+      </div>
 
     <!-- STAMP -->
-    {{#if ../showStamp}}
-    <div class="stamp-area">
-      <div class="stamp-box">Official Stamp</div>
+      {{#if ../showStamp}}
+      <div class="stamp-box">Official<br>Stamp</div>
+      {{/if}}
     </div>
-    {{/if}}
 
     <!-- FOOTER -->
     <div class="footer">

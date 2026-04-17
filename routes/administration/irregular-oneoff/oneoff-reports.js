@@ -1317,7 +1317,7 @@ function generatePDFHTML(groups, reportType, classDescription, period, specificT
 
       <div class="header-info">
         <div class="left">
-          ${reportType === "bank" ? "SALARY CREDIT VOUCHER LISTING (ONE-OFF)" : reportType === "analysis" ? "ANALYSIS OF EARNINGS & DEDUCTIONS (ONE-OFF)" : "SALARY CREDIT VOUCHER LISTING (ONE-OFF)"}
+          ${reportType === "bank" ? "SALARY CREDIT VOUCHER LISTING (ONE-OFF)" : reportType === "analysis" ? "ANALYSIS OF EARNINGS & DEDUCTIONS (ONE-OFF)" : "REMITTANCE ADVICE (ONE-OFF)"}
         </div>
         <div class="center">
           <span>PRODUCED ON</span>

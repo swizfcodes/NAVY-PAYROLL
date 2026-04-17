@@ -55,37 +55,53 @@
 </style>
 
 <!-- Payroll Register -->
-<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+<section class="items border rounded-lg m-6 max-w-2xl mr-auto p-6 mx-auto">
   <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Generate And Print Payroll Register Report</h2>
 
   <form id="payrollForm" class="space-y-4">
-    <!-- Location Selection -->
+
+    <!-- People Selection -->
     <div>
-      <label class="block font-medium mb-2">Select Location</label>
-      <div class="flex gap-6">
-        <label class="flex text-sm items-center gap-2">
-          <input type="radio" id="allPayrollLocations" name="payrollLocationChoice" value="all" checked>
-          <span>All Locations</span>
+      <label class="block font-medium mb-2 text-sm">Select People</label>
+      <div class="flex space-x-4">
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="payrollPeople" value="all" checked>
+          <span>All</span>
         </label>
-        <label class="flex text-sm items-center gap-2">
-          <input type="radio" id="specificPayrollLocation" name="payrollLocationChoice" value="specific">
-          <span>Specific Location</span>
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="payrollPeople" value="specific">
+          <span>Specific</span>
+        </label>
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="payrollPeople" value="individual">
+          <span>Individual</span>
         </label>
       </div>
-      <select id="payrollLocationDropdown"
-        class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        disabled>
-        <option value="">Select Location</option>
-      </select>
     </div>
 
-    <!-- Processing Month + Year -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="col-span-1">
+    <!-- Service Numbers -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Start Service No</label>
+        <input type="text" id="payrollStartNo"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">End Service No</label>
+        <input type="text" id="payrollEndNo"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled />
+      </div>
+    </div>
+
+    <!-- Processing Month + Year + Header Type + Report Type (all one row on md) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div>
         <label for="payrollMonth" class="block text-sm font-medium mb-2">Processing Month</label>
         <select id="payrollMonth"
           class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <option value="">Select Month</option>
+          <option value="">Month</option>
           <option value="1">January</option>
           <option value="2">February</option>
           <option value="3">March</option>
@@ -100,33 +116,52 @@
           <option value="12">December</option>
         </select>
       </div>
-      <div class="col-span-1">
+      <div>
         <label for="payrollYear" class="block text-sm font-medium mb-2">Processing Year</label>
         <input type="number" id="payrollYear"
           class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="e.g., 2025" min="2020" max="2099">
       </div>
+      <div>
+        <label for="payrollHeaderType" class="block text-sm font-medium mb-2">Header Type</label>
+        <select id="payrollHeaderType"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="">-- Select --</option>
+          <option value="code">Code</option>
+          <option value="description">Description</option>
+        </select>
+      </div>
+      <div>
+        <label for="payrollReportType" class="block text-sm font-medium mb-2">Report Type</label>
+        <select id="payrollReportType"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="both" selected>Both</option>
+          <option value="earnings">Earnings</option>
+          <option value="deductions">Deductions</option>
+        </select>
+      </div>
     </div>
 
-    <!-- Output Format -->
+    <!-- Output Format + IPPIS on same line -->
     <div>
       <label class="block font-medium mb-2">Output Format</label>
-      <div class="flex space-x-4">
-        <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="payrollFormat" value="pdf" checked>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label class="hidden flex text-sm items-center space-x-2">
+          <input type="radio" name="payrollFormat" value="pdf">
           <span>PDF</span>
         </label>
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="payrollFormat" value="excel">
+          <input type="radio" name="payrollFormat" value="excel" checked>
           <span>Excel</span>
         </label>
-        <div class="flex items-center gap-2">
+        <div class="hidden flex items-center gap-2">
           <input type="checkbox" id="payrollSummary" class="h-4 w-4">
           <label for="payrollSummary" class="text-sm">Summary Report</label>
         </div>
-        <div class="hidden flex items-center gap-2">
-          <input type="checkbox" id="payrollElements" class="h-4 w-4">
-          <label for="payrollElements" class="text-sm">Include Pay Elements</label>
+        <!-- IPPIS — now visible, on same line -->
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="payrollIppis" class="h-4 w-4">
+          <label for="payrollIppis" class="text-sm">Use IPPIS</label>
         </div>
       </div>
     </div>
@@ -196,13 +231,11 @@
       <h3 class="text-lg font-semibold text-white">Payroll Register Preview</h3>
       <button id="payrollClosePreviewBtn" class="text-white hover:text-gray-200 text-2xl">&times;</button>
     </div>
-
     <div class="overflow-auto" style="max-height: calc(90vh - 100px); background: #d1d5db;">
       <iframe id="payrollPreviewIframe" title="Payroll Register Preview"
         style="width: 100%; min-height: 842px; border: none; background: white; display: block;">
       </iframe>
     </div>
-
     <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-2 flex justify-end space-x-2">
       <button id="payrollCancelPreviewBtn"
         class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
@@ -216,29 +249,50 @@
   const auth = window.authService;
   const PAYROLL_API_BASE = '/payrollRegister';
 
-  const allPayrollLocations = document.getElementById('allPayrollLocations');
-  const specificPayrollLocation = document.getElementById('specificPayrollLocation');
-  const payrollLocationDropdown = document.getElementById('payrollLocationDropdown');
+  // ── Element refs ─────────────────────────────────────────────────────────
+  const payrollStartNo = document.getElementById('payrollStartNo');
+  const payrollEndNo = document.getElementById('payrollEndNo');
   const payrollMonth = document.getElementById('payrollMonth');
   const payrollYear = document.getElementById('payrollYear');
+  const payrollHeaderType = document.getElementById('payrollHeaderType');
+  const payrollReportType = document.getElementById('payrollReportType');
   const payrollLoadingIndicator = document.getElementById('payrollLoadingIndicator');
-
   const payrollPrintBtn = document.getElementById('payrollPrintBtn');
   const payrollClearBtn = document.getElementById('payrollClearBtn');
-
   const payrollConfirmModal = document.getElementById('payrollConfirmModal');
   const payrollCancelBtn = document.getElementById('payrollCancelBtn');
   const payrollContinueBtn = document.getElementById('payrollContinueBtn');
-
   const payrollSuccessModal = document.getElementById('payrollSuccessModal');
   const payrollSuccessOkBtn = document.getElementById('payrollSuccessOkBtn');
   const payrollSuccessMessage = document.getElementById('payrollSuccessMessage');
-
   const payrollErrorModal = document.getElementById('payrollErrorModal');
   const payrollErrorOkBtn = document.getElementById('payrollErrorOkBtn');
   const payrollErrorText = document.getElementById('payrollErrorText');
 
-  // ── Load current period ─────────────────────────────────────────
+  // ── People radio → service number inputs ─────────────────────────────────
+  function applyPeopleSelection() {
+    const selected = document.querySelector('input[name="payrollPeople"]:checked').value;
+    if (selected === 'all') {
+      payrollStartNo.disabled = true;
+      payrollEndNo.disabled = true;
+      payrollStartNo.value = '';
+      payrollEndNo.value = '';
+    } else if (selected === 'specific') {
+      payrollStartNo.disabled = false;
+      payrollEndNo.disabled = false;
+    } else {
+      // individual — only start enabled
+      payrollStartNo.disabled = false;
+      payrollEndNo.disabled = true;
+      payrollEndNo.value = '';
+    }
+  }
+
+  document.querySelectorAll('input[name="payrollPeople"]').forEach(radio => {
+    radio.addEventListener('change', applyPeopleSelection);
+  });
+
+  // ── Load current period ───────────────────────────────────────────────────
   async function loadCurrentPeriod() {
     try {
       const token = localStorage.getItem('token');
@@ -258,41 +312,10 @@
     }
   }
 
-  // ── Load locations ──────────────────────────────────────────────
-  async function loadLocations() {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await auth.fetchWithAuth(`/salarysummary/filter-options`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data.locations) {
-          payrollLocationDropdown.innerHTML = '<option value="">All Locations</option>';
-          result.data.locations.forEach(loc => {
-            const option = document.createElement('option');
-            option.value = loc.location_code;
-            option.textContent = loc.location_name || loc.location_code;
-            payrollLocationDropdown.appendChild(option);
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading locations:', error);
-    }
-  }
-
-  // ── Toggles ─────────────────────────────────────────────────────
-  function togglePayrollLocation() {
-    payrollLocationDropdown.disabled = allPayrollLocations.checked;
-    if (allPayrollLocations.checked) payrollLocationDropdown.value = '';
-  }
-
-  allPayrollLocations.addEventListener('change', togglePayrollLocation);
-  specificPayrollLocation.addEventListener('change', togglePayrollLocation);
-
-  // ── Validate & show confirm ─────────────────────────────────────
+  // ── Validate → confirm ────────────────────────────────────────────────────
   payrollPrintBtn.addEventListener('click', () => {
+    const people = document.querySelector('input[name="payrollPeople"]:checked').value;
+
     if (!payrollMonth.value) {
       payrollErrorText.textContent = 'Please select a processing month.';
       payrollErrorModal.classList.remove('hidden'); return;
@@ -301,43 +324,77 @@
       payrollErrorText.textContent = 'Please enter a processing year.';
       payrollErrorModal.classList.remove('hidden'); return;
     }
-    if (specificPayrollLocation.checked && !payrollLocationDropdown.value) {
-      payrollErrorText.textContent = 'Please choose a location when "Specific Location" is selected.';
+    if (!payrollHeaderType.value) {
+      payrollErrorText.textContent = 'Please select a header type (Code or Description).';
       payrollErrorModal.classList.remove('hidden'); return;
     }
+    if ((people === 'specific' || people === 'individual') && !payrollStartNo.value.trim()) {
+      payrollErrorText.textContent = 'Please enter a Start Service No.';
+      payrollErrorModal.classList.remove('hidden'); return;
+    }
+    if (people === 'specific' && !payrollEndNo.value.trim()) {
+      payrollErrorText.textContent = 'Please enter an End Service No for a specific range.';
+      payrollErrorModal.classList.remove('hidden'); return;
+    }
+
     payrollConfirmModal.classList.remove('hidden');
   });
 
   payrollCancelBtn.addEventListener('click', () => payrollConfirmModal.classList.add('hidden'));
 
-  // ── Generate — fetch blob, show in preview iframe ───────────────
+  // ── Generate ──────────────────────────────────────────────────────────────
   payrollContinueBtn.addEventListener('click', async () => {
     payrollConfirmModal.classList.add('hidden');
     payrollLoadingIndicator.classList.remove('hidden');
     payrollPrintBtn.disabled = true;
 
+    const people = document.querySelector('input[name="payrollPeople"]:checked').value;
     const format = document.querySelector('input[name="payrollFormat"]:checked').value;
     const month = payrollMonth.value;
     const year = payrollYear.value;
+    const headerType = payrollHeaderType.value;          // 'code' | 'description'
+    const reportType = payrollReportType.value;          // 'both' | 'earnings' | 'deductions'
     const summary = document.getElementById('payrollSummary').checked;
-    const includeElements = document.getElementById('payrollElements').checked;
+    const useIppis = document.getElementById('payrollIppis').checked ? 'Y' : 'N';
+
+    const period = year + String(month).padStart(2, '0'); // YYYYMM
+
+    // Build empnoFrom / empnoTo from people selection
+    let empnoFrom = '';
+    let empnoTo = '';
+    let printRange = false;
+
+    if (people === 'specific') {
+      empnoFrom = payrollStartNo.value.trim();
+      empnoTo = payrollEndNo.value.trim();
+      printRange = true;
+    } else if (people === 'individual') {
+      empnoFrom = payrollStartNo.value.trim();
+      empnoTo = empnoFrom;
+      printRange = true;
+    }
 
     try {
       const token = localStorage.getItem('token');
 
-      const params = new URLSearchParams({
-        format, month, year,
-        summary: summary ? '1' : '0',
-        include_elements: includeElements ? '1' : '0'
-      });
+      const endpoint = format === 'pdf'
+        ? `${PAYROLL_API_BASE}/export/pdf`
+        : `${PAYROLL_API_BASE}/export/excel`;
 
-      if (specificPayrollLocation.checked && payrollLocationDropdown.value) {
-        params.append('location', payrollLocationDropdown.value);
-      }
-
-      const response = await auth.fetchWithAuth(`${PAYROLL_API_BASE}/generate?${params.toString()}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await auth.fetchWithAuth(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          period, useIppis, printRange: printRange ? '1' : '0',
+          useCodeHeader: headerType === 'code' ? 'true' : 'false',
+          reportType,
+          summary: summary ? '1' : '0',
+          ...(empnoFrom && { empnoFrom }),
+          ...(empnoTo && { empnoTo })
+        })
       });
 
       if (!response.ok) {
@@ -350,7 +407,7 @@
       payrollLoadingIndicator.classList.add('hidden');
       payrollPrintBtn.disabled = false;
 
-      // Store blob for download — no second fetch needed
+      // Store for download
       window.payrollCurrentBlob = blob;
       window.payrollCurrentFormat = format;
       window.payrollCurrentMonth = month;
@@ -361,7 +418,7 @@
 
       if (format === 'pdf') {
         const blobUrl = window.URL.createObjectURL(blob);
-        window.payrollCurrentBlobUrl = blobUrl; // store to revoke on close
+        window.payrollCurrentBlobUrl = blobUrl;
         iframe.src = blobUrl + '#toolbar=0';
         iframe.style.minHeight = '842px';
         dlBtn.textContent = 'Download PDF';
@@ -389,7 +446,7 @@
     }
   });
 
-  // ── Preview modal controls ──────────────────────────────────────
+  // ── Preview modal controls ────────────────────────────────────────────────
   function closePreview() {
     document.getElementById('payrollPreviewModal').classList.add('hidden');
     const iframe = document.getElementById('payrollPreviewIframe');
@@ -414,8 +471,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    window.URL.revokeObjectURL(url); // revoke immediately after trigger
-
+    window.URL.revokeObjectURL(url);
     payrollSuccessMessage.textContent = 'Report downloaded successfully!';
     payrollSuccessModal.classList.remove('hidden');
   });
@@ -425,14 +481,16 @@
 
   payrollClearBtn.addEventListener('click', () => {
     setTimeout(() => {
-      allPayrollLocations.checked = true;
-      togglePayrollLocation();
+      document.querySelector('input[name="payrollPeople"][value="all"]').checked = true;
+      applyPeopleSelection();
       payrollYear.value = new Date().getFullYear();
+      payrollHeaderType.value = '';
+      payrollReportType.value = 'both';
+      document.getElementById('payrollIppis').checked = false;
     }, 0);
   });
 
-  // ── Init ────────────────────────────────────────────────────────
-  togglePayrollLocation();
-  loadLocations();
+  // ── Init ──────────────────────────────────────────────────────────────────
+  applyPeopleSelection();
   loadCurrentPeriod();
 </script>

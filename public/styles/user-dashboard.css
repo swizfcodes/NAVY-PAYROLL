@@ -169,7 +169,7 @@ nav a.active::after {
 
 /* ── HOME ── */
 .home-bg {
-  background-image: url("photos/background-user-navy.png");
+  background-image: url("../photos/background-user-navy.png");
   background-size: cover;
   background-position: center 40%;
   align-items: flex-start;

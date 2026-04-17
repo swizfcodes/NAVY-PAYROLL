@@ -86,3 +86,6 @@ actions-runner
 bin/openssl.cnf
 NavyPayroll-mDNS.exe
 NavyPayroll-mDNS.xml
+preview.ps1
+~$preview.xlsx
+preview.xlsx

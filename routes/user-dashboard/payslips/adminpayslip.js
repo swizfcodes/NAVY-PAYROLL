@@ -2,45 +2,44 @@
 // ADMIN PAYSLIP CONTROLLER
 // routes/admin/adminPayslip.js
 //
-// Supports three modes:
-//   single  — one employee, one period
-//   multi   — array of employee IDs, one period
-//   range   — all employees between two service-number IDs, one period
+// Performance model (after SP rewrite):
 //
-// PDF delivery:
-//   merged  — single PDF (all employees concatenated)
-//   zip     — ZIP archive of individual PDFs
+//   BEFORE:  500 employees  →  500 SP calls  (one per employee)
+//   AFTER:   500 employees  →  N SP calls    (one per payroll class)
+//            N is typically 1-5 for most organisations.
 //
-// Auth assumption: verifyToken populates req.user_role.
-//   Swap `verifyAdmin` internals if your JWT uses a different field
-//   or you need a DB lookup.
+// Flow:
+//   1. Resolve employee IDs                         (1 query)
+//   2. Bulk-classify → group by payroll class       (1 JOIN query)
+//   3. For each class-group: call SP once with the
+//      full EMPL_ID range, under a unique session key
+//                                                   (N SP calls, parallel)
+//   4. Fetch all written rows in one SELECT per group
+//   5. Map rows → per-employee payslip objects
 // ============================================================
 
 const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs");
-const archiver = require("archiver"); // npm i archiver
-const { PDFDocument } = require("pdf-lib"); // npm i pdf-lib
+const archiver = require("archiver");
 const pool = require("../../../config/db");
 const verifyToken = require("../../../middware/authentication");
 const BaseReportController = require("../../../controllers/Reports/reportsFallbackController");
 
-// ── Re-use helpers from user payslip (copy or import) ────────
-// If you extract these to a shared lib, replace with:
-//   const { getPayrollClassDb, mapPayslipRows, buildPeriod, zeroPad }
-//     = require("../../lib/payslipHelpers");
+// ── Tuning ───────────────────────────────────────────────────
+const PDF_BATCH_SIZE = 50;
 
-async function getPayrollClassDb(classcode) {
-  const [[row]] = await pool.query(
-    `SELECT db_name
-     FROM py_payrollclass
-     WHERE classcode = ? AND status = 'active'
-     LIMIT 1`,
-    [classcode],
-  );
-  return row ? row.db_name : null;
+// ── Lazy PDF controller singleton ────────────────────────────
+let _controller = null;
+function getController() {
+  if (!_controller) _controller = new BaseReportController();
+  return _controller;
 }
+
+// ============================================================
+// PURE HELPERS
+// ============================================================
 
 function zeroPad(n) {
   return String(n).padStart(2, "0");
@@ -50,6 +49,20 @@ function buildPeriod(year, month) {
   return `${year}${zeroPad(month)}`;
 }
 
+/**
+ * Unique write key for py_webpayslip.work_station.
+ * Scopes each admin request's output rows so concurrent requests
+ * don't collide, and so the final SELECT reads only this batch.
+ * Format: "adm_{timestamp}_{random4hex}"
+ */
+function makeSessionKey() {
+  return `adm_${Date.now()}_${Math.floor(Math.random() * 0xffff).toString(16)}`;
+}
+
+/**
+ * Convert a flat array of py_webpayslip rows (all belonging to one employee)
+ * into the structured payslip object the PDF template expects.
+ */
 function mapPayslipRows(rows) {
   if (!rows || rows.length === 0) return null;
 
@@ -88,7 +101,7 @@ function mapPayslipRows(rows) {
     net_pay: 0,
   };
 
-  rows.forEach((row) => {
+  for (const row of rows) {
     const source = (row.source || "").toUpperCase();
     const category = (row.bpc || "").toUpperCase();
     const amount = parseFloat(row.bpm || row.BPM) || 0;
@@ -114,7 +127,7 @@ function mapPayslipRows(rows) {
       bucket.deductions.push(item);
       bucket.deductions_total += amount;
     }
-  });
+  }
 
   emp.ippis.net =
     emp.ippis.taxable_total +
@@ -136,24 +149,10 @@ function mapPayslipRows(rows) {
   return emp;
 }
 
-// ── Lazy PDF controller singleton ────────────────────────────
-let _controller = null;
-function getController() {
-  if (!_controller) _controller = new BaseReportController();
-  return _controller;
-}
-
 // ============================================================
-// SHARED: resolve employee IDs for each mode
+// RESOLVE EMPLOYEE IDs
 // ============================================================
 
-/**
- * Returns an array of EMPL_IDs depending on mode:
- *   single  — [employeeId]
- *   multi   — employeeIds  (validated non-empty array)
- *   range   — all IDs between fromId and toId inclusive (lexicographic,
- *             matching how service numbers sort in hr_employees)
- */
 async function resolveEmployeeIds(
   mode,
   { employeeId, employeeIds, fromId, toId },
@@ -167,56 +166,43 @@ async function resolveEmployeeIds(
         };
       return [String(employeeId)];
     }
-
     case "multi": {
-      if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+      if (!Array.isArray(employeeIds) || employeeIds.length === 0)
         throw {
           status: 400,
           message: "employeeIds must be a non-empty array for multi mode.",
         };
-      }
-      if (employeeIds.length > 500) {
+      if (employeeIds.length > 500)
         throw {
           status: 400,
           message: "Maximum 500 employees per multi request.",
         };
-      }
       return employeeIds.map(String);
     }
-
     case "range": {
       if (!fromId || !toId)
         throw {
           status: 400,
           message: "fromId and toId are required for range mode.",
         };
-
-      // Pull all EMPL_IDs that fall between fromId and toId.
-      // Adjust ORDER BY / WHERE if your IDs are numeric.
       const [rows] = await pool.query(
-        `SELECT EMPL_ID
-         FROM hr_employees
+        `SELECT EMPL_ID FROM hr_employees
          WHERE EMPL_ID >= ? AND EMPL_ID <= ?
          ORDER BY EMPL_ID ASC`,
         [String(fromId), String(toId)],
       );
-
-      if (!rows || rows.length === 0) {
+      if (!rows || rows.length === 0)
         throw {
           status: 404,
           message: "No employees found in the specified range.",
         };
-      }
-      if (rows.length > 500) {
+      if (rows.length > 500)
         throw {
           status: 400,
           message: "Range exceeds 500 employees. Please narrow the range.",
         };
-      }
-
       return rows.map((r) => String(r.EMPL_ID));
     }
-
     default:
       throw {
         status: 400,
@@ -226,109 +212,172 @@ async function resolveEmployeeIds(
 }
 
 // ============================================================
-// SHARED: generate payslip data for one employee
-// Returns { empId, data } or { empId, skipped: true, reason }
+// BULK CLASSIFY
+// One JOIN → Map<empId, { payrollclass, targetDb }>
 // ============================================================
-async function generateOnePayslip(
-  empId,
+
+async function classifyEmployees(empIds) {
+  if (empIds.length === 0) return new Map();
+
+  const [rows] = await pool.query(
+    `SELECT e.EMPL_ID, e.payrollclass, p.db_name AS targetDb
+     FROM hr_employees e
+     JOIN py_payrollclass p
+       ON  p.classcode = e.payrollclass
+       AND p.status    = 'active'
+     WHERE e.EMPL_ID IN (?)`,
+    [empIds],
+  );
+
+  const map = new Map();
+  for (const r of rows) {
+    map.set(String(r.EMPL_ID), {
+      payrollclass: String(r.payrollclass),
+      targetDb: r.targetDb,
+    });
+  }
+  return map;
+}
+
+// ============================================================
+// PROCESS ONE CLASS-GROUP
+//
+// One dedicated connection → USE targetDb → call SP ONCE for the
+// entire group → fetch all written rows → split per empId.
+//
+// The SP's p_username is a unique session key scoped to this
+// request — NOT an employee ID. This means:
+//   - Concurrent admin requests never overwrite each other's rows
+//   - The final SELECT reads exactly this batch's output
+//   - Rows are cleaned up immediately after reading
+// ============================================================
+
+async function processClassGroup(
+  targetDb,
+  payrollclass,
+  empIds,
   period,
   inputYear,
   inputMonth,
   monthdesc,
 ) {
-  // Fetch payrollclass
-  const [empRows] = await pool.query(
-    `SELECT payrollclass FROM hr_employees WHERE EMPL_ID = ? LIMIT 1`,
-    [empId],
-  );
-  if (!empRows || empRows.length === 0) {
-    return { empId, skipped: true, reason: "Employee record not found." };
-  }
+  const conn = await pool.getConnection();
+  const sessionKey = makeSessionKey();
 
-  const payrollclass = String(empRows[0].payrollclass);
-  const targetDb = await getPayrollClassDb(payrollclass);
-  if (!targetDb) {
-    return {
-      empId,
-      skipped: true,
-      reason: `Unsupported payroll class: ${payrollclass}.`,
-    };
-  }
+  try {
+    await conn.query(`USE \`${targetDb}\``);
 
-  // Switch DB context — all subsequent queries run against this employee's payroll DB
-  const storeKey = pool._getSessionContext().getStore() || "default";
-  pool.useDatabase(targetDb, storeKey);
-
-  // ── BT05: read current processing period from this employee's own DB ──
-  const [[bt05]] = await pool.query(
-    `SELECT ord, mth FROM py_stdrate WHERE type = 'BT05' LIMIT 1`,
-  );
-  if (!bt05) {
-    return {
-      empId,
-      skipped: true,
-      reason: "Could not determine current processing period from payroll DB.",
-    };
-  }
-  const isCurrentPeriod =
-    inputYear === parseInt(bt05.ord) && inputMonth === parseInt(bt05.mth);
-
-  // IPPIS readiness check
-  const [[ippisCheck]] = await pool.query(
-    `SELECT COUNT(*) AS cnt FROM py_ipis_payhistory WHERE numb = ? AND period = ?`,
-    [empId, period],
-  );
-
-  if (!ippisCheck || ippisCheck.cnt === 0) {
-    if (isCurrentPeriod) {
-      return {
+    // ── BT05: determine current processing period ─────────────
+    const [[bt05]] = await conn.query(
+      `SELECT ord, mth FROM py_stdrate WHERE type = 'BT05' LIMIT 1`,
+    );
+    if (!bt05) {
+      return empIds.map((empId) => ({
         empId,
         skipped: true,
-        reason: "Payslip not ready yet for the current period.",
-      };
+        reason: "Could not determine processing period from payroll DB.",
+      }));
     }
-    // Historical NAVY-only months — allow through
+
+    const isCurrentPeriod =
+      inputYear === parseInt(bt05.ord) && inputMonth === parseInt(bt05.mth);
+
+    // ── Current period: one group readiness check ─────────────
+    // Instead of N individual IPPIS checks, do one IN() query for
+    // the whole group. Employees absent from the result aren't ready.
+    let notReadyIds = new Set();
+    if (isCurrentPeriod) {
+      const [readyRows] = await conn.query(
+        `SELECT DISTINCT numb
+         FROM py_ipis_payhistory
+         WHERE period = ? AND numb IN (?)`,
+        [period, empIds],
+      );
+      const readySet = new Set(readyRows.map((r) => String(r.numb)));
+      for (const id of empIds) {
+        if (!readySet.has(id)) notReadyIds.add(id);
+      }
+    }
+
+    const processable = empIds.filter((id) => !notReadyIds.has(id));
+    const skippedEarly = [...notReadyIds].map((empId) => ({
+      empId,
+      skipped: true,
+      reason: "Payslip not ready yet for the current period.",
+    }));
+
+    if (processable.length === 0) {
+      return skippedEarly;
+    }
+
+    // ── Single SP call for the whole group ────────────────────
+    // The SP processes all employees in the range [fromId, toId]
+    // belonging to p_payrollclass, writing under p_username (sessionKey).
+    const sortedIds = [...processable].sort();
+    const fromId = sortedIds[0];
+    const toId = sortedIds[sortedIds.length - 1];
+
+    await conn.query(`CALL py_generate_combined_payslip(?, ?, ?, ?, ?, '1')`, [
+      fromId,
+      toId,
+      period,
+      payrollclass,
+      sessionKey,
+    ]);
+
+    // ── Fetch all rows written by this SP call ────────────────
+    const [allRows] = await conn.query(
+      `SELECT * FROM py_webpayslip
+       WHERE work_station = ? AND ord = ? AND desc1 = ?
+       ORDER BY numb, source DESC, bpc, bp`,
+      [sessionKey, String(inputYear), monthdesc],
+    );
+
+    // ── Async cleanup — don't block the response ──────────────
+    conn
+      .query(`DELETE FROM py_webpayslip WHERE work_station = ?`, [sessionKey])
+      .catch((e) => console.warn("⚠️ Session cleanup failed:", e.message));
+
+    // ── Group rows by employee ────────────────────────────────
+    const rowsByEmp = new Map();
+    for (const row of allRows) {
+      const id = String(row.numb || row.NUMB);
+      if (!rowsByEmp.has(id)) rowsByEmp.set(id, []);
+      rowsByEmp.get(id).push(row);
+    }
+
+    // ── Build result array ────────────────────────────────────
+    const groupResults = processable.map((empId) => {
+      const empRows = rowsByEmp.get(empId);
+      if (!empRows || empRows.length === 0) {
+        return {
+          empId,
+          skipped: true,
+          reason: "No payslip rows found after SP execution.",
+        };
+      }
+      return { empId, data: mapPayslipRows(empRows) };
+    });
+
+    return [...skippedEarly, ...groupResults];
+  } catch (err) {
+    // Best-effort cleanup on error
+    conn
+      .query(`DELETE FROM py_webpayslip WHERE work_station = ?`, [sessionKey])
+      .catch(() => {});
+    throw err;
+  } finally {
+    conn.release();
   }
-
-  // Call SP
-  await pool.query(`CALL py_generate_combined_payslip(?, ?, ?, ?, ?, ?)`, [
-    empId,
-    empId,
-    period,
-    payrollclass,
-    empId,
-    "1",
-  ]);
-
-  // Fetch rows
-  const [rawRows] = await pool.query(
-    `SELECT * FROM py_webpayslip
-     WHERE work_station = ? AND ord = ? AND desc1 = ?
-     ORDER BY source DESC, bpc, bp`,
-    [empId, String(inputYear), monthdesc],
-  );
-
-  if (!rawRows || rawRows.length === 0) {
-    return { empId, skipped: true, reason: "No payslip rows found." };
-  }
-
-  return { empId, data: mapPayslipRows(rawRows) };
 }
 
 // ============================================================
 // POST /admin/payslip/generate
-// Body:
-//   { mode: "single",  employeeId: "N12345",               year: "2025", month: "3" }
-//   { mode: "multi",   employeeIds: ["N12345","N12346"],    year: "2025", month: "3" }
-//   { mode: "range",   fromId: "N12300", toId: "N12399",   year: "2025", month: "3" }
-//
-// Returns:
-//   { success, results: [ { empId, data } | { empId, skipped, reason } ] }
 // ============================================================
+
 router.post("/generate", verifyToken, async (req, res) => {
   const { mode, employeeId, employeeIds, fromId, toId, year, month } = req.body;
 
-  // ── Input validation ──────────────────────────────────────
   const inputYear = parseInt(year);
   const inputMonth = parseInt(month);
 
@@ -349,7 +398,7 @@ router.post("/generate", verifyToken, async (req, res) => {
   const period = buildPeriod(inputYear, inputMonth);
 
   try {
-    // ── Resolve employee list ─────────────────────────────
+    // 1. Resolve IDs
     let empIds;
     try {
       empIds = await resolveEmployeeIds(mode, {
@@ -362,7 +411,7 @@ router.post("/generate", verifyToken, async (req, res) => {
       return res.status(e.status || 400).json({ error: e.message });
     }
 
-    // ── Month description ─────────────────────────────────
+    // 2. Month description
     const [monthData] = await pool.query(
       `SELECT mthdesc FROM ac_months WHERE cmonth = ? LIMIT 1`,
       [inputMonth],
@@ -374,19 +423,50 @@ router.post("/generate", verifyToken, async (req, res) => {
     }
     const monthdesc = monthData[0].mthdesc;
 
-    // ── Process all employees (sequential to respect DB context switching) ──
-    const results = [];
+    // 3. Bulk classify — 1 query
+    const classMap = await classifyEmployees(empIds);
+
+    // 4. Bucket by payroll DB
+    const dbGroups = new Map();
+    const earlySkips = [];
+
     for (const empId of empIds) {
-      const result = await generateOnePayslip(
-        empId,
-        period,
-        inputYear,
-        inputMonth,
-        monthdesc,
-      );
-      results.push(result);
+      const meta = classMap.get(empId);
+      if (!meta) {
+        earlySkips.push({
+          empId,
+          skipped: true,
+          reason: "Employee not found or no active payroll class.",
+        });
+        continue;
+      }
+      if (!dbGroups.has(meta.targetDb)) {
+        dbGroups.set(meta.targetDb, {
+          payrollclass: meta.payrollclass,
+          empIds: [],
+        });
+      }
+      dbGroups.get(meta.targetDb).empIds.push(empId);
     }
 
+    // 5. One SP call per class-group — all groups run in parallel
+    const groupResultArrays = await Promise.all(
+      [...dbGroups.entries()].map(
+        ([targetDb, { payrollclass, empIds: gIds }]) =>
+          processClassGroup(
+            targetDb,
+            payrollclass,
+            gIds,
+            period,
+            inputYear,
+            inputMonth,
+            monthdesc,
+          ),
+      ),
+    );
+
+    // 6. Flatten and return
+    const results = [...earlySkips, ...groupResultArrays.flat()];
     const successful = results.filter((r) => !r.skipped).length;
     const skipped = results.filter((r) => r.skipped).length;
 
@@ -405,17 +485,8 @@ router.post("/generate", verifyToken, async (req, res) => {
 
 // ============================================================
 // POST /admin/payslip/pdf
-// Body:
-//   {
-//     results:  [ { empId, data }, ... ],   ← from /generate response
-//     delivery: "merged" | "zip",           ← default: "merged"
-//     stamp:    true | false
-//   }
-//
-// Returns:
-//   merged → application/pdf
-//   zip    → application/zip
 // ============================================================
+
 router.post("/pdf", verifyToken, async (req, res) => {
   const { results, delivery = "merged", stamp = false } = req.body;
 
@@ -433,20 +504,27 @@ router.post("/pdf", verifyToken, async (req, res) => {
     "../../../templates/user-payslip.html",
   );
   const logoPath = path.join(__dirname, "../../../public/photos/logo.png");
-
   let logoDataUrl = "";
+
   if (fs.existsSync(logoPath)) {
     const buf = fs.readFileSync(logoPath);
     logoDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
   }
 
-  const controller  = getController();
-  const BATCH_SIZE  = 50; // employees per Chromium render — tune up/down based on memory
+  const controller = getController();
+  const firstEmp = validEntries[0]?.data || {};
+  const periodMonth = firstEmp.payroll_month || "";
+  const periodYear = String(firstEmp.payroll_year || "");
+  const sharedGlobals = {
+    payDate: new Date(),
+    logoDataUrl,
+    showStamp: !!stamp,
+  };
 
   const pdfOptions = {
-    format:    "A5",
+    format: "A5",
     landscape: false,
-    timeout:   120000,
+    timeout: 120000,
     helpers: `
       function formatCurrency(value) {
         if (!value && value !== 0) return '0.00';
@@ -464,62 +542,31 @@ router.post("/pdf", verifyToken, async (req, res) => {
     `,
   };
 
-  const sharedGlobals = { payDate: new Date(), logoDataUrl, showStamp: !!stamp };
-
-  // ── Shared filename helpers ───────────────────────────────────
-  const firstEmp    = validEntries[0]?.data || {};
-  const periodMonth = firstEmp.payroll_month || "";
-  const periodYear  = String(firstEmp.payroll_year || "");
-
-  function zipFileName(entry) {
-    const d       = entry.data || {};
-    const surname = (d.surname   || "").trim().toUpperCase();
-    const other   = (d.othername || "").trim().toUpperCase();
-    const month   = d.payroll_month || periodMonth;
-    const year    = String(d.payroll_year || periodYear);
-    return [surname, other, month, year, "Payslip"].filter(Boolean).join(" ") + ".pdf";
-  }
-
   try {
-    // ════════════════════════════════════════════════════════════
-    // MERGED PDF
-    // One generateBatchedPDF call with ALL employees.
-    // BATCH_SIZE controls how many employees Chromium renders per
-    // page-load — the controller splits and merges automatically.
-    // ════════════════════════════════════════════════════════════
     if (delivery === "merged") {
-      console.log(`📄 Generating merged PDF for ${validEntries.length} employees`);
+      console.log(
+        `📄 Generating merged PDF for ${validEntries.length} employees`,
+      );
 
-      const allData = validEntries.map((e) => e.data);
-
-      // Single call — controller batches internally, one browser launch total
       const mergedBuffer = await controller.generateBatchedPDF(
         templatePath,
-        allData,
-        BATCH_SIZE,   // ← passed as third arg, not buried in pdfOptions
+        validEntries.map((e) => e.data),
+        PDF_BATCH_SIZE,
         pdfOptions,
         sharedGlobals,
       );
 
       const mergedName = `Payslips ${periodMonth} ${periodYear}.pdf`.trim();
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${mergedName}"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${mergedName}"`,
+      );
       return res.send(mergedBuffer);
     }
 
-    // ════════════════════════════════════════════════════════════
-    // ZIP — individual PDFs per employee
-    // Still uses BATCH_SIZE: renders N employees per Chromium call,
-    // then pdf-lib splits pages back into per-employee buffers.
-    // Far fewer browser launches than the old 1-per-employee loop.
-    // ════════════════════════════════════════════════════════════
     if (delivery === "zip") {
-      // Archive name: "Payslips April 2025.zip"
-      const firstEmpZ = validEntries[0]?.data || {};
-      const zipMonth = firstEmpZ.payroll_month || String(inputMonth);
-      const zipYear = firstEmpZ.payroll_year || String(inputYear);
-      const zipName = `Payslips ${zipMonth} ${zipYear}.zip`;
-
+      const zipName = `Payslips ${firstEmp.payroll_month || periodMonth} ${firstEmp.payroll_year || periodYear}.zip`;
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Disposition", `attachment; filename="${zipName}"`);
 
@@ -537,108 +584,102 @@ router.post("/pdf", verifyToken, async (req, res) => {
           pdfOptions,
           sharedGlobals,
         );
-        // Per-file: "SURNAME OTHERNAME MONTH YEAR Payslip.pdf"
         const d = entry.data || {};
-        const surname = (d.surname || "").trim().toUpperCase();
-        const other = (d.othername || "").trim().toUpperCase();
-        const month = d.payroll_month || String(inputMonth);
-        const year = d.payroll_year || String(inputYear);
-        const parts = [surname, other, month, year, "Payslip"].filter(Boolean);
+        const parts = [
+          (d.surname || "").trim().toUpperCase(),
+          (d.othername || "").trim().toUpperCase(),
+          d.payroll_month || periodMonth,
+          String(d.payroll_year || periodYear),
+          "Payslip",
+        ].filter(Boolean);
         archive.append(buf, { name: parts.join(" ") + ".pdf" });
       }
 
       await archive.finalize();
-      return; // response is streamed by archiver
+      return;
     }
 
-    return res.status(400).json({ error: "delivery must be 'merged' or 'zip'." });
-
+    return res
+      .status(400)
+      .json({ error: "delivery must be 'merged' or 'zip'." });
   } catch (err) {
     console.error("❌ Admin payslip PDF error:", err);
     return res.status(500).json({ error: "PDF generation failed." });
   }
 });
 
-// ── GET /admin/employees/search ─────────────────────────────
-// Query params:
-//   q   — search string (min 2 chars)
-//   max — max results (default 10, cap 30)
-// ────────────────────────────────────────────────────────────
+// ============================================================
+// GET /admin/payslip/search
+// ============================================================
+
 function looksLikeId(q) {
-  return /^[A-Z]{1,3}\d+$/i.test(q) || /^\d+$/.test(q) || /^[A-Z]{2}\/\d{4}$/i.test(q);
+  return (
+    /^[A-Z]{1,3}\d+$/i.test(q) ||
+    /^\d+$/.test(q) ||
+    /^[A-Z]{2}\/\d{4}$/i.test(q)
+  );
 }
- 
-router.get('/search', verifyToken, async (req, res) => {
+
+router.get("/search", verifyToken, async (req, res) => {
   const { q, max } = req.query;
- 
+
   if (!q || String(q).trim().length < 2) {
-    return res.status(400).json({ error: 'Search query must be at least 2 characters.' });
+    return res
+      .status(400)
+      .json({ error: "Search query must be at least 2 characters." });
   }
- 
-  const term  = String(q).trim();
+
+  const term = String(q).trim();
   const limit = Math.min(parseInt(max) || 15, 30);
- 
-  // Active-employee predicate — shared by both branches
-  const activePredicate = `((DateLeft IS NULL OR DateLeft = '' OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d')) AND (exittype IS NULL OR exittype = ''))`;
- 
+
+  const activePredicate = `(
+    (DateLeft IS NULL OR DateLeft = '' OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d'))
+    AND (exittype IS NULL OR exittype = '')
+  )`;
+
   try {
     let rows;
- 
+
     if (looksLikeId(term)) {
-      // ── Fast path: exact or prefix match on EMPL_ID ──────
-      // EMPL_ID is typically the primary key, so this is O(log n).
       const [r] = await pool.query(
         `SELECT EMPL_ID AS id, Title AS title, Surname AS surname, OtherName AS othername
          FROM hr_employees
-         WHERE ${activePredicate}
-           AND EMPL_ID LIKE ?
-         ORDER BY EMPL_ID ASC
-         LIMIT ?`,
-        [term + '%', limit]
+         WHERE ${activePredicate} AND EMPL_ID LIKE ?
+         ORDER BY EMPL_ID ASC LIMIT ?`,
+        [term + "%", limit],
       );
       rows = r;
     } else {
-      // ── Name path: starts-with on Surname UNION OtherName ─
-      // Both LIKE 'term%' patterns benefit from an index on the
-      // respective column (add one if missing: INDEX(Surname), INDEX(OtherName)).
-      // UNION removes duplicates automatically.
-      const startsWith = term + '%';
+      const startsWith = term + "%";
       const [r] = await pool.query(
-        `(
-          SELECT EMPL_ID AS id, Title AS title, Surname AS surname, OtherName AS othername
+        `(SELECT EMPL_ID AS id, Title AS title, Surname AS surname, OtherName AS othername
           FROM hr_employees
-          WHERE ${activePredicate}
-            AND Surname LIKE ?
-          ORDER BY Surname ASC
-          LIMIT ?
-        )
-        UNION
-        (
-          SELECT EMPL_ID AS id, Title AS title, Surname AS surname, OtherName AS othername
+          WHERE ${activePredicate} AND Surname LIKE ?
+          ORDER BY Surname ASC LIMIT ?)
+         UNION
+         (SELECT EMPL_ID AS id, Title AS title, Surname AS surname, OtherName AS othername
           FROM hr_employees
-          WHERE ${activePredicate}
-            AND OtherName LIKE ?
-          ORDER BY OtherName ASC
-          LIMIT ?
-        )
-        LIMIT ?`,
-        [startsWith, limit, startsWith, limit, limit]
+          WHERE ${activePredicate} AND OtherName LIKE ?
+          ORDER BY OtherName ASC LIMIT ?)
+         LIMIT ?`,
+        [startsWith, limit, startsWith, limit, limit],
       );
       rows = r;
     }
- 
-    const results = (rows || []).map(row => ({
-      id:        String(row.id        || ''),
-      title:     String(row.title     || ''),
-      surname:   String(row.surname   || ''),
-      othername: String(row.othername || ''),
-    }));
- 
-    return res.json(results);
- 
+
+    return res.json(
+      (rows || []).map((row) => ({
+        id: String(row.id || ""),
+        title: String(row.title || ""),
+        surname: String(row.surname || ""),
+        othername: String(row.othername || ""),
+      })),
+    );
   } catch (err) {
-    console.error('❌ Employee search error:', err);
-    return res.status(500).json({ error: 'An error occurred during employee search.' });
+    console.error("❌ Employee search error:", err);
+    return res
+      .status(500)
+      .json({ error: "An error occurred during employee search." });
   }
 });
 
