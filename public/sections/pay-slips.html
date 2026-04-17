@@ -263,14 +263,14 @@
     const selectedPeople = document.querySelector('input[name="people"]:checked').value;
     const excelRadio = document.querySelector('input[name="format"][value="excel"]');
     const pdfRadio = document.querySelector('input[name="format"][value="pdf"]');
-    if (selectedPeople === 'individual') {
+    /*if (selectedPeople === 'individual') {
       excelRadio.disabled = true;
       excelRadio.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
       pdfRadio.checked = true;
     } else {
       excelRadio.disabled = false;
       excelRadio.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
+    }*/
   }
 
   peopleRadios.forEach(radio => {

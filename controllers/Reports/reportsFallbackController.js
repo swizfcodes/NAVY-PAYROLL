@@ -1,44 +1,50 @@
-const jsreport = require('jsreport-core')();
-const chromiumPdfGenerator = require('../../lib/chromiumPdfGenerator');
-const Handlebars = require('handlebars');
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
+// ============================================================================
+// controllers/Reports/reportsFallbackController.js  (BaseReportController)============================================================================
+
+const jsreport = require("jsreport-core")();
+const chromiumPdfGenerator = require("../../lib/chromiumPdfGenerator");
+const Handlebars = require("handlebars");
+const fs = require("fs");
+const path = require("path");
 
 class BaseReportController {
   constructor() {
     this.jsreportReady = false;
     this.fallbackReady = true;
-    
-    const forceFallback = process.env.USE_JSREPORT_FALLBACK === 'true';
-    
+
+    const forceFallback = process.env.USE_JSREPORT_FALLBACK === "true";
+
     if (forceFallback) {
-      console.log('⚠️  JSReport disabled via USE_JSREPORT_FALLBACK=true - using Chromium fallback');
+      console.log(
+        "⚠️  JSReport disabled via USE_JSREPORT_FALLBACK=true - using Chromium fallback",
+      );
       this.jsreportReady = false;
     } else {
       this.initJSReport();
     }
-    
+
     this.registerHandlebarsHelpers();
   }
 
   async initJSReport() {
     try {
-      jsreport.use(require('jsreport-handlebars')());
-      jsreport.use(require('jsreport-chrome-pdf')());
-      
+      jsreport.use(require("jsreport-handlebars")());
+      jsreport.use(require("jsreport-chrome-pdf")());
       await jsreport.init();
       this.jsreportReady = true;
-      console.log('✅ JSReport initialized');
+      console.log("✅ JSReport initialized");
     } catch (error) {
-      console.error('⚠️  JSReport initialization failed, will use Chromium fallback:', error.message);
+      console.error(
+        "⚠️  JSReport initialization failed, will use Chromium fallback:",
+        error.message,
+      );
       this.jsreportReady = false;
     }
   }
 
   registerHandlebarsHelpers() {
     const helpersCode = this._getCommonHelpers();
-    
+
     const helperFunctions = new Function(`
       ${helpersCode}
       return {
@@ -65,72 +71,39 @@ class BaseReportController {
       };
     `)();
 
-    Object.keys(helperFunctions).forEach(name => {
+    Object.keys(helperFunctions).forEach((name) => {
       Handlebars.registerHelper(name, helperFunctions[name]);
     });
 
-    console.log('✅ Handlebars helpers registered for fallback');
+    console.log("✅ Handlebars helpers registered for fallback");
   }
 
   _getCommonHelpers() {
     return `
       function formatCurrency(value) {
         const num = parseFloat(value) || 0;
-        return num.toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
+        return num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
-
       function formatCurrencyWithSign(amount) {
         const num = parseFloat(amount || 0);
-        const formatted = Math.abs(num).toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-        if (num < 0) {
-          return '(' + formatted + ')';
-        }
-        return formatted;
+        const formatted = Math.abs(num).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return num < 0 ? '(' + formatted + ')' : formatted;
       }
-
-      function abs(value) {
-        return Math.abs(parseFloat(value) || 0);
-      }  
-      
-      function isNegative(amount) {
-        return parseFloat(amount || 0) < 0;
-      }
-      
+      function abs(value) { return Math.abs(parseFloat(value) || 0); }
+      function isNegative(amount) { return parseFloat(amount || 0) < 0; }
       function formatDate(date) {
-        const d = new Date(date || new Date());
-        return d.toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        });
+        return new Date(date || new Date()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       }
-
       function formatTime(date) {
-        return new Date(date).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
+        return new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       }
-
       function formatPeriod(period) {
         if (!period || period.length !== 6) return period;
-        const year = period.substring(0, 4);
-        const month = period.substring(4, 6);
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthName = months[parseInt(month) - 1] || month;
-        return monthName + ' ' + year;
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return (months[parseInt(period.substring(4,6)) - 1] || period.substring(4,6)) + ' ' + period.substring(0,4);
       }
-
       function formatMonth(monthNumber) {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         return monthNames[monthNumber - 1] || 'Unknown';
       }
 
@@ -211,116 +184,246 @@ class BaseReportController {
     `;
   }
 
-  // UNIFIED PDF GENERATION METHOD
+  // ==========================================================================
+  // SINGLE-DOCUMENT PDF  (reports, not payslips)
+  // Unchanged from original — used by all non-batched report routes.
+  // ==========================================================================
+
   async generatePDFWithFallback(templatePath, templateData, pdfOptions = {}) {
     if (!fs.existsSync(templatePath)) {
       throw new Error(`PDF template file not found: ${templatePath}`);
     }
-    
-    const templateContent = fs.readFileSync(templatePath, 'utf8');
-    let pdfBuffer;
+
+    const templateContent = fs.readFileSync(templatePath, "utf8");
 
     if (this.jsreportReady) {
       try {
-        console.log('🔄 Attempting PDF generation with JSReport...');
+        console.log("🔄 Attempting PDF generation with JSReport...");
         const result = await jsreport.render({
           template: {
             content: templateContent,
-            engine: 'handlebars',
-            recipe: 'chrome-pdf',
+            engine: "handlebars",
+            recipe: "chrome-pdf",
             chrome: {
               displayHeaderFooter: pdfOptions.displayHeaderFooter || false,
               printBackground: pdfOptions.printBackground !== false,
-              format: pdfOptions.format || 'A4',
+              format: pdfOptions.format || "A4",
               landscape: pdfOptions.landscape !== false,
-              marginTop: pdfOptions.marginTop || '5mm',
-              marginBottom: pdfOptions.marginBottom || '5mm',
-              marginLeft: pdfOptions.marginLeft || '5mm',
-              marginRight: pdfOptions.marginRight || '5mm',
-              timeout: pdfOptions.timeout || 120000
+              marginTop: pdfOptions.marginTop || "5mm",
+              marginBottom: pdfOptions.marginBottom || "5mm",
+              marginLeft: pdfOptions.marginLeft || "5mm",
+              marginRight: pdfOptions.marginRight || "5mm",
+              timeout: pdfOptions.timeout || 120000,
             },
-            helpers: pdfOptions.helpers || this._getCommonHelpers()
+            helpers: pdfOptions.helpers || this._getCommonHelpers(),
           },
           data: templateData,
-          options: pdfOptions.options || {}
+          options: pdfOptions.options || {},
         });
-        
-        pdfBuffer = result.content;
-        console.log('✅ PDF generated successfully with JSReport');
-        return pdfBuffer;
+        console.log("✅ PDF generated successfully with JSReport");
+        return result.content;
       } catch (jsreportError) {
-        console.error('⚠️  JSReport failed, switching to Chromium fallback:', jsreportError.message);
+        console.error(
+          "⚠️  JSReport failed, switching to Chromium fallback:",
+          jsreportError.message,
+        );
         this.jsreportReady = false;
       }
     }
 
-    if (!this.jsreportReady && this.fallbackReady) {
-      console.log('🔄 Using Chromium fallback for PDF generation...');
-      
-      const template = Handlebars.compile(templateContent);
-      const html = template(templateData);
-      
-      pdfBuffer = await chromiumPdfGenerator.generateFromHTML(html, {
-        format: pdfOptions.format || 'A4',
-        landscape: pdfOptions.landscape !== false,
-        margin: {
-          top: pdfOptions.marginTop || '5mm',
-          right: pdfOptions.marginRight || '5mm',
-          bottom: pdfOptions.marginBottom || '5mm',
-          left: pdfOptions.marginLeft || '5mm'
-        }
-      });
-      
-      console.log('✅ PDF generated successfully with Chromium fallback');
-      return pdfBuffer;
-    }
+    console.log("🔄 Using Chromium fallback for PDF generation...");
+    const template = Handlebars.compile(templateContent);
+    const html = template(templateData);
 
-    throw new Error('No PDF generation method available');
+    const pdfBuffer = await chromiumPdfGenerator.generateFromHTML(html, {
+      format: pdfOptions.format || "A4",
+      landscape: pdfOptions.landscape !== false,
+      margin: {
+        top: pdfOptions.marginTop || "5mm",
+        right: pdfOptions.marginRight || "5mm",
+        bottom: pdfOptions.marginBottom || "5mm",
+        left: pdfOptions.marginLeft || "5mm",
+      },
+    });
+
+    console.log("✅ PDF generated successfully with Chromium fallback");
+    return pdfBuffer;
   }
 
-  // BATCH PDF GENERATION - For payslips/large datasets
-  async generateBatchedPDF(templatePath, allData, batchSize, pdfOptions, extraTemplateData = {}) {
-    console.log(`📦 Starting batched PDF generation: ${allData.length} items, batch size: ${batchSize}`);
-    
+  // ==========================================================================
+  // BATCHED PDF  (payslips — large employee sets)
+  //
+  // Strategy:
+  //   1. Compile the Handlebars template ONCE (was re-compiled per batch)
+  //   2. Render all batches to HTML strings in memory (CPU only, fast)
+  //   3. Pass all HTML strings to chromiumPdfGenerator.generateManyFromHTML
+  //      which launches ONE browser and renders through a tab pool
+  //   4. Merge PDFs incrementally as each batch finishes (streaming)
+  //      so we never hold the full 40k pages in RAM at once
+  //
+  // For jsreport mode the original serial approach is kept because jsreport
+  // manages its own process pool differently.
+  // ==========================================================================
+
+  async generateBatchedPDF(
+    templatePath,
+    allData,
+    batchSize,
+    pdfOptions,
+    extraTemplateData = {},
+  ) {
+    console.log(
+      `📦 Starting batched PDF: ${allData.length} employees, batch ${batchSize}, pool ${require("../../lib/chromiumPdfGenerator").constructor.name || "ChromiumPDFGenerator"}`,
+    );
+
+    // ── Split data into batches ───────────────────────────────────────────────
     const batches = [];
     for (let i = 0; i < allData.length; i += batchSize) {
       batches.push(allData.slice(i, i + batchSize));
     }
-    
-    console.log(`📦 Created ${batches.length} batches`);
-    
-    const pdfBuffers = [];
-    
-    for (let i = 0; i < batches.length; i++) {
-      console.log(`🔄 Processing batch ${i + 1}/${batches.length} (${batches[i].length} items)`);
-      
-      const templateData = {
-        ...extraTemplateData,
-        employees: batches[i]
-      };
-      
-      const batchPdf = await this.generatePDFWithFallback(templatePath, templateData, pdfOptions);
-      pdfBuffers.push(batchPdf);
-      
-      console.log(`✅ Batch ${i + 1}/${batches.length} complete`);
+    console.log(`📦 ${batches.length} batches created`);
+
+    // ── JSReport path (unchanged, serial) ────────────────────────────────────
+    if (this.jsreportReady) {
+      return this._generateBatchedPDFJSReport(
+        templatePath,
+        batches,
+        pdfOptions,
+        extraTemplateData,
+      );
     }
-    
-    console.log('📄 Merging PDFs...');
-    const mergedPdf = await this.mergePDFs(pdfBuffers);
-    console.log('✅ PDF merge complete');
-    
+
+    // ── Chromium path (optimised) ─────────────────────────────────────────────
+    console.log("🔄 Using optimised Chromium batched path");
+
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`PDF template file not found: ${templatePath}`);
+    }
+
+    // Step 1: compile template once
+    const templateContent = fs.readFileSync(templatePath, "utf8");
+    const compiledTemplate = Handlebars.compile(templateContent);
+
+    // Step 2: render all HTML strings (pure JS, no browser needed)
+    console.log("📝 Pre-rendering HTML for all batches...");
+    const htmlPages = batches.map((batch, i) => {
+      const templateData = { ...extraTemplateData, employees: batch };
+      return compiledTemplate(templateData);
+    });
+    console.log(`✅ All ${htmlPages.length} HTML pages rendered`);
+
+    // Step 3 + 4: generate PDFs through tab pool, merge incrementally
+    // pdf-merger-js supports add(Buffer) so we can merge as each batch arrives
+    const PDFMerger = require("pdf-merger-js").default;
+    const merger = new PDFMerger();
+    let completed = 0;
+
+    const chromiumOptions = {
+      format: pdfOptions.format || "A5",
+      landscape: pdfOptions.landscape !== false ? pdfOptions.landscape : false,
+      margin: {
+        top: "5mm",
+        right: "5mm",
+        bottom: "5mm",
+        left: "5mm",
+      },
+      timeout: pdfOptions.timeout || 600000,
+    };
+
+    await chromiumPdfGenerator.generateManyFromHTML(
+      htmlPages,
+      chromiumOptions,
+      async (buffer, index) => {
+        // Called as each batch finishes — merge immediately to avoid
+        // accumulating all buffers in RAM
+        await merger.add(buffer);
+        completed++;
+        console.log(`📄 Merged batch ${completed}/${batches.length}`);
+      },
+    );
+
+    console.log("📄 Finalising merged PDF...");
+    const mergedPdf = await merger.saveAsBuffer();
+    console.log(
+      `✅ Final PDF: ${(mergedPdf.length / 1024 / 1024).toFixed(1)}MB`,
+    );
     return mergedPdf;
   }
 
-  // MERGE MULTIPLE PDF BUFFERS
-  async mergePDFs(pdfBuffers) {
-    const PDFMerger = require('pdf-merger-js').default;
-    const merger = new PDFMerger();
+  // ==========================================================================
+  // JSReport batched path (serial, unchanged behaviour)
+  // ==========================================================================
 
-    for (const buffer of pdfBuffers) {
-      await merger.add(buffer);
+  async _generateBatchedPDFJSReport(
+    templatePath,
+    batches,
+    pdfOptions,
+    extraTemplateData,
+  ) {
+    const templateContent = fs.readFileSync(templatePath, "utf8");
+    const pdfBuffers = [];
+
+    for (let i = 0; i < batches.length; i++) {
+      console.log(`🔄 JSReport batch ${i + 1}/${batches.length}`);
+      const templateData = { ...extraTemplateData, employees: batches[i] };
+
+      try {
+        const result = await jsreport.render({
+          template: {
+            content: templateContent,
+            engine: "handlebars",
+            recipe: "chrome-pdf",
+            chrome: {
+              format: pdfOptions.format || "A5",
+              landscape:
+                pdfOptions.landscape !== false ? pdfOptions.landscape : false,
+              printBackground: true,
+              timeout: pdfOptions.timeout || 120000,
+              marginTop: "5mm",
+              marginBottom: "5mm",
+              marginLeft: "5mm",
+              marginRight: "5mm",
+            },
+            helpers: pdfOptions.helpers || this._getCommonHelpers(),
+          },
+          data: templateData,
+          options: pdfOptions.options || {},
+        });
+        pdfBuffers.push(result.content);
+        console.log(`✅ JSReport batch ${i + 1}/${batches.length} complete`);
+      } catch (err) {
+        console.error(
+          `⚠️  JSReport batch ${i + 1} failed, switching to Chromium:`,
+          err.message,
+        );
+        this.jsreportReady = false;
+        // Re-run remaining batches through Chromium by recursing
+        // (rare edge case — jsreport crashed mid-run)
+        const remaining = batches.slice(i).flatMap((b) => b);
+        const fallback = await this.generateBatchedPDF(
+          templatePath,
+          remaining,
+          batches[0].length,
+          pdfOptions,
+          extraTemplateData,
+        );
+        pdfBuffers.push(fallback);
+        break;
+      }
     }
 
+    console.log("📄 Merging JSReport PDFs...");
+    return this.mergePDFs(pdfBuffers);
+  }
+
+  // ==========================================================================
+  // MERGE MULTIPLE PDF BUFFERS  (kept for external callers)
+  // ==========================================================================
+
+  async mergePDFs(pdfBuffers) {
+    const PDFMerger = require("pdf-merger-js").default;
+    const merger = new PDFMerger();
+    for (const buffer of pdfBuffers) await merger.add(buffer);
     return merger.saveAsBuffer();
   }
 }

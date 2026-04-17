@@ -1,140 +1,117 @@
+// ============================================================================
+// services/Reports/NHFReportService.js============================================================================
+
 const pool = require('../../config/db');
 
 class NHFReportService {
-  
-  // ========================================================================
-  // NHF REPORT - NO GROUPING
-  // ========================================================================
+
+  // ==========================================================================
+  // INTERNAL: resolve period to scalar values (same pattern as reportServices)
+  // ==========================================================================
+  async _getPeriod(year, month) {
+    if (year && month) {
+      return { year: String(year), month: String(month) };
+    }
+    const [rows] = await pool.query(
+      `SELECT ord AS year, mth AS month FROM py_stdrate WHERE type = 'BT05' LIMIT 1`
+    );
+    if (!rows || rows.length === 0) {
+      throw new Error("Current period (BT05) not found in py_stdrate");
+    }
+    return { year: String(rows[0].year), month: String(rows[0].month) };
+  }
+
+  // ==========================================================================
+  // NHF REPORT
+  // ==========================================================================
   async getNHFReport(filters = {}) {
     const { year, month, summaryOnly } = filters;
-    
-    // Convert summaryOnly to boolean if it's a string
     const isSummary = summaryOnly === true || summaryOnly === '1' || summaryOnly === 'true';
-    
+    const period    = await this._getPeriod(year, month);
+
     if (isSummary) {
-      // Summary query - overall aggregation
-      const query = `
-        SELECT 
-          sr.ord as year,
-          sr.mth as month,
-          COUNT(DISTINCT mp.his_empno) as employee_count,
-          ROUND(SUM(mc.his_netmth), 2) as total_net_pay,
-          ROUND(AVG(mc.his_netmth), 2) as avg_net_pay,
-          ROUND(SUM(mp.amtthismth), 2) as total_nhf_contribution,
-          ROUND(AVG(mp.amtthismth), 2) as avg_nhf_contribution,
-          ROUND(SUM(mp.totpaidtodate), 2) as total_nhf_paid_todate,
-          ROUND(MIN(mp.amtthismth), 2) as min_nhf_contribution,
-          ROUND(MAX(mp.amtthismth), 2) as max_nhf_contribution
-        FROM py_wkemployees we
-        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-        INNER JOIN py_masterpayded mp ON mp.his_empno = we.empl_id 
-          AND mp.his_type = 'PR309'
-        WHERE mp.amtthismth > 0
-          ${year ? 'AND sr.ord = ?' : ''}
-          ${month ? 'AND sr.mth = ?' : ''}
-        GROUP BY sr.ord, sr.mth
-      `;
-      
-      const params = [];
-      if (year) params.push(year);
-      if (month) params.push(month);
-      
-      const [rows] = await pool.query(query, params);
+      // ── Summary: one aggregate row ────────────────────────────────────────
+      // Period scalars injected as literals — no cross join needed.
+      // mc.his_type = period.month correctly uses the index on py_mastercum.
+      const [rows] = await pool.query(
+        `SELECT
+           '${period.year}'  AS year,
+           '${period.month}' AS month,
+           COUNT(DISTINCT mp.his_empno)        AS employee_count,
+           ROUND(SUM(mc.his_netmth),    2)     AS total_net_pay,
+           ROUND(AVG(mc.his_netmth),    2)     AS avg_net_pay,
+           ROUND(SUM(mp.amtthismth),    2)     AS total_nhf_contribution,
+           ROUND(AVG(mp.amtthismth),    2)     AS avg_nhf_contribution,
+           ROUND(SUM(mp.totpaidtodate), 2)     AS total_nhf_paid_todate,
+           ROUND(MIN(mp.amtthismth),    2)     AS min_nhf_contribution,
+           ROUND(MAX(mp.amtthismth),    2)     AS max_nhf_contribution
+         FROM py_masterpayded mp
+         INNER JOIN py_mastercum mc
+                 ON mc.his_empno = mp.his_empno
+                AND mc.his_type  = ?
+         INNER JOIN py_wkemployees we ON we.empl_id = mp.his_empno
+         WHERE mp.his_type     = 'PR309'
+           AND mp.amtthismth   > 0`,
+        [period.month]
+      );
       return rows;
-      
+
     } else {
-      // Detailed query - process in batches for better performance
-      const BATCH_SIZE = 100;
-      
-      // First, get the total count
-      const countQuery = `
-        SELECT COUNT(DISTINCT mp.his_empno) as total
-        FROM py_wkemployees we
-        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-        INNER JOIN py_masterpayded mp ON mp.his_empno = we.empl_id 
-          AND mp.his_type = 'PR309'
-        WHERE mp.amtthismth > 0
-          ${year ? 'AND sr.ord = ?' : ''}
-          ${month ? 'AND sr.mth = ?' : ''}
-      `;
-      
-      const countParams = [];
-      if (year) countParams.push(year);
-      if (month) countParams.push(month);
-      
-      const [[{ total }]] = await pool.query(countQuery, countParams);
-      
-      // If no records, return empty array
-      if (total === 0) return [];
-      
-      // Fetch data in batches
-      const allResults = [];
-      const totalBatches = Math.ceil(total / BATCH_SIZE);
-      
-      for (let batch = 0; batch < totalBatches; batch++) {
-        const offset = batch * BATCH_SIZE;
-        
-        const query = `
-          SELECT 
-            sr.ord as year,
-            sr.mth as month,
-            we.empl_id as employee_id,
-            CONCAT(TRIM(we.Surname), ' ', TRIM(IFNULL(we.OtherName, ''))) as full_name,
-            tt.Description as title,
-            we.Title as Title,
-            DATE_FORMAT(we.dateempl, '%Y-%m-%d') as date_employed,
-            we.NSITFcode as nsitf_code,
-            we.gradetype as grade_type,
-            SUBSTRING(we.gradelevel, 1, 2) as grade_level,
-            ROUND(TIMESTAMPDIFF(YEAR, we.datepmted, NOW()), 0) as years_in_level,
-            we.Location as location_code,
-            COALESCE(cc.unitdesc, '') as location_name,
-            ROUND(mc.his_netmth, 2) as net_pay,
-            ROUND(mp.amtthismth, 2) as nhf_contribution,
-            ROUND(mp.totpaidtodate, 2) as nhf_paid_todate,
-            ROUND((mp.amtthismth / NULLIF(mc.his_netmth, 0)) * 100, 2) as nhf_percentage,
-            we.Bankcode,
-            we.BankACNumber
-          FROM py_wkemployees we
-          CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-          INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-          INNER JOIN py_masterpayded mp ON mp.his_empno = we.empl_id 
-            AND mp.his_type = 'PR309'
-          LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
-          LEFT JOIN ac_costcentre cc ON cc.unitcode = we.Location
-          WHERE mp.amtthismth > 0
-            ${year ? 'AND sr.ord = ?' : ''}
-            ${month ? 'AND sr.mth = ?' : ''}
-          ORDER BY mp.amtthismth DESC
-          LIMIT ? OFFSET ?
-        `;
-        
-        const params = [];
-        if (year) params.push(year);
-        if (month) params.push(month);
-        params.push(BATCH_SIZE, offset);
-        
-        const [batchRows] = await pool.query(query, params);
-        allResults.push(...batchRows);
-      }
-      
-      return allResults;
+      // ── Detail: one row per employee ──────────────────────────────────────
+      // BEFORE: COUNT query + loop of 40 paginated queries (41 round-trips,
+      //         MySQL reads up to 80k rows total due to offset scanning).
+      // AFTER:  Single query, all rows returned at once (1 round-trip).
+      //
+      // The DB is better at sorting and returning 4000 rows in one shot than
+      // Node is at reassembling 40 paginated slices.
+      //
+      // Drive the query from py_masterpayded (already filtered to PR309)
+      // rather than py_wkemployees — avoids a full employee table scan
+      // before the NHF filter is applied.
+      const [rows] = await pool.query(
+        `SELECT
+           '${period.year}'  AS year,
+           '${period.month}' AS month,
+           we.empl_id                                                         AS employee_id,
+           CONCAT(TRIM(we.Surname), ' ', TRIM(IFNULL(we.OtherName, '')))      AS full_name,
+           tt.Description                                                      AS title,
+           we.Title,
+           DATE_FORMAT(we.dateempl, '%Y-%m-%d')                               AS date_employed,
+           we.NSITFcode                                                        AS nsitf_code,
+           we.gradetype                                                        AS grade_type,
+           SUBSTRING(we.gradelevel, 1, 2)                                     AS grade_level,
+           ROUND(TIMESTAMPDIFF(YEAR, we.datepmted, NOW()), 0)                 AS years_in_level,
+           we.Location                                                         AS location_code,
+           COALESCE(cc.unitdesc, '')                                           AS location_name,
+           ROUND(mc.his_netmth,      2)                                       AS net_pay,
+           ROUND(mp.amtthismth,      2)                                       AS nhf_contribution,
+           ROUND(mp.totpaidtodate,   2)                                       AS nhf_paid_todate,
+           ROUND((mp.amtthismth / NULLIF(mc.his_netmth, 0)) * 100, 2)        AS nhf_percentage,
+           we.Bankcode,
+           we.BankACNumber
+         FROM py_masterpayded mp
+         INNER JOIN py_wkemployees we ON we.empl_id  = mp.his_empno
+         INNER JOIN py_mastercum   mc ON mc.his_empno = mp.his_empno
+                                     AND mc.his_type  = ?
+         LEFT  JOIN py_Title        tt ON tt.Titlecode  = we.Title
+         LEFT  JOIN ac_costcentre   cc ON cc.unitcode   = we.Location
+         WHERE mp.his_type   = 'PR309'
+           AND mp.amtthismth > 0
+         ORDER BY mp.amtthismth DESC`,
+        [period.month]
+      );
+      return rows;
     }
   }
 
-  // ========================================================================
+  // ==========================================================================
   // HELPER: Get Current Period
-  // ========================================================================
+  // ==========================================================================
   async getCurrentPeriod() {
-    const query = `
-      SELECT ord as year, mth as month, pmth as prev_month
-      FROM py_stdrate 
-      WHERE type = 'BT05'
-      LIMIT 1
-    `;
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(
+      `SELECT ord AS year, mth AS month, pmth AS prev_month
+       FROM py_stdrate WHERE type = 'BT05' LIMIT 1`
+    );
     return rows[0];
   }
 }

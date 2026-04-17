@@ -491,14 +491,14 @@
       if (v === 'individual') { endNo.value = ''; }
       // Excel disabled for individual
       const excelRadio = document.querySelector('input[name="ps_format"][value="excel"]');
-      if (v === 'individual') {
+      /*if (v === 'individual') {
         excelRadio.disabled = true;
         excelRadio.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
         document.querySelector('input[name="ps_format"][value="pdf"]').checked = true;
       } else {
         excelRadio.disabled = false;
         excelRadio.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
-      }
+      }*/
     }
 
     radios.forEach(r => r.addEventListener('change', toggleInputs));
