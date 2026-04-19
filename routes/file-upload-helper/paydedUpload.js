@@ -321,7 +321,6 @@ router.post(
       // Insert only unique deductions
       for (let i = 0; i < uniqueData.length; i++) {
         try {
-          console.log(batchName);
           uniqueData[i].batchName = batchName;
           await insertDeduction(uniqueData[i]);
           results.successful++;
