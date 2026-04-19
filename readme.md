@@ -241,17 +241,28 @@ npm run migrate:status # Show migration status
 
 ### -- Local Server Deployment --
 
-1. Clone the repo
+1. Clone the repo:
+   ```bash
    git clone https://github.com/hicadsystems/NAVY-PAYROLL.git
+   ```
    
 2. Create a Projects folder in C:/ and extract into it.
 
-3. using powershell cd C:/Projects/NAVY-PAYROLL
+3. using powershell: 
+   ```bash
+   cd C:/Projects/NAVY-PAYROLL
+   ```
 
-4. Install dependencies: npm install (ensure you have already installed the prerequisites needed into your system as listed above)
+4. Install dependencies: 
+   Ensure you have already installed the prerequisites needed into your system as listed above
+   ```bash
+   npm install
+   ```
 
-5. Set up both .env.local and .env.production then Run .\setup.bat.
-
+5. Set up both `.env.local` and `.env.production` then Run;
+   ```bash
+   .\setup.bat.
+   ```
 
 
 ### -- cPanel Deployment --
@@ -321,7 +332,7 @@ Issues to address as the system and dataset grow:
 |---|---|---|---|
 | 🔴 High | **Puppeteer PDF generation** | Each PDF request spawns a full Chromium instance — unbounded concurrency will exhaust RAM | Implement a PDF queue with max 3–4 concurrent Chromium instances |
 | 🟡 Medium | **Heavy report queries** | Some report endpoints fetch entire datasets without pagination | Add server-side pagination and date range limits to large queries |
-| 🟠 Monitor | **MySQL connection pool** | Cap `connectionLimit: 10` per instance in `db.js` |
+| 🟠 Monitor | **MySQL connection pool** |Each db connection instance has its own pool — simultaneous saturation possible under heavy load| | Cap `connectionLimit: 10` per instance in `db.js` |
 | 🟢 Future | **MySQL read replica** | Report queries compete with write operations on the same DB instance | Route report queries to a read replica |
 
 ---
