@@ -9,12 +9,19 @@ const fs = require("fs");
 const path = require("path");
 const pool = require("../../config/db"); // mysql2 pool
 const verifyToken = require("../../middware/authentication");
+const {
+  parseCSVFile,
+  deduplicate,
+  normalize,
+  generateBatchName
+} = require("../../utils/excel_helper");
 const config = require("../../config");
+
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd, "../uploads");
+    const uploadDir = path.join(process.cwd(), "uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -93,7 +100,6 @@ function parseExcelFile(filePath) {
     if (!validHeaders || validHeaders.length === 0) {
       throw new Error(`No headers found in row 4 of sheet "${sheetName}"`);
     }
-    console.log("📋 Detected headers:", headers);
 
     // Rows 5+ (index 4+) contain the actual data
     const dataRows = sheetData.slice(4);
@@ -127,88 +133,13 @@ function parseExcelFile(filePath) {
                 : "";
           }
         });
-
-        console.log(`📊 Row ${rowIndex + 5}:`, obj);
         return obj;
       });
-
-    console.log("✅ Parsed data rows:", data.length);
 
     allData.push(...data);
   }
 
   return allData;
-}
-
-// Helper function to parse CSV file
-function parseCSVFile(filePath) {
-  return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on("data", (data) => results.push(data))
-      .on("end", () => resolve(results))
-      .on("error", (error) => reject(error));
-  });
-}
-
-function rowSignature(row) {
-  const sortedKeys = Object.keys(row).sort();
-  const normalized = {};
-
-  for (const key of sortedKeys) {
-    const value = row[key];
-    normalized[key] = typeof value === "string" ? value.trim() : value;
-  }
-
-  return JSON.stringify(normalized);
-}
-
-function deduplicate(rows) {
-  const seen = new Set();
-  const cleaned = [];
-  const duplicates = [];
-
-  for (const row of rows) {
-    const sig = rowSignature(row);
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      cleaned.push(row);
-    } else {
-      duplicates.push(row);
-    }
-  }
-
-  return { cleaned, duplicates };
-}
-
-function normalize(row) {
-  const normalized = {};
-
-  for (const key in row) {
-    if (!Object.prototype.hasOwnProperty.call(row, key)) continue;
-
-    const normalizedKey = key
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "") // remove non-alphanumeric (keeps spaces for now)
-      .replace(/\s+/g, "_") // convert whitespace to _
-      .replace(/^_+|_+$/g, ""); // strip leading/trailing underscores
-
-    if (!normalizedKey) continue; // skip keys that became empty
-
-    normalized[normalizedKey] = row[key];
-  }
-
-  return normalized;
-}
-
-function normalizeDate(dateStr) {
-  if (!dateStr || dateStr.trim() === "" || dateStr.trim().length !== 8)
-    return null;
-  const s = dateStr.trim();
-  // expects yyyymmdd
-  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
 }
 
 // Helper function to map fields
@@ -249,6 +180,7 @@ function mapFields(row, defaultCreatedBy) {
   if (!mappedRow.nomth) mappedRow.nomth = 0;
   mappedRow.createdby = defaultCreatedBy; // Always use the dynamic value from req.user_fullname
 
+  mappedRow.pay_class = row.pay_class || row.payclass || null; // to determine DB context later
   return mappedRow;
 }
 
@@ -277,7 +209,7 @@ function validateRow(row, rowIndex) {
 }
 
 // Check for duplicate deductions in DB
-async function checkDuplicates(deductions) {
+async function checkDuplicates(deductions, connection = pool) {
   if (deductions.length === 0) return [];
 
   const conditions = deductions
@@ -291,19 +223,19 @@ async function checkDuplicates(deductions) {
     WHERE ${conditions}
   `;
 
-  const [results] = await pool.query(query, values);
+  const [results] = await connection.query(query, values);
   return results.map((row) => `${row.Empl_id}-${row.type}`);
 }
 
 // Insert deduction record
-async function insertDeduction(data) {
+async function insertDeduction(data, connection = pool) {
   const query = `
     INSERT INTO py_payded (
-      Empl_id, type, mak1, amtp, mak2, amt, amttd, payind, nomth, createdby, datecreated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      Empl_id, type, mak1, amtp, mak2, amt, amttd, payind, nomth, createdby, datecreated, batchName
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
   `;
 
-  const [result] = await pool.query(query, [
+  const [result] = await connection.query(query, [
     data.Empl_id,
     data.type,
     data.mak1,
@@ -314,6 +246,7 @@ async function insertDeduction(data) {
     data.payind,
     data.nomth,
     data.createdby,
+    data.batchName || null,
   ]);
 
   return result;
@@ -325,8 +258,10 @@ router.post(
   verifyToken,
   upload.single("file"),
   async (req, res) => {
+    let filePath = null;
+    let connection = null; // ADD THIS - declare connection at top level
+
     try {
-      let filePath = null;
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
@@ -334,7 +269,11 @@ router.post(
       filePath = req.file.path;
       const fileExt = path.extname(req.file.originalname).toLowerCase();
       const createdBy = req.user_fullname || "SYSTEM";
-      const batchName = `batch_${new Date().toISOString()}`;
+
+      const originalBatchame = req?.body?.batchName?.trim() || "";
+      const hasBatchName = !!originalBatchame;
+      const batchName = hasBatchName ? originalBatchame
+        : generateBatchName("PAYDED", createdBy);
 
       // Parse and clean file
       let rawData;
@@ -350,9 +289,6 @@ router.post(
       rawData = rawData?.filter((row) => Object.keys(row).length > 0);
 
       const { cleaned, duplicates } = deduplicate(rawData);
-
-      console.log("📄 First row of parsed cleaned data:", cleaned[0]);
-      console.log("📊 Total rows parsed:", cleaned.length);
 
       // THEN SET DATABASE CONTEXT
       const currentDb = pool.getCurrentDatabase(req.user_id.toString());
@@ -377,58 +313,106 @@ router.post(
         });
       }
 
-      // Check for DB duplicates (Empl_id + type combination)
-      const duplicateKeys = await checkDuplicates(mappedData);
-
-      // Filter out duplicates
-      const uniqueData = mappedData.filter((row) => {
-        const key = `${row.Empl_id}-${row.type}`;
-        return !duplicateKeys.includes(key);
-      });
-
       const results = {
         totalRecords: mappedData.length,
-        duplicates: duplicateKeys,
-        inserted: uniqueData.length,
+        duplicates: [],
+        inserted: 0,
         successful: 0,
         failed: 0,
         errors: [],
-        batchName,
       };
 
-      // Insert only unique deductions
-      for (let i = 0; i < uniqueData.length; i++) {
-        try {
-          uniqueData[i].batchName = batchName;
-          await insertDeduction(uniqueData[i]);
-          results.successful++;
-        } catch (error) {
-          results.failed++;
-          results.errors.push({
-            row: i + 5, // +5 because data starts at row 5 in Excel
-            serviceNumber: uniqueData[i].Empl_id,
-            deductionType: uniqueData[i].type,
-            error: error.message,
-          });
+      // DB work starts
+      // map by payclass and switch context
+      const payclassMap = new Map();
+      for (const row of mappedData) {
+        const payclass = row.pay_class;
+        if (!payclassMap.has(payclass)) {
+          payclassMap.set(payclass, []);
         }
+        payclassMap.get(payclass).push(row);
       }
 
-      // Add duplicates to failed count
-      results.failed += results.duplicates.length;
+      for (const [payclass, payclassData] of payclassMap) {
+        console.log(`🔄 Processing payclass: ${payclass} with ${payclassData.length} records`);
 
-      // Push duplicates as soft errors for frontend visibility
-      if (results.duplicates.length > 0) {
-        results.errors.push(
-          ...results.duplicates.map((key) => {
-            const [emplId, type] = key.split("-");
-            return {
-              row: null,
-              serviceNumber: emplId,
-              deductionType: type,
-              error: "Already exists (duplicate)",
-            };
-          }),
-        );
+        const db = PAYCLASS_MAPPING[payclass];
+        if (!db) {
+          console.warn(`No database mapping for payclass ${payclass}, skipping`);
+        
+          results.failed += payclassData.length;
+          results.errors.push(
+            ...payclassData.map((row, idx) => ({
+              row: idx + 5,
+              serviceNumber: row.Empl_id,
+              deductionType: row.type,
+              payclass: payclass,
+              error: `No database mapping for payclass ${payclass}`,
+            }))
+          );
+          continue;
+        }
+
+        try {
+          connection = await pool.getConnection();
+          await connection.query(`USE ??`, [db]);
+
+          // Check for DB duplicates (Empl_id + type combination)
+         
+          const duplicateKeys = await checkDuplicates(payclassData, connection);
+
+          // Filter out duplicates
+          
+          const uniqueData = payclassData.filter((row) => {
+            const key = `${row.Empl_id}-${row.type}`;
+            return !duplicateKeys.includes(key);
+          });
+
+          // Insert only unique deductions
+          for (let i = 0; i < uniqueData.length; i++) {
+            try {
+              uniqueData[i].batchName = batchName;
+              await insertDeduction(uniqueData[i], connection);
+              results.successful++;
+              results.inserted++; 
+            } catch (error) {
+              results.failed++;
+              results.errors.push({
+                row: i + 5,
+                serviceNumber: uniqueData[i].Empl_id,
+                deductionType: uniqueData[i].type,
+                payclass: payclass, 
+                error: error.message,
+              });
+            }
+          }
+
+          
+          results.failed += duplicateKeys.length; 
+
+          // Push duplicates as soft errors for frontend visibility
+          if (duplicateKeys.length > 0) { 
+            results.duplicates.push(...duplicateKeys); 
+            results.errors.push(
+              ...duplicateKeys.map((key) => { 
+                const [emplId, type] = key.split("-");
+                return {
+                  row: null,
+                  serviceNumber: emplId,
+                  deductionType: type,
+                  payclass: payclass, 
+                  error: "Already exists (duplicate)",
+                };
+              })
+            );
+          }
+
+        } finally { 
+          if (connection) {
+            connection.release();
+            connection = null;
+          }
+        }
       }
 
       // Clean up file
@@ -436,11 +420,19 @@ router.post(
 
       return res.status(200).json({
         message: "Batch payment and deduction upload completed",
-        summary: results,
+        summary: {
+          ...results,
+          batchName: results.successful > 0 ? batchName : undefined,
+        },
       });
     } catch (error) {
       console.error("Batch payment and deduction upload error:", error);
       if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+   
+      if (connection) {
+        connection.release();
+      }
 
       return res.status(500).json({
         error: "Batch payment and deduction upload failed",
@@ -665,30 +657,151 @@ router.get("/batch-template", verifyToken, async (req, res) => {
 });
 
 // GET: Batch upload history
-router.get("/batch-list", verifyToken, async (req, res) => {
+router.get("/list-batch", verifyToken, async (req, res) => {
   try {
+    const page = Number(req.query?.page) || 1;
+    const limit = Number(req.query?.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const searchTerm = req.query.search?.trim() || '';
+    const hasSearch = searchTerm.length > 0;
+    const searchPattern = `%${searchTerm}%`;
+
     const query = `
-     SELECT batchName,
-
-      GROUP_CONCAT(
-        DISTINCT LOWER(TRIM(createdby))
-        ORDER BY LOWER(TRIM(createdby))
-        SEPARATOR ', '
-      ) AS createdByList,
-
-      MAX(datecreated) AS latestDateCreated
-
-    FROM py_payded
-
-    GROUP BY batchName
-
-    ORDER BY latestDateCreated DESC;
+      SELECT batchName,
+        GROUP_CONCAT(
+          DISTINCT LOWER(TRIM(createdby))
+          ORDER BY LOWER(TRIM(createdby))
+          SEPARATOR ', '
+        ) AS createdByList,
+        MAX(datecreated) AS latestDateCreated
+      FROM py_payded
+      WHERE batchName IS NOT NULL
+        AND TRIM(batchName) <> ''
+        ${hasSearch ? 'AND LOWER(batchName) LIKE LOWER(?)' : ''}
+      GROUP BY batchName
+      ORDER BY latestDateCreated DESC
+      LIMIT ? OFFSET ?;
     `;
-    const [results] = await pool.query(query);
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM (
+        SELECT batchName
+        FROM py_payded
+        WHERE batchName IS NOT NULL
+          AND TRIM(batchName) <> ''
+          ${hasSearch ? 'AND LOWER(batchName) LIKE LOWER(?)' : ''}
+        GROUP BY batchName
+      ) AS grouped;
+    `;
+
+    // Build params dynamically based on whether search is active
+    const queryParams = hasSearch
+      ? [searchPattern, limit, offset]
+      : [limit, offset];
+    const countParams = hasSearch ? [searchPattern] : [];
+
+    const [[batches], [countResults]] = await Promise.all([
+      pool.query(query, queryParams),
+      pool.query(countQuery, countParams),
+    ]);
+
+    const totalRecords = countResults[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+    const results = batches.map((batch) => ({
+      batchName: batch.batchName,
+      uploadedBy: batch.createdByList,
+      createdAt: batch.latestDateCreated,
+      batchOriginal: batch.batchName,
+    }));
 
     return res.status(200).json({
       success: true,
       data: results,
+      pagination: {
+        currentPage: page,
+        recordsPerPage: limit,
+        totalRecords,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to fetch batch history:", error);
+    return res.status(500).json({
+      error: "Failed to fetch batch history",
+      details: error.message,
+    });
+  }
+});
+
+// GET: Records with Batch Name
+router.get("/batch-list/:batchName", verifyToken, async (req, res) => {
+  try {
+    const batchName = req?.params?.batchName; // to be sanitized
+    if (typeof batchName !== "string") {
+      return res.status(400).json({
+        error: "Batch Name must be a string",
+      });
+    }
+    if (!batchName.trim()) {
+      return res.status(400).json({
+        error: "Batch Name Must Not Be Empty",
+      });
+    }
+
+    const page = Number(req.query?.page) || 1;
+    const limit = Number(req.query?.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT 
+        p.Empl_id,
+        p.type,
+        p.amtp AS amount_payable,
+        p.payind AS indicator,
+        p.nomth AS months_remaining,
+        pi.inddesc AS ind_desc
+      FROM py_payded p
+      LEFT JOIN py_payind pi 
+        ON p.payind = pi.ind
+      WHERE batchName = ?
+      ORDER BY p.Empl_id, p.type
+      LIMIT ? OFFSET ?;
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM py_payded
+      WHERE batchName = ?;
+    `;
+
+    const [[batches], [countResults]] = await Promise.all([
+      pool.query(query, [batchName.trim(), limit, offset]),
+      pool.query(countQuery, [batchName.trim()]),
+    ]);
+
+    const totalRecords = countResults[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+    const results = batches.map((batch) => {
+      return {
+        id: batch.Empl_id,
+        type: batch.type,
+        amount_payable: Number(batch.amount_payable) || 0,
+        months_remaining: batch.months_remaining,
+        indicator: batch.ind_desc,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: results,
+      pagination: {
+        currentPage: page,
+        recordsPerPage: limit,
+        totalRecords,
+        totalPages,
+      },
     });
   } catch (error) {
     console.error("Failed to fetch batch history:", error);
@@ -702,8 +815,7 @@ router.get("/batch-list", verifyToken, async (req, res) => {
 // DELETE: Delete Batch Payded
 router.delete("/batch-delete", verifyToken, async (req, res) => {
   try {
-
-    const batchName = req?.body?.batchName // to be sanitized
+    const batchName = req?.body?.batchName; // to be sanitized
     if (typeof batchName !== "string") {
       return res.status(400).json({
         error: "Batch Name must be a string",
@@ -711,19 +823,9 @@ router.delete("/batch-delete", verifyToken, async (req, res) => {
     }
     if (!batchName.trim()) {
       return res.status(400).json({
-        error: 'Batch Name Must Not Be Empty'
+        error: "Batch Name Must Not Be Empty",
       });
     }
-
-    const BATCH_REGEX = /^batch_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
-
-    if (!BATCH_REGEX.test(batchName)) {
-      return res.status(400).json({
-        error: "Invalid Batch Name",
-      });
-    }
-
-
 
     const deleteQuery = `DELETE FROM py_payded WHERE batchName = ?`;
     await pool.query(deleteQuery, [batchName]);
@@ -732,7 +834,6 @@ router.delete("/batch-delete", verifyToken, async (req, res) => {
       success: true,
       message: `Batch "${batchName}" deleted successfully`,
     });
-
   } catch (error) {
     console.error("Failed to delete batch:", error);
     return res.status(500).json({

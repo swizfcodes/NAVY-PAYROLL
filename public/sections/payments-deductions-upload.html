@@ -1,27 +1,55 @@
 <!-- BATCH UPLOAD SECTION -->
- <style>
+<style>
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
+
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
+
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
+
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
     position: absolute;
     bottom: 0;
   }
+
   .animate-grow-down {
     animation: grow-down 0.6s ease-in-out infinite alternate;
     position: absolute;
     top: 0;
   }
+
   .animate-expand {
     animation: expand 0.6s ease-in-out infinite alternate;
   }
@@ -29,13 +57,23 @@
 
 
 <div id="section-batch" class="p-6">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4 gap-2">
     <!-- Left: quick nav (may be hidden) -->
     <div>
       <button id="quickNav-payments-deductions"
         onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')"
         class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700">
         Payments/Deductions
+      </button>
+
+
+    </div>
+    <div>
+      <!-- fix batch list -->
+      <button id="batch-list"
+        onclick="window.navigation.navigateToSection('payded-batch-list', 'Payments/Deductions Batch List')"
+        class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700">
+        Batch List
       </button>
     </div>
 
@@ -90,6 +128,15 @@
               class="text-blue-600 font-medium hover:underline ml-2">Download Template</button>
           </p>
         </div>
+        <div>
+          <label for="batchNameInput" class="block text-sm font-medium text-gray-700 mb-2">Batch Name (Optional)</label>
+          <input type="text" id="batchNameInput"
+            class="mt-1 block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+            placeholder="e.g., January 2024 Payroll" maxlength="100" />
+          <p class="text-xs text-gray-500 mt-2">
+            If not provided, a default name will be generated.
+          </p>
+        </div>
         <div class="flex justify-end gap-3">
           <button type="button" id="cancelBatchBtn"
             class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium shadow-sm">Cancel</button>
@@ -115,6 +162,7 @@
         <p>Total Records: <span id="total-Records" class="font-medium">0</span></p>
         <p>Successfully Inserted: <span id="successRecords" class="font-medium text-green-600">0</span></p>
         <p>Duplicates/Failed: <span id="failedRecords" class="font-medium text-red-600">0</span></p>
+        <p>Batch Name: <span id="batchName" class="font-medium hidden">Unknown</span></p>
       </div>
       <button id="closeModalBtn"
         class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">OK</button>
@@ -223,6 +271,7 @@
     // DOM Elements
     const uploadBtn = document.getElementById("uploadBatchBtn");
     const batchFileInput = document.getElementById("batchFile");
+    const batchNameInput = document.getElementById("batchNameInput");
     const batchForm = document.getElementById("batchUploadForm");
     const batchDiv = document.getElementById("batchUploadDiv");
     const addNewBatch = document.getElementById("addBatch");
@@ -481,6 +530,9 @@
       const formData = new FormData();
       formData.append('file', file);
 
+      const batchName = batchNameInput.value.trim();
+      formData.append('batchName', batchName)
+
       // Show loading
       showLoading();
 
@@ -521,6 +573,7 @@
 
         // Clear file input
         batchFileInput.value = '';
+        batchNameInput.value = ''
         batchDiv.classList.add("hidden");
 
       } catch (error) {
@@ -559,6 +612,10 @@
       document.getElementById("total-Records").textContent = summary.totalRecords || 0;
       document.getElementById("successRecords").textContent = summary.successful || 0;
       document.getElementById("failedRecords").textContent = summary.failed || 0;
+      if (summary.batchName?.trim() && summary.batchName !== "Unknown") {
+        document.getElementById("batchName").classList.remove("hidden");
+        document.getElementById("batchName").textContent = summary.batchName;
+      }
       uploadSummary.classList.remove("hidden");
 
       // Show errors if any
@@ -748,6 +805,7 @@
     addNewBatch.addEventListener("click", () => {
       batchDiv.classList.remove("hidden");
       batchForm.reset();
+      batchNameInput.value = '';
     });
 
     // TABLE SEARCH FUNCTIONALITY
@@ -785,6 +843,7 @@
     // Cancel Button
     document.getElementById("cancelBatchBtn").addEventListener("click", () => {
       batchFileInput.value = '';
+      batchNameInput.value = ''
       batchForm.reset();
       uploadedData = [];
       batchDiv.classList.add("hidden");
@@ -1070,13 +1129,13 @@
 
       // Wait for manager AND its menus to be populated
       if (!manager || !manager.userAccessibleMenus?.length) {
-          setTimeout(applyQuickNavAccess, 50);
-          return;
+        setTimeout(applyQuickNavAccess, 50);
+        return;
       }
 
       document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
-          const menuKey = btn.id.replace('quickNav-', '');
-          window.checkMenuAccess(menuKey, btn);
+        const menuKey = btn.id.replace('quickNav-', '');
+        window.checkMenuAccess(menuKey, btn);
       });
     }
 
