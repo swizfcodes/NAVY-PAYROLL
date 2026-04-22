@@ -1,3 +1,6 @@
+//Auth
+const unifiedLoginRoutes = require("./auth/unifiedLogin");
+
 //Dashboard
 const statsRoutes = require("./dashboard/stats");
 const notificationRoutes = require("./dashboard/notification");
@@ -109,6 +112,9 @@ const paydedReportRoutes = require("./helpers/puppeteer-gen-reports/paydedReport
 const logServiceRoutes = require("./helpers/logRoutes");
 
 module.exports = (app) => {
+  //auth
+  app.use("/auth/users", unifiedLoginRoutes);
+
   //dashboard
   app.use("/stats", statsRoutes);
   app.use("/notifications", notificationRoutes);

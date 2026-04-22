@@ -203,18 +203,19 @@
         console.error("Logout error:", err);
       } finally {
         var pid = sessionStorage.getItem("_pid");
-        var ppwd = sessionStorage.getItem("_ppwd");
+        // var ppwd = sessionStorage.getItem("_ppwd");
         var preLoginToken = localStorage.getItem("pre_login_token"); // ← restore this
         var userId = localStorage.getItem("user_id");
         var fullName = localStorage.getItem("full_name");
         var role = localStorage.getItem("role");
         var cls = localStorage.getItem("class");
+        var capabilities = localStorage.getItem("capabilities");
 
         localStorage.clear();
         sessionStorage.clear();
 
         if (pid) sessionStorage.setItem("_pid", pid);
-        if (ppwd) sessionStorage.setItem("_ppwd", ppwd);
+        // if (ppwd) sessionStorage.setItem("_ppwd", ppwd);
         if (preLoginToken) localStorage.setItem("token", preLoginToken); // clean, no current_class
         if (preLoginToken)
           localStorage.setItem("pre_login_token", preLoginToken);
@@ -222,6 +223,7 @@
         if (fullName) localStorage.setItem("full_name", fullName);
         if (role) localStorage.setItem("role", role);
         if (cls) localStorage.setItem("class", cls);
+        if (capabilities) localStorage.setItem("capabilities", capabilities);
 
         this.stopTracking();
         sessionStorage.setItem("_from_logout", "true");

@@ -665,10 +665,25 @@ function _closeLogoutModal(overlay) {
   if (box) box.style.transform = "translateY(12px)";
 }
 
-function logout() {
+async function logout() {
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      await fetch("/auth/users/logout", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Logout error:", err);
+  } finally {
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = "personnel-user-login.html";
+  }
 }
 
 // ══════════════════════════════════════════════════════════

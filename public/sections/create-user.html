@@ -1,26 +1,54 @@
 <style>
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
+
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
+
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
+
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
     position: absolute;
     bottom: 0;
   }
+
   .animate-grow-down {
     animation: grow-down 0.6s ease-in-out infinite alternate;
     position: absolute;
     top: 0;
   }
+
   .animate-expand {
     animation: expand 0.6s ease-in-out infinite alternate;
   }
@@ -30,7 +58,8 @@
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <h3 class="text-lg font-semibold text-gray-900">Create New Payroll User</h3>
 
-    <button id="quickNav-control-user" type="button" onclick="window.navigation.navigateToSection('control-user', 'Control Payroll Users')"
+    <button id="quickNav-control-user" type="button"
+      onclick="window.navigation.navigateToSection('control-user', 'Control Payroll Users')"
       class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
       View All Users
     </button>
@@ -41,13 +70,13 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">User ID *</label>
-        <input type="text" name="employeeId" required
+        <input type="text" id="employeeID" name="employeeId" required
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-        <input type="text" name="fullName" required
+        <input type="text" name="fullName" required cuursor="not-allowed" disabled
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
 
@@ -79,54 +108,56 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
 
-      <div class="relative">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-        <input type="password" id="password" name="password" required
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10">
+      <div style="display: none;">
+        <div class="hidden relative">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+          <input type="password" id="password"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10">
 
-        <!-- Eye Toggle Button -->
-        <span class="toggle-password" data-target="password"
-          style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
-          <!-- Eye Open SVG -->
-          <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+          <!-- Eye Toggle Button -->
+          <span class="toggle-password" data-target="password"
+            style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
+            <!-- Eye Open SVG -->
+            <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
 
-          <!-- Eye Closed SVG -->
-          <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-            <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22" />
-            <path d="M9.5 9.5a3 3 0 004 4" />
-          </svg>
-        </span>
-        <small class="text-gray-500 text-xs">Minimum 6 characters</small>
-      </div>
+            <!-- Eye Closed SVG -->
+            <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22" />
+              <path d="M9.5 9.5a3 3 0 004 4" />
+            </svg>
+          </span>
+          <small class="text-gray-500 text-xs">Minimum 6 characters</small>
+        </div>
 
-      <div class="relative">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" required
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10">
+        <div class="hidden relative">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
+          <input type="password" id="confirmPassword"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10">
 
-        <!-- Eye Toggle Button -->
-        <span class="toggle-password" data-target="confirmPassword"
-          style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
-          <!-- Eye Open SVG -->
-          <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+          <!-- Eye Toggle Button -->
+          <span class="toggle-password" data-target="confirmPassword"
+            style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
+            <!-- Eye Open SVG -->
+            <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
 
-          <!-- Eye Closed SVG -->
-          <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-            <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22" />
-            <path d="M9.5 9.5a3 3 0 004 4" />
-          </svg>
-        </span>
-        <small id="password-match-message" class="text-xs"></small>
+            <!-- Eye Closed SVG -->
+            <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22" />
+              <path d="M9.5 9.5a3 3 0 004 4" />
+            </svg>
+          </span>
+          <small id="password-match-message" class="text-xs"></small>
+        </div>
       </div>
 
       <div>
@@ -465,59 +496,117 @@
     loadPayrollClasses();
   }
 
+  // ── Employee ID lookup → auto-fill fields ─────────────────
+  const employeeIdInput = document.querySelector('input[name="employeeId"]');
+  const fullNameInput = document.querySelector('input[name="fullName"]');
+  const emailInput = document.querySelector('input[name="email"]');
+  const phoneInput = document.querySelector('input[name="phone"]');
 
+  let lookupTimer = null;
+
+  employeeIdInput.addEventListener('input', function () {
+    const val = this.value.trim();
+
+    // Reset all auto-filled fields
+    fullNameInput.value = '';
+    fullNameInput.disabled = false;
+    fullNameInput.style.background = '';
+    fullNameInput.style.cursor = '';
+    emailInput.value = '';
+    phoneInput.value = '';
+
+    clearTimeout(lookupTimer);
+    if (!val) return;
+
+    lookupTimer = setTimeout(() => lookupEmployee(val), 600);
+  });
+
+  async function lookupEmployee(userId) {
+    fullNameInput.value = '';
+    fullNameInput.disabled = true;
+    fullNameInput.placeholder = 'Looking up...';
+    fullNameInput.style.background = '#f3f4f6';
+    fullNameInput.style.cursor = 'not-allowed';
+
+    try {
+      const token = localStorage.getItem('token');
+      const encodedId = encodeURIComponent(userId.trim());
+
+      const res = await auth.fetchWithAuth(`/api/users/employee/${encodedId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        fullNameInput.disabled = false;
+        fullNameInput.placeholder = 'Employee not found';
+        // fullNameInput.style.background = '';
+        // fullNameInput.style.cursor = '';
+        emailInput.value = '';
+        phoneInput.value = '';
+        return;
+      }
+
+      const data = await res.json();
+      const emp = data.employee || data;
+
+      // Full name
+      const formatted = [
+        emp.Title ? emp.Title.trim() + '.' : null,
+        emp.Surname ? emp.Surname.trim() : null,
+        emp.OtherName ? emp.OtherName.trim().charAt(0) + '.' : null
+      ].filter(Boolean).join(' ');
+
+      fullNameInput.value = formatted;
+      fullNameInput.disabled = true;
+      fullNameInput.placeholder = '';
+
+      // Email — auto-fill but leave editable
+      emailInput.value = emp.email ? emp.email.trim() : '';
+
+      // Phone — auto-fill but leave editable
+      phoneInput.value = emp.gsm_number ? emp.gsm_number.trim() : '';
+
+    } catch (err) {
+      console.error('Employee lookup failed:', err);
+      fullNameInput.disabled = false;
+      fullNameInput.placeholder = 'Lookup failed — enter manually';
+      fullNameInput.style.background = '';
+      fullNameInput.style.cursor = '';
+    }
+  }
+
+  // ── Form submit ───────────────────────────────────────────
   document.getElementById('create-user-form').addEventListener('submit', async function (e) {
     e.preventDefault();
-
-    // Validate password match before submission
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-
-    // Password validation
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      AlertModal.show({
-        type: 'error',
-        title: 'Invalid Password',
-        message: passwordError
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      AlertModal.show({
-        type: 'error',
-        title: 'Password Mismatch',
-        message: 'Passwords do not match. Please re-enter.'
-      });
-      return;
-    }
 
     const formData = new FormData(this);
     const userData = Object.fromEntries(formData.entries());
 
-    // Map employeeId to user_id
     if (userData.employeeId) {
-      userData.user_id = userData.employeeId;
+      userData.user_id = userData.employeeId.trim();
       delete userData.employeeId;
     }
 
-    // Remove confirmPassword from submission
+    // Read directly since fullName may be disabled
+    userData.fullName = fullNameInput.value.trim();
+
+    // Trim all string fields
+    Object.keys(userData).forEach(k => {
+      if (typeof userData[k] === 'string') userData[k] = userData[k].trim();
+    });
+
+    delete userData.password;
     delete userData.confirmPassword;
 
-    // Ensure status has a value
-    if (!userData.status) {
-      userData.status = 'active';
+    if (!userData.status) userData.status = 'active';
+    if (!userData.expiryDate) delete userData.expiryDate;
+
+    // Basic guard — full name must be resolved
+    if (!userData.fullName) {
+      await AlertModal.show({ type: 'error', title: 'Missing Name', message: 'Please enter a valid Employee ID to auto-fill the full name.' });
+      return;
     }
 
-    // Handle empty expiry date
-    if (!userData.expiryDate || userData.expiryDate === '') {
-      delete userData.expiryDate;
-    }
-
-    console.log('Creating user:', userData);
-
-    // Disable submit button to prevent double submission
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
@@ -525,65 +614,45 @@
     let result = {};
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
 
       if (!token) {
-        AlertModal.show({
-          type: 'error',
-          title: 'Authentication Required',
-          message: 'Your session has expired or you are not logged in. Please login again.'
-        });
+        await AlertModal.show({ type: 'error', title: 'Authentication Required', message: 'Session expired. Please log in again.' });
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create User';
         return;
       }
 
-      const response = await auth.fetchWithAuth(`/api/users`, {
+      const response = await auth.fetchWithAuth('/api/users', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(userData)
       });
 
       result = await response.json();
-      console.log('Response status:', response.status, 'Result:', result); 
 
       if (response.ok) {
-        showSuccess('Creating User...\nID: ' + result.user_id);
+        showSuccess('User Created! ID: ' + result.user_id);
         this.reset();
+        fullNameInput.value = '';
+        fullNameInput.disabled = false;
+        fullNameInput.style.background = '';
+        fullNameInput.style.cursor = '';
+        emailInput.value = '';
+        phoneInput.value = '';
 
-        // Clear password match message
-        const message = document.getElementById('password-match-message');
-        if (message) message.textContent = '';
-
-        // Refresh personnel table after create
         if (window.personnelManager) {
-          if (typeof window.personnelManager.load === 'function') {
-            await window.personnelManager.load();
-          } else if (typeof window.personnelManager.loadPersonnelData === 'function') {
-            await window.personnelManager.loadPersonnelData();
-          } else if (typeof window.personnelManager.refresh === 'function') {
-            await window.personnelManager.refresh();
-          }
+          const mgr = window.personnelManager;
+          await (mgr.load ?? mgr.loadPersonnelData ?? mgr.refresh ?? (() => { }))();
         }
       } else {
-        AlertModal.show({
-          type: 'error',
-          title: 'User Creation Failed',
-          message: result.error || result.message || 'An unknown error occurred while creating the user.'
-        });
+        await AlertModal.show({ type: 'error', title: 'User Creation Failed', message: result.error || result.message || 'An unknown error occurred.' });
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create User';
       }
     } catch (err) {
       console.error('Fetch error:', err);
-      AlertModal.show({
-        type: 'error',
-        title: 'User Creation Failed',
-        message: result.error || result.message || 'An unknown error occurred while creating the user.'
-      });
+      await AlertModal.show({ type: 'error', title: 'User Creation Failed', message: result.error || result.message || 'An unknown error occurred.' });
       submitBtn.disabled = false;
       submitBtn.textContent = 'Create User';
     }
@@ -621,19 +690,27 @@
     submitBtn.textContent = 'Create User';
   });
 
+  //capitalize all
+  ["employeeID"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = el.value.toUpperCase();
+    });
+  });
+
   // Hide quick nav buttons user has no access to
   function applyQuickNavAccess() {
     const manager = window.quickAccessManager;
 
     // Wait for manager AND its menus to be populated
     if (!manager || !manager.userAccessibleMenus?.length) {
-        setTimeout(applyQuickNavAccess, 50);
-        return;
+      setTimeout(applyQuickNavAccess, 50);
+      return;
     }
 
     document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
-        const menuKey = btn.id.replace('quickNav-', '');
-        window.checkMenuAccess(menuKey, btn);
+      const menuKey = btn.id.replace('quickNav-', '');
+      window.checkMenuAccess(menuKey, btn);
     });
   }
 
