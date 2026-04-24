@@ -94,13 +94,34 @@ const variationInputRoutes = require("./audit-trail/variationInput");
 const rangePaymentRoutes = require("./audit-trail/rangePayments");
 
 //User Dashboard
-//email
-const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
-//payslip
-const userPayslipRoutes = require('../routes/user-dashboard/payslips/userpayslip');
-const adminPayslip = require("../routes/user-dashboard/payslips/adminpayslip");
-const cron = require("node-cron");
-const { cleanupOrphanedAttachments } = require("./user-dashboard/email/mailSystem");
+  //email
+  const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
+  const cron = require("node-cron");
+  const { cleanupOrphanedAttachments } = require("./user-dashboard/email/mailSystem");
+
+  //payslip
+  const userPayslipRoutes = require('../routes/user-dashboard/payslips/userpayslip');
+  const adminPayslip = require("../routes/user-dashboard/payslips/adminpayslip");
+  
+  //emolument
+    //-- admin --
+    const emolumentAdminRoutes = require("../routes/user-dashboard/emolument/admin/admin.routes");
+    //-- form --
+    const emolumentFormRoutes = require("../routes/user-dashboard/emolument/form/form.routes");
+    //-- system --
+    const emolumentSystemRoutes = require("../routes/user-dashboard/emolument/system/system.routes");
+    //-- do --
+    const emolumentDoRoutes = require("../routes/user-dashboard/emolument/do/do.routes");
+    //-- fo --
+    const emolumentFoRoutes = require("../routes/user-dashboard/emolument/fo/fo.routes");
+    //-- cpo --
+    const emolumentCpoRoutes = require("../routes/user-dashboard/emolument/cpo/cpo.routes");
+    //-- reports --
+    const emolumentReportRoutes = require("../routes/user-dashboard/emolument/reports/reports.routes");
+    //-- documents --
+    const emolumentDocumentRoutes = require("../routes/user-dashboard/emolument/documents/documents.routes");
+  //
+//
 
 //file-upload-helper
 const salaryscaleuploadRoutes = require("./file-upload-helper/salaryscaleupload");
@@ -208,13 +229,36 @@ module.exports = (app) => {
   app.use("/rangepayments", rangePaymentRoutes);
 
   //user-dashboard
-  app.use("/messages", mailSystemRoutes);
-  app.use('/payslip', userPayslipRoutes);
-  app.use("/admin/payslip", adminPayslip);
-  // Every hour at :00
-  cron.schedule("0 * * * *", () => {
-    cleanupOrphanedAttachments();
-  });
+    //email
+    app.use("/messages", mailSystemRoutes);
+    // Every hour at :00
+    cron.schedule("0 * * * *", () => {
+      cleanupOrphanedAttachments();
+    });
+
+    //emolument
+      //-- admin --
+      app.use("/admin", emolumentAdminRoutes);
+      //-- form --
+      app.use("/form", emolumentFormRoutes);
+      //-- system --
+      app.use("/system", emolumentSystemRoutes);
+      //-- do --
+      app.use("/do", emolumentDoRoutes);
+      //-- fo --
+      app.use("/fo", emolumentFoRoutes);
+      //-- cpo --
+      app.use("/cpo", emolumentCpoRoutes);
+      //-- reports --
+      app.use("/reports", emolumentReportRoutes);
+      //-- documents --
+      app.use("/documents", emolumentDocumentRoutes);
+    //
+
+    //payslip
+    app.use('/payslip', userPayslipRoutes);
+    app.use("/admin/payslip", adminPayslip);
+  //
 
   //file-upload-helper
   app.use("/api/v1", salaryscaleuploadRoutes);

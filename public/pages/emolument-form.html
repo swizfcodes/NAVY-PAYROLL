@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <title>NAVY Emolument</title>
+
+  <style>
+    html { visibility: hidden; }
+    html.ready { visibility: visible; }
+    body { opacity: 0; transition: opacity 0.15s ease; }
+    body.initialized { opacity: 1; }
+  </style>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="photos/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="photos/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="photos/favicon-16x16.png">
+  <link rel="manifest" href="photos/site.webmanifest">
+
+  <link rel="stylesheet" href="styles/output.css">
+  <link rel="stylesheet" href="more-assets/css/boxicons.min.css">
+  <link rel="stylesheet" href="more-assets/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="offline-assets/css/choices.min.css">
+  <link rel="stylesheet" href="styles/dashboard.css">
+  <script src="offline-assets/js/choices.min.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-dvh antialiased overflow-auto">
+<div class="max-w-layout mx-auto min-h-dvh flex flex-col">
+
+  <!-- ══════════════════════════════════════════════════════
+       HEADER  — identical structure to dashboard.html
+  ══════════════════════════════════════════════════════ -->
+  <header
+    class="max-w-layout fixed top-0 w-full z-30 bg-transparent flex items-center justify-between py-2 px-2 border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
+    id="emol-header">
+
+    <div class="flex items-center gap-4 bg-opacity-50">
+      <!-- Hamburger -->
+      <button id="emol-menu-toggle" class="p-2 rounded focus:outline-none" aria-label="Toggle menu">
+        <div class="menu flex flex-col gap-1.5" aria-hidden="true">
+          <img class="line w-6"   src="photos/line2i199-45p.svg" alt="" />
+          <img class="img w-3"   src="photos/line2i199-45p.svg" alt="" />
+          <img class="line-2 w-6" src="photos/line4i199-83u6.svg" alt="" />
+        </div>
+      </button>
+
+      <div class="text-2xl lg:text-3xl font-black text-navy select-none">NAVY</div>
+
+      <!-- Support -->
+      <div class="relative group">
+        <button
+          class="text-2xl font-black text-navy select-none cursor-pointer"
+          onclick="emolNav.go('support', 'Help & Support')"
+          aria-label="Support">
+          <i class="fa-solid fa-headset mr-2"></i>
+        </button>
+        <span class="absolute top-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
+                     text-navy font-bold px-2 py-1 rounded shadow text-xs whitespace-nowrap">
+          Support
+        </span>
+      </div>
+
+      <!-- Profile -->
+      <div class="relative group">
+        <button
+          class="text-2xl font-black text-navy select-none cursor-pointer"
+          onclick="emolNav.go('my-profile', 'My Profile')"
+          aria-label="Profile">
+          <i class="fas fa-user-circle mr-2"></i>
+        </button>
+        <span class="absolute top-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
+                     text-navy font-bold px-2 py-1 rounded shadow text-xs whitespace-nowrap">
+          Profile
+        </span>
+      </div>
+    </div>
+
+    <!-- Right: year + logo -->
+    <div class="flex flex-wrap items-center gap-6 cursor-default">
+      <p class="text-sm font-bold text-navy text-blue-900">
+        Processing Year:
+        <span class="text-yellow-600 text-md" id="emol-processing-year">Loading…</span>
+      </p>
+      <img src="photos/logo.png" alt="logo"
+           class="hidden sm:block lg:w-[25px] h-[35px] object-contain" />
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════
+       LAYOUT WRAPPER
+  ══════════════════════════════════════════════════════ -->
+  <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
+
+    <!-- ══════════════════════════════════════════════════
+         SIDEBAR  — same structure/classes as dashboard.html
+    ══════════════════════════════════════════════════ -->
+    <aside id="emol-sidebar"
+      class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-[max(0px,calc(50%-720px))] z-20
+             lg:w-[250px] bg-transparent lg:h-[calc(100vh-1rem)] shadow-lg overflow-y-auto">
+
+      <nav class="px-4">
+        <ul class="flex flex-col gap-[1.1rem]" id="emol-nav-list">
+
+          <!-- Dashboard (always) -->
+          <li class="relative">
+            <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+               href="#" onclick="emolNav.returnHome(); return false;" title="Dashboard">
+              <span class="flex items-center gap-2">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+              </span>
+            </a>
+          </li>
+
+          <!-- My Form (always) -->
+          <li class="relative">
+            <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+               href="#" onclick="emolNav.go('my-form', 'My Emolument Form'); return false;">
+              <span class="flex items-center gap-2">
+                <i class="fas fa-file-alt"></i>
+                <span>My Form</span>
+              </span>
+            </a>
+          </li>
+
+          <!-- My Ships — injected by JS if ship officer -->
+          <!-- id="emol-ships-nav-item" -->
+
+          <!-- Progress — injected by JS if elevated role -->
+          <!-- id="emol-progress-nav-item" -->
+
+          <!-- Admin Panel — injected by JS if EMOL_ADMIN -->
+          <!-- id="emol-admin-nav-item" -->
+
+          <!-- Dynamic items injected here by emolument-dashboard.js -->
+          <li id="emol-dynamic-nav-items"></li>
+
+          <!-- Logout (always) -->
+          <li class="relative">
+            <button
+              onclick="emolLogout()"
+              class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">
+              Logout
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ══════════════════════════════════════════════════
+         MAIN CONTENT
+    ══════════════════════════════════════════════════ -->
+    <main class="overlap relative p-6 lg:px-10" id="emol-main">
+
+      <!-- Greeting -->
+      <div class="mt-4">
+        <p id="emol-greeting"
+           class="text-md md:text-xl lg:text-xl font-bold text-navy text-center text-blue-900"></p>
+      </div>
+
+      <!-- Time -->
+      <div class="text-center my-2">
+        <p id="emol-time"
+           class="text-yellow-600 text-base font-semibold lg:text-lg tracking-wide"></p>
+      </div>
+
+      <!-- ── STATS STRIP ────────────────────────────── -->
+      <section class="mt-4 flex justify-center">
+        <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto
+                    bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 h-full rounded-lg overflow-hidden"
+               id="emol-stats-grid">
+
+            <!-- Stat 1 -->
+            <div class="p-6 flex flex-col items-center gap-4">
+              <div class="flex items-center gap-1">
+                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat1-label">—</h3>
+                <i id="emol-stat1-icon" class="fas fa-file-alt text-blue-600" style="font-size:22px"></i>
+              </div>
+              <div id="emol-stat1-value"
+                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning">
+                Loading…
+              </div>
+            </div>
+
+            <!-- Stat 2 -->
+            <div class="p-6 flex flex-col items-center gap-4">
+              <div class="flex items-center gap-1">
+                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat2-label">—</h3>
+                <i id="emol-stat2-icon" class="fas fa-check-circle text-green-600" style="font-size:22px"></i>
+              </div>
+              <div id="emol-stat2-value"
+                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-success">
+                Loading…
+              </div>
+            </div>
+
+            <!-- Stat 3 -->
+            <div class="p-6 flex flex-col items-center gap-4">
+              <div class="flex items-center gap-1">
+                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat3-label">—</h3>
+                <i id="emol-stat3-icon" class="fas fa-users text-yellow-500" style="font-size:22px"></i>
+              </div>
+              <div id="emol-stat3-value"
+                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">
+                Loading…
+              </div>
+            </div>
+          </div>
+
+          <!-- SVG separators — same as payroll dashboard -->
+          <img class="hidden lg:block absolute top-[-15px] left-[34%] w-[31px] h-[239px] object-cover"
+               src="photos/line23022-bue8.svg" alt="" />
+          <img class="hidden lg:block absolute top-[-15px] left-[66%] w-[31px] h-[239px] object-cover"
+               src="photos/line23022-bue8.svg" alt="" />
+        </div>
+      </section>
+
+      <!-- ── QUICK ACCESS + NOTIFICATIONS ─────────── -->
+      <section class="mt-6 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
+
+        <!-- Quick Access -->
+        <div class="frame-3 w-full h-auto sm:w-[416px] bg-white/20 rounded-xl p-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h4 class="text-xl font-bold text-navy">Quick Access</h4>
+            <div class="text-sm text-gray-400" id="emol-quick-meta"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4" id="emol-quick-grid">
+            <div class="col-span-2 text-center py-8 text-gray-500">
+              <p>Loading…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ships panel — shows ONLY for ship officers, hidden for pure PERSONNEL -->
+        <aside id="emol-ships-panel"
+          class="hidden w-full sm:w-[192px] h-auto bg-white/20 rounded-xl p-4 pt-5 shadow-lg">
+          <h4 class="text-sm font-bold text-navy mb-3 uppercase tracking-wide">My Ships</h4>
+          <ul class="flex flex-col gap-2" id="emol-ships-list">
+            <!-- populated by JS -->
+          </ul>
+        </aside>
+
+        <!-- Notifications (for pure personnel — no ships panel) -->
+        <aside id="emol-notifications"
+          class="flex-col justify-center w-full sm:w-[192px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
+          <!-- populated by JS -->
+        </aside>
+
+      </section>
+
+    </main>
+  </div><!-- /main-content-wrapper -->
+
+</div><!-- /max-w-layout -->
+
+<script src="script/menu-highlighting.js"></script>
+<script src="script/auth.js"></script>
+<script src="script/emolument-dashboard.js"></script>
+</body>
+</html>

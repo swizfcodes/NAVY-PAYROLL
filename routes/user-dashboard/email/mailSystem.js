@@ -105,8 +105,8 @@ async function hardDeleteMessage(msgId) {
       }
       await pool
         .query(
-          `UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
-         WHERE user_id = ?`,
+          `UPDATE hr_employees SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
+         WHERE Empl_ID = ?`,
           [att.file_size, att.uploaded_by],
         )
         .catch(() => {});
@@ -128,7 +128,7 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     const [[user]] = await pool.query(
       `SELECT storage_used_bytes,
               COALESCE(storage_quota_bytes, ?) AS storage_quota_bytes
-       FROM users WHERE user_id = ?`,
+       FROM hr_employees WHERE Empl_ID = ?`,
       [DEFAULT_QUOTA, req.user_id],
     );
 
@@ -211,7 +211,7 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     );
 
     await pool.query(
-      `UPDATE users SET storage_used_bytes = storage_used_bytes + ? WHERE user_id = ?`,
+      `UPDATE hr_employees SET storage_used_bytes = storage_used_bytes + ? WHERE Empl_ID = ?`,
       [req.file.size, req.user_id],
     );
 
@@ -298,7 +298,7 @@ router.post("/", verifyToken, async (req, res) => {
 
   try {
     const [[sender]] = await pool.query(
-      "SELECT email FROM users WHERE user_id = ? LIMIT 1",
+      "SELECT email FROM hr_employees WHERE Empl_ID = ? LIMIT 1",
       [req.user_id],
     );
     const fromEmail = sender?.email || req.email || "";
@@ -795,7 +795,7 @@ router.get("/storage/me", verifyToken, async (req, res) => {
     const [[user]] = await pool.query(
       `SELECT storage_used_bytes,
               COALESCE(storage_quota_bytes, ?) AS storage_quota_bytes
-       FROM users WHERE user_id = ?`,
+       FROM hr_employees WHERE Empl_ID = ?`,
       [DEFAULT_QUOTA, req.user_id],
     );
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -884,7 +884,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
             await hardDeleteMessage(sibling.id);
             if (!receiverHadDeleted) {
               const [[toUser]] = await pool.query(
-                "SELECT full_name FROM users WHERE user_id = ?",
+                "SELECT CONCAT(Title,'.',Surname, ' ', OtherName) AS full_name FROM hr_employees WHERE Empl_ID = ?",
                 [sibling.to_user_id],
               );
               await pool.query(
@@ -908,7 +908,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
           await hardDeleteMessage(req.params.id);
           if (!receiverHadDeleted) {
             const [[toUser]] = await pool.query(
-              "SELECT full_name FROM users WHERE user_id = ?",
+              "SELECT CONCAT(Title,'.',Surname, ' ', OtherName) AS full_name FROM hr_employees WHERE Empl_ID = ?",
               [msg.to_user_id],
             );
             await pool.query(
@@ -947,11 +947,11 @@ router.get("/users/search", verifyToken, async (req, res) => {
       .json({ error: "Search query must be at least 2 characters" });
   try {
     const [rows] = await pool.query(
-      `SELECT user_id, full_name, email FROM users
-       WHERE (full_name LIKE ? OR user_id LIKE ? OR email LIKE ?)
-         AND status = 'active' AND user_id != ?
+      `SELECT Empl_ID AS user_id, CONCAT(Title,'.',Surname, ' ', OtherName) AS full_name, email FROM hr_employees
+       WHERE (Title LIKE ? OR Empl_ID LIKE ? OR Surname LIKE ? OR OtherName LIKE ? OR email LIKE ?)
+         AND Empl_ID != ?
        LIMIT 20`,
-      [`%${q}%`, `%${q}%`, `%${q}%`, req.user_id],
+      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, req.user_id],
     );
     res.json({ users: rows });
   } catch (err) {
@@ -984,8 +984,8 @@ async function cleanupOrphanedAttachments() {
         );
         await pool
           .query(
-            `UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
-           WHERE user_id = ?`,
+            `UPDATE hr_employees SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
+           WHERE Empl_ID = ?`,
             [row.file_size, row.uploaded_by],
           )
           .catch(() => {});
@@ -1021,8 +1021,8 @@ async function cleanupOrphanedAttachments() {
       await pool.query("DELETE FROM mail_attachments WHERE id = ?", [att.id]);
       await pool
         .query(
-          `UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
-         WHERE user_id = ?`,
+          `UPDATE hr_employees SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?)
+         WHERE Empl_ID = ?`,
           [att.file_size, att.uploaded_by],
         )
         .catch(() => {});

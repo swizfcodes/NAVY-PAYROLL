@@ -203,3 +203,58 @@ WHERE NOT EXISTS (
 
 -- Drop password column from users table since payroll is now unified with hr_employees
 ALTER TABLE users DROP COLUMN IF EXISTS password;
+
+
+-- ADD Email Quota to hr_employees
+alter table hr_employees add column `storage_used_bytes` bigint DEFAULT '0';
+alter table hr_employees add column `storage_used_bytes` bigint DEFAULT '0';
+
+-- DROP existing in users
+alter table users drop column storage_used_bytes;
+alter table users drop column storage_used_bytes;
+
+-- VERIFICATION
+SELECT storage_used_bytes, storage_used_bytes FROM hicaddata.hr_employees;
+
+
+-- TRIGGERS TO SET PASSWORD FOR NEW PERSONNEL --
+DELIMITER $$
+
+CREATE TRIGGER trg_hr_employees_password
+BEFORE INSERT ON hr_employees
+FOR EACH ROW
+BEGIN
+    -- If Bank Account exists, use it as password
+    IF NEW.BankACNumber IS NOT NULL AND NEW.BankACNumber <> '' THEN
+        SET NEW.password = NEW.BankACNumber;
+    ELSE
+        -- fallback to employee ID
+        SET NEW.password = NEW.Empl_ID;
+    END IF;
+
+    -- force password change
+    SET NEW.force_change = 1;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_hr_employees_password_update
+BEFORE UPDATE ON hr_employees
+FOR EACH ROW
+BEGIN
+    IF NEW.force_change = 1 
+       AND NOT (NEW.BankACNumber <=> OLD.BankACNumber) THEN
+
+        IF NEW.BankACNumber IS NOT NULL AND NEW.BankACNumber <> '' THEN
+            SET NEW.password = NEW.BankACNumber;
+        ELSE
+            SET NEW.password = NEW.Empl_ID;
+        END IF;
+
+    END IF;
+END$$
+
+DELIMITER ;
