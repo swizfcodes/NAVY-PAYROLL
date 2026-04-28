@@ -1,0 +1,79 @@
+<div>
+  <div class="mb-6">
+    <h2 class="text-xl font-black text-navy">For CPO Confirmation</h2>
+    <p class="text-sm text-blue-900/50 mt-1">FO-approved forms awaiting your final confirmation</p>
+  </div>
+  <div id="cpo-pending-content"><div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div></div>
+</div>
+
+<!-- CPO Confirm Modal -->
+<div id="cpoConfirmModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+    <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">CPO Confirmation</h3>
+    <p class="text-sm text-blue-900/40 mb-4" id="cpoModalMeta"></p>
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Remarks (optional)</label>
+      <textarea id="cpoRemarks" rows="3" placeholder="Add remarks..." class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="cpoAction('reject')"  class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"><i class="fas fa-times mr-1"></i>Reject</button>
+      <button onclick="cpoAction('confirm')" class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"><i class="fas fa-stamp mr-1"></i>Confirm</button>
+    </div>
+    <button onclick="closeCpoModal()" class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none">Cancel</button>
+    <div id="cpoConfirmMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+  </div>
+</div>
+
+<script>
+let cpoActiveFormId = null;
+const token = localStorage.getItem('token');
+const ship  = sessionStorage.getItem('active_ship');
+
+function loadCpoPending() {
+  const el = document.getElementById('cpo-pending-content');
+  fetch('/ship/cpo/pending?ship=' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      if (!rows.length) { el.innerHTML='<div class="text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">No forms pending CPO confirmation</p></div>'; return; }
+      el.innerHTML = `<div class="space-y-3">` + rows.map(r => `
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-file-alt text-green-500" style="font-size:16px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-navy text-sm">${r.full_name}</div>
+            <div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · FO approved ${r.approved_at ? new Date(r.approved_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '—'}</div>
+          </div>
+          <button onclick="openCpoConfirm('${r.form_id}','${r.full_name} (${r.user_id})')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-green-700 transition-colors flex-shrink-0">
+            Confirm
+          </button>
+        </div>`).join('') + `</div>`;
+    }).catch(() => { el.innerHTML='<div class="text-center py-10 text-red-400 text-sm">Failed to load</div>'; });
+}
+
+function openCpoConfirm(formId, meta) {
+  cpoActiveFormId = formId;
+  document.getElementById('cpoModalMeta').textContent = meta;
+  document.getElementById('cpoRemarks').value = '';
+  document.getElementById('cpoConfirmMsg').classList.add('hidden');
+  document.getElementById('cpoConfirmModal').classList.remove('hidden');
+}
+
+function closeCpoModal() { document.getElementById('cpoConfirmModal').classList.add('hidden'); cpoActiveFormId = null; }
+
+function cpoAction(action) {
+  const remarks = document.getElementById('cpoRemarks').value.trim();
+  const msg = document.getElementById('cpoConfirmMsg');
+  fetch('/ship/cpo/' + action, {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body: JSON.stringify({ form_id:cpoActiveFormId, ship, remarks })
+  })
+  .then(r => r.json().then(d => ({ ok:r.ok, d })))
+  .then(({ ok, d }) => {
+    msg.className='p-3 rounded-lg text-sm font-semibold '+(ok?'bg-green-50 text-green-700':'bg-red-50 text-red-600');
+    msg.textContent = ok?(d.message||(action==='confirm'?'Form confirmed.':'Form rejected.')):(d.error||'Failed');
+    msg.classList.remove('hidden');
+    if (ok) { setTimeout(() => { closeCpoModal(); loadCpoPending(); }, 1200); }
+  }).catch(() => { msg.className='p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';msg.textContent='Server error';msg.classList.remove('hidden'); });
+}
+
+loadCpoPending();
+</script>

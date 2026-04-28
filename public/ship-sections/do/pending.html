@@ -1,0 +1,100 @@
+<div>
+  <div class="mb-6">
+    <h2 class="text-xl font-black text-navy">Pending DO Review</h2>
+    <p class="text-sm text-blue-900/50 mt-1">Forms submitted by personnel awaiting your authentication</p>
+  </div>
+
+  <div id="do-pending-content">
+    <div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div id="doReviewModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+    <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">Review Form</h3>
+    <p class="text-sm text-blue-900/40 mb-4" id="reviewModalMeta"></p>
+
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Remarks (optional)</label>
+      <textarea id="doReviewRemarks" rows="3" placeholder="Add remarks for the personnel or FO..."
+        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy resize-none"></textarea>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="doReviewAction('reject')"  class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"><i class="fas fa-times mr-1"></i>Reject</button>
+      <button onclick="doReviewAction('approve')" class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"><i class="fas fa-check mr-1"></i>Authenticate</button>
+    </div>
+
+    <button onclick="closeDoModal()" class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none">Cancel</button>
+    <div id="doReviewMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+  </div>
+</div>
+
+<script>
+let doActiveFormId = null;
+const token = localStorage.getItem('token');
+const ship  = sessionStorage.getItem('active_ship');
+
+function loadDoPending() {
+  const el = document.getElementById('do-pending-content');
+  fetch('/ship/do/pending?ship=' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      if (!rows.length) {
+        el.innerHTML=`<div class="text-center py-16 text-blue-900/30">
+          <i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i>
+          <p class="font-semibold">No forms pending review</p>
+          <p class="text-sm mt-1">All submitted forms have been reviewed.</p>
+        </div>`; return;
+      }
+      el.innerHTML = `<div class="space-y-3">` + rows.map(r => `
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-file-alt text-amber-500" style="font-size:16px"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-navy text-sm">${r.full_name}</div>
+            <div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · Submitted ${r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '—'}</div>
+          </div>
+          <button onclick="openDoReview('${r.form_id}','${r.full_name} (${r.user_id})')"
+            class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
+            Review
+          </button>
+        </div>`).join('') + `</div>`;
+    })
+    .catch(() => { el.innerHTML='<div class="text-center py-10 text-red-400 text-sm">Failed to load</div>'; });
+}
+
+function openDoReview(formId, meta) {
+  doActiveFormId = formId;
+  document.getElementById('reviewModalMeta').textContent = meta;
+  document.getElementById('doReviewRemarks').value = '';
+  document.getElementById('doReviewMsg').classList.add('hidden');
+  document.getElementById('doReviewModal').classList.remove('hidden');
+}
+
+function closeDoModal() {
+  document.getElementById('doReviewModal').classList.add('hidden');
+  doActiveFormId = null;
+}
+
+function doReviewAction(action) {
+  const remarks = document.getElementById('doReviewRemarks').value.trim();
+  const msg     = document.getElementById('doReviewMsg');
+  fetch('/ship/do/' + action, {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body: JSON.stringify({ form_id:doActiveFormId, ship, remarks })
+  })
+  .then(r => r.json().then(d => ({ ok:r.ok, d })))
+  .then(({ ok, d }) => {
+    msg.className='p-3 rounded-lg text-sm font-semibold '+(ok?'bg-green-50 text-green-700':'bg-red-50 text-red-600');
+    msg.textContent = ok?(d.message||(action==='approve'?'Form authenticated.':'Form rejected.')):(d.error||'Failed');
+    msg.classList.remove('hidden');
+    if (ok) { setTimeout(() => { closeDoModal(); loadDoPending(); }, 1200); }
+  })
+  .catch(() => { msg.className='p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';msg.textContent='Server error';msg.classList.remove('hidden'); });
+}
+
+loadDoPending();
+</script>

@@ -1,0 +1,511 @@
+<div class="p-2 md:p-4 lg:p-6">
+
+  <!-- Header + action buttons -->
+  <div class="flex items-start justify-between gap-3 mb-4">
+    <div>
+      <h3 class="text-sm lg:text-base font-bold text-navy border-b border-amber-100 pb-1">Ships Overview</h3>
+      <p class="text-xs text-blue-900/40 mt-1">Manage ships, open/close access, assign roles</p>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+      <button onclick="window.sOpenCreateModal()"
+        class="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
+        <i class="fas fa-user-plus"></i><span class="hidden sm:inline">Assign Role</span>
+      </button>
+      <button onclick="window.sOpenUploadModal()"
+        class="flex items-center gap-1.5 px-3 py-2 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+        <i class="fas fa-upload"></i><span class="hidden sm:inline">Upload Personnel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter row -->
+  <div class="flex gap-2 mb-3 flex-wrap">
+    <input id="sSearchInput" type="text" placeholder="Search ship..."
+      class="flex-1 min-w-28 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+      oninput="window.sFilter()" />
+    <select id="sCommandFilter"
+      class="flex-1 min-w-28 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+      onchange="window.sFilter()">
+      <option value="">All Commands</option>
+    </select>
+    <select id="sStatusFilter"
+      class="min-w-24 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+      onchange="window.sFilter()">
+      <option value="">All</option>
+      <option value="1">Open</option>
+      <option value="0">Closed</option>
+    </select>
+  </div>
+
+  <!-- Bulk actions -->
+  <div class="flex gap-2 mb-4 items-center">
+    <button onclick="window.sOpenAll()"
+      class="flex-1 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
+      <i class="fas fa-lock-open mr-1"></i>Open All
+    </button>
+    <button onclick="window.sCloseAll()"
+      class="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
+      <i class="fas fa-lock mr-1"></i>Close All
+    </button>
+    <span class="text-xs text-blue-900/40 px-1 flex-shrink-0" id="sCountLabel"></span>
+  </div>
+
+  <!-- Desktop two-column, mobile stacked -->
+  <div class="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+
+    <!-- LEFT: ship list — compact rows, capped height -->
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden mb-4 lg:mb-0">
+      <div class="grid px-3 py-2 bg-amber-50/60 border-b border-amber-100"
+        style="grid-template-columns:1fr auto auto;gap:0.5rem;">
+        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Ship / Command</span>
+        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Status</span>
+        <span></span>
+      </div>
+      <div id="sShipsList" style="max-height:440px;overflow-y:auto;">
+        <div class="flex items-center justify-center py-10 text-navy/30 text-xs">
+          <i class="fas fa-spinner fa-spin mr-2"></i>Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: role assignments for selected ship -->
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
+      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Role Assignments
+        </span>
+        <select id="sRoleShipSelect"
+          class="flex-1 max-w-52 border border-amber-100 rounded-lg px-2 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
+          onchange="window.sLoadRoles()">
+          <option value="">— Select ship —</option>
+        </select>
+      </div>
+      <div id="sRolesPanel">
+        <div class="text-center py-8 text-blue-900/25 text-xs">
+          <i class="fas fa-ship fa-2x mb-2 block opacity-20"></i>
+          Select a ship to view assignments
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Assign Role -->
+<div id="sCreateModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between p-5 border-b border-amber-100">
+      <h3 class="font-black text-navy text-sm uppercase tracking-wide">Assign Ship Role</h3>
+      <button onclick="window.sCloseCreateModal()"
+        class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-navy/40 hover:text-navy cursor-pointer border-none text-lg font-bold">x</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service No</label>
+        <input id="sCreateSvcNo" type="text" placeholder="e.g. NA/0012345"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none" />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
+        <select id="sCreateRole" onchange="window.sCreateRoleChange()"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+          <option value="DO">DO — Divisional Officer</option>
+          <option value="FO">FO — First Officer</option>
+          <option value="CPO">CPO — Command Payroll Officer</option>
+        </select>
+      </div>
+      <div id="sCreateShipWrap">
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Ship</label>
+        <select id="sCreateShip"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+          <option value="">— Select ship —</option>
+        </select>
+      </div>
+      <div id="sCreateCommandWrap" class="hidden">
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Command (CPO scope)</label>
+        <select id="sCreateCommand"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+          <option value="">— Select command —</option>
+        </select>
+      </div>
+      <button onclick="window.sSubmitCreate()"
+        class="w-full py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
+        <i class="fas fa-user-plus mr-2"></i>Assign Role
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Upload Personnel -->
+<div id="sUploadModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between p-5 border-b border-amber-100">
+      <h3 class="font-black text-navy text-sm uppercase tracking-wide">Upload Personnel</h3>
+      <button onclick="window.sCloseUploadModal()"
+        class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-navy/40 hover:text-navy cursor-pointer border-none text-lg font-bold">x</button>
+    </div>
+    <div class="p-5">
+      <p class="text-xs text-blue-900/50 mb-3">Required CSV columns:
+        <span class="font-mono bg-amber-50 px-1 rounded text-xs">serviceNumber, surname, otherName, rank, email, phoneNumber, payrollclass, classes, ship</span>
+      </p>
+      <div class="border-2 border-dashed border-amber-200 rounded-xl p-6 text-center mb-3 cursor-pointer hover:bg-amber-50/30 transition-all"
+        onclick="document.getElementById('sUploadFile').click()">
+        <i class="fas fa-file-csv text-amber-400 text-3xl mb-2 block"></i>
+        <p class="font-bold text-navy text-sm">Click to select CSV</p>
+        <input type="file" id="sUploadFile" accept=".csv" class="hidden" onchange="window.sPreviewFile(this)" />
+      </div>
+      <div id="sUploadFileInfo" class="hidden text-xs text-center font-semibold text-navy/60 mb-2"></div>
+      <div id="sUploadPreviewCount" class="hidden text-xs text-center text-green-700 font-bold mb-3"></div>
+      <button onclick="window.sSubmitUpload()"
+        class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+        <i class="fas fa-upload mr-2"></i>Upload
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div id="sConfirmModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+    <div id="sConfirmIconWrap" class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-50">
+      <i id="sConfirmIcon" class="fas fa-question text-xl text-blue-600"></i>
+    </div>
+    <h3 class="font-black text-navy text-base mb-2" id="sConfirmTitle">Confirm</h3>
+    <p class="text-sm text-blue-900/50 mb-6" id="sConfirmMsg">Are you sure?</p>
+    <div class="flex gap-3">
+      <button onclick="window.sCancelConfirm()"
+        class="flex-1 py-2.5 border border-amber-100 text-navy text-sm font-bold rounded-lg hover:bg-amber-50 cursor-pointer bg-white">Cancel</button>
+      <button id="sConfirmOkBtn"
+        class="flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-navy hover:bg-blue-800">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="sToast" class="hidden fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs"></div>
+
+<style>
+  .s-row { border-bottom:1px solid rgba(251,191,36,0.12); }
+  .s-row:last-child { border-bottom:none; }
+  .s-row:hover { background:rgba(251,191,36,0.05); }
+  .badge-open   { background:rgba(34,197,94,0.12);  color:#166534; }
+  .badge-closed { background:rgba(239,68,68,0.1);   color:#991b1b; }
+  .badge-DO  { background:rgba(59,130,246,0.12); color:#1d4ed8; }
+  .badge-FO  { background:rgba(245,158,11,0.12); color:#92400e; }
+  .badge-CPO { background:rgba(16,185,129,0.12); color:#065f46; }
+</style>
+
+<script>
+(function () {
+  const T = localStorage.getItem('token');
+  const H = { Authorization: 'Bearer ' + T };
+  let _ships = [], _commands = [], _confirmCb = null, _uploadRecords = null;
+
+  function toast(msg, ok) {
+    const el = document.getElementById('sToast');
+    el.textContent = msg;
+    el.className = 'fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs '
+      + (ok !== false ? 'bg-green-600 text-white' : 'bg-red-500 text-white');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+
+  function confirm_(title, msg, cb, danger) {
+    _confirmCb = cb;
+    document.getElementById('sConfirmTitle').textContent = title;
+    document.getElementById('sConfirmMsg').textContent = msg;
+    const wrap = document.getElementById('sConfirmIconWrap');
+    const icon = document.getElementById('sConfirmIcon');
+    const btn  = document.getElementById('sConfirmOkBtn');
+    if (danger) {
+      wrap.className = 'w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-50';
+      icon.className = 'fas fa-exclamation-triangle text-xl text-red-500';
+      btn.className  = 'flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-red-500 hover:bg-red-600';
+    } else {
+      wrap.className = 'w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-50';
+      icon.className = 'fas fa-check text-xl text-blue-600';
+      btn.className  = 'flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-navy hover:bg-blue-800';
+    }
+    document.getElementById('sConfirmModal').classList.remove('hidden');
+  }
+
+  document.getElementById('sConfirmOkBtn').onclick = function () {
+    document.getElementById('sConfirmModal').classList.add('hidden');
+    if (_confirmCb) { _confirmCb(); _confirmCb = null; }
+  };
+  window.sCancelConfirm = function () {
+    document.getElementById('sConfirmModal').classList.add('hidden');
+    _confirmCb = null;
+  };
+
+  // GET /system/ships — returns array directly
+  function loadShips() {
+    fetch('/system/ships', { headers: H })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(raw => {
+        _ships = Array.isArray(raw) ? raw : (raw.data || raw.ships || []);
+        renderShips(_ships);
+        populateSelects(_ships);
+        document.getElementById('sCountLabel').textContent = _ships.length + ' ships';
+      })
+      .catch(() => {
+        document.getElementById('sShipsList').innerHTML =
+          '<div class="text-center py-8 text-red-400 text-xs p-4">Failed to load ships</div>';
+      });
+  }
+
+  // GET /system/commands — returns array directly
+  function loadCommands() {
+    fetch('/system/commands', { headers: H })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(raw => {
+        _commands = Array.isArray(raw) ? raw : (raw.data || raw.commands || []);
+        const cmdFilter = document.getElementById('sCommandFilter');
+        const createCmd = document.getElementById('sCreateCommand');
+        _commands.forEach(c => {
+          const label = c.commandName || c.name;
+          const val   = c.code || c.commandCode || c.Id;
+          [cmdFilter, createCmd].forEach(sel => {
+            const opt = document.createElement('option');
+            opt.value = val; opt.textContent = label;
+            sel.appendChild(opt);
+          });
+        });
+      })
+      .catch(() => {});
+  }
+
+  function populateSelects(ships) {
+    ['sRoleShipSelect', 'sCreateShip'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1);
+      ships.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.shipName;
+        opt.dataset.id = s.Id;
+        opt.textContent = s.shipName;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function renderShips(ships) {
+    const el = document.getElementById('sShipsList');
+    document.getElementById('sCountLabel').textContent = ships.length + ' ships';
+    if (!ships.length) {
+      el.innerHTML = '<div class="text-center py-10 text-blue-900/25 text-xs p-4">No ships found</div>';
+      return;
+    }
+    el.innerHTML = ships.map(s => {
+      const open = s.openship === 1;
+      const name = s.shipName.replace(/'/g, "\\'");
+      return `<div class="s-row" style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;">
+        <div style="min-width:0;">
+          <div class="font-bold text-navy truncate" style="font-size:12px;">${s.shipName}</div>
+          <div class="text-blue-900/40 truncate" style="font-size:10px;">${s.commandName || '—'}</div>
+        </div>
+        <span class="font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${open ? 'badge-open' : 'badge-closed'}" style="font-size:10px;">${open ? 'OPEN' : 'CLOSED'}</span>
+        <button onclick="window.sToggle(${s.Id},'${name}',${open ? 0 : 1})"
+          class="flex-shrink-0 flex items-center justify-center rounded-lg border border-amber-100 bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors"
+          style="width:28px;height:28px;" title="${open ? 'Close' : 'Open'} ship">
+          <i class="fas fa-${open ? 'lock text-red-400' : 'lock-open text-green-600'}" style="font-size:10px;"></i>
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  window.sFilter = function () {
+    const q   = (document.getElementById('sSearchInput').value || '').toLowerCase();
+    const cmd = document.getElementById('sCommandFilter').value;
+    const st  = document.getElementById('sStatusFilter').value;
+    const f = _ships.filter(s => {
+      if (q && !s.shipName.toLowerCase().includes(q)) return false;
+      if (cmd && s.commandCode !== cmd) return false;
+      if (st !== '' && String(s.openship) !== st) return false;
+      return true;
+    });
+    renderShips(f);
+  };
+
+  // POST /system/ships/:id/open|close
+  window.sToggle = function (shipId, shipName, targetOpen) {
+    confirm_(
+      (targetOpen ? 'Open' : 'Close') + ' Ship',
+      `${targetOpen ? 'Open' : 'Close'} access for ${shipName}?`,
+      function () {
+        fetch(`/system/ships/${shipId}/${targetOpen ? 'open' : 'close'}`, {
+          method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { toast(ok ? (d.message || 'Done.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
+        .catch(() => toast('Server error', false));
+      },
+      !targetOpen
+    );
+  };
+
+  window.sOpenAll = function () {
+    confirm_('Open All Ships', 'Open form access for all ships?', function () {
+      fetch('/system/ships/open-all', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' } })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { toast(ok ? (d.message || 'All ships opened.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
+        .catch(() => toast('Server error', false));
+    }, false);
+  };
+
+  window.sCloseAll = function () {
+    confirm_('Close All Ships', 'Close access for ALL ships? Personnel cannot submit.', function () {
+      fetch('/system/ships/close-all', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' } })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { toast(ok ? (d.message || 'All ships closed.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
+        .catch(() => toast('Server error', false));
+    }, true);
+  };
+
+  // GET /admin/roles?scope_type=SHIP&scope_value=X — returns array directly
+  window.sLoadRoles = function () {
+    const ship  = document.getElementById('sRoleShipSelect').value;
+    const panel = document.getElementById('sRolesPanel');
+    if (!ship) {
+      panel.innerHTML = '<div class="text-center py-8 text-blue-900/25 text-xs"><i class="fas fa-ship fa-2x mb-2 block opacity-20"></i>Select a ship</div>';
+      return;
+    }
+    panel.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+    fetch(`/admin/roles?scope_type=SHIP&scope_value=${encodeURIComponent(ship)}`, { headers: H })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(raw => {
+        const roles = Array.isArray(raw) ? raw : (raw.data || []);
+        if (!roles.length) {
+          panel.innerHTML = `<div class="text-center py-8 text-blue-900/25 text-xs"><i class="fas fa-user-slash fa-2x mb-2 block opacity-20"></i>No roles for ${ship}</div>`;
+          return;
+        }
+        panel.innerHTML = '<div class="space-y-2">' + roles.map(r => `
+          <div class="flex items-center gap-3 p-2.5 rounded-xl border border-amber-50 bg-white/40">
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-navy" style="font-size:12px;">${r.user_id}</div>
+              <div class="text-blue-900/40 mt-0.5" style="font-size:10px;">by ${r.assigned_by || '—'}</div>
+            </div>
+            <span class="font-bold px-2 py-0.5 rounded-full badge-${r.role} flex-shrink-0" style="font-size:10px;">${r.role}</span>
+            <button onclick="window.sRevokeRole(${r.id},'${r.user_id}','${r.role}')"
+              class="flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 cursor-pointer border-none transition-colors flex-shrink-0"
+              style="width:24px;height:24px;">
+              <i class="fas fa-times text-red-400" style="font-size:9px;"></i>
+            </button>
+          </div>`).join('') + '</div>';
+      })
+      .catch(() => { panel.innerHTML = '<div class="text-center py-8 text-red-400 text-xs">Failed to load</div>'; });
+  };
+
+  // DELETE /admin/roles/:id/revoke
+  window.sRevokeRole = function (roleId, userId, role) {
+    confirm_('Revoke Role', `Revoke ${role} from ${userId}?`, function () {
+      fetch(`/admin/roles/${roleId}/revoke`, { method: 'DELETE', headers: H })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { toast(ok ? (d.message || 'Revoked.') : (d.error || 'Failed'), ok); if (ok) window.sLoadRoles(); })
+        .catch(() => toast('Server error', false));
+    }, true);
+  };
+
+  // Create modal
+  window.sOpenCreateModal = function () {
+    document.getElementById('sCreateModal').classList.remove('hidden');
+    document.getElementById('sCreateSvcNo').value = '';
+    document.getElementById('sCreateRole').value = 'DO';
+    document.getElementById('sCreateShip').value = '';
+    document.getElementById('sCreateShipWrap').classList.remove('hidden');
+    document.getElementById('sCreateCommandWrap').classList.add('hidden');
+    document.body.style.overflow = 'hidden';
+  };
+  window.sCloseCreateModal = function () {
+    document.getElementById('sCreateModal').classList.add('hidden');
+    document.body.style.overflow = '';
+  };
+  document.getElementById('sCreateModal').addEventListener('click', function (e) { if (e.target === this) window.sCloseCreateModal(); });
+
+  window.sCreateRoleChange = function () {
+    const isCPO = document.getElementById('sCreateRole').value === 'CPO';
+    document.getElementById('sCreateShipWrap').classList.toggle('hidden', isCPO);
+    document.getElementById('sCreateCommandWrap').classList.toggle('hidden', !isCPO);
+  };
+
+  // POST /admin/roles/assign
+  window.sSubmitCreate = function () {
+    const svcNo = document.getElementById('sCreateSvcNo').value.trim();
+    const role  = document.getElementById('sCreateRole').value;
+    if (!svcNo) { toast('Service number is required.', false); return; }
+    let scope_type, scope_value;
+    if (role === 'CPO') {
+      scope_type  = 'COMMAND';
+      scope_value = document.getElementById('sCreateCommand').value;
+      if (!scope_value) { toast('Select a command for CPO.', false); return; }
+    } else {
+      scope_type  = 'SHIP';
+      scope_value = document.getElementById('sCreateShip').value;
+      if (!scope_value) { toast('Select a ship.', false); return; }
+    }
+    fetch('/admin/roles/assign', {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: svcNo, role, scope_type, scope_value })
+    })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => { toast(ok ? (d.message || 'Role assigned.') : (d.error || 'Failed'), ok); if (ok) { window.sCloseCreateModal(); window.sLoadRoles(); } })
+    .catch(() => toast('Server error', false));
+  };
+
+  // Upload modal
+  window.sOpenUploadModal = function () {
+    document.getElementById('sUploadModal').classList.remove('hidden');
+    document.getElementById('sUploadFile').value = '';
+    document.getElementById('sUploadFileInfo').classList.add('hidden');
+    document.getElementById('sUploadPreviewCount').classList.add('hidden');
+    _uploadRecords = null;
+    document.body.style.overflow = 'hidden';
+  };
+  window.sCloseUploadModal = function () {
+    document.getElementById('sUploadModal').classList.add('hidden');
+    document.body.style.overflow = '';
+  };
+  document.getElementById('sUploadModal').addEventListener('click', function (e) { if (e.target === this) window.sCloseUploadModal(); });
+
+  window.sPreviewFile = function (input) {
+    const file = input.files[0]; if (!file) return;
+    document.getElementById('sUploadFileInfo').textContent = file.name + ' · ' + (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('sUploadFileInfo').classList.remove('hidden');
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const lines = e.target.result.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast('File empty or no data rows.', false); return; }
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      _uploadRecords = lines.slice(1).map(line => {
+        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const obj = {}; headers.forEach((h, i) => { if (vals[i]) obj[h] = vals[i]; }); return obj;
+      }).filter(r => r.serviceNumber || r.service_no);
+      const cnt = document.getElementById('sUploadPreviewCount');
+      cnt.textContent = _uploadRecords.length + ' valid records found';
+      cnt.classList.remove('hidden');
+    };
+    reader.readAsText(file);
+  };
+
+  // POST /admin/upload/personnel
+  window.sSubmitUpload = function () {
+    if (!_uploadRecords || !_uploadRecords.length) { toast('Select a valid CSV first.', false); return; }
+    fetch('/admin/upload/personnel', {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/json' },
+      body: JSON.stringify(_uploadRecords)
+    })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => {
+      if (ok) { const res = d.data || {}; toast('Done — ' + (res.inserted || 0) + ' upserted, ' + ((res.failed || []).length) + ' failed.', true); window.sCloseUploadModal(); }
+      else toast(d.error || 'Upload failed.', false);
+    })
+    .catch(() => toast('Server error', false));
+  };
+
+  loadShips();
+  loadCommands();
+})();
+</script>

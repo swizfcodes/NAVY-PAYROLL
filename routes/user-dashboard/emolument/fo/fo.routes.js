@@ -52,7 +52,7 @@ function resolveForShips(req) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/fo/ship/:ship/personnel
+// GET /fo/ship/:ship/personnel
 // List all DO_REVIEWED forms on a ship.
 // requireEmolRole('FO') scopes from req.params.ship.
 // ─────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ router.get("/ship/:ship/personnel", requireEmolRole("FO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/fo/forms/:form_id
+// GET /fo/forms/:form_id
 // View full form detail. requireFormRole resolves ship from form.
 // ─────────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ router.get("/forms/:form_id", requireFormRole("FO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/fo/forms/:form_id/approve
+// POST /fo/forms/:form_id/approve
 // Individual approval. fo_svcno taken from req.user_id.
 // Body: { fo_name, fo_rank, fo_date }
 // ─────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ router.post(
 );
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/fo/ship/:ship/bulk-approve
+// POST /fo/ship/:ship/bulk-approve
 // Bulk approval for a ship + classes combination.
 // requireEmolRole('FO') scopes from req.params.ship.
 // Body: { fo_name, fo_rank, fo_date, classes }
@@ -172,7 +172,7 @@ router.post(
 );
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/fo/forms/:form_id/reject
+// POST /fo/forms/:form_id/reject
 // Reject a DO_REVIEWED form. Resets to NULL.
 // Body: { remarks }
 // ─────────────────────────────────────────────────────────────

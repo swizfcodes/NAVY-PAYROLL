@@ -1,0 +1,219 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Upload, update, commission and manage
+      personnel records</h3>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div
+    class="max-w-2xl mr-auto ml-auto flex gap-1 mb-4 bg-white/40 rounded-lg p-1 border border-amber-100 overflow-x-auto">
+    <button onclick="window.pTab('search')"
+      class="ptab active flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="search">Search /
+      Update</button>
+    <button onclick="window.pTab('upload')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="upload">Batch Upload</button>
+    <button onclick="window.pTab('svcno')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="svcno">Change SVC No</button>
+    <button onclick="window.pTab('commission')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="commission">Commission</button>
+  </div>
+
+  <!-- Search / Update -->
+  <div id="ptab-search" class="max-w-lg mr-auto ml-auto ptab-panel">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">Search Personnel</h3>
+      <div class="flex gap-2">
+        <input id="searchSvcNo" type="text" placeholder="Service number or name..."
+          class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+          onkeydown="if(event.key==='Enter')window.searchPersonnel()" />
+        <button onclick="window.searchPersonnel()"
+          class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"><i
+            class="fas fa-search"></i></button>
+      </div>
+      <div id="searchResults" class="mt-4"></div>
+    </div>
+  </div>
+
+  <!-- Batch Upload -->
+  <div id="ptab-upload" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">Batch Personnel Upload (PERS)</h3>
+      <p class="text-sm text-blue-900/50 mb-4">Upload a CSV/Excel file with personnel records. Existing records will be
+        updated, new ones created.</p>
+      <div
+        class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
+        onclick="document.getElementById('persFile').click()">
+        <i class="fas fa-cloud-upload-alt text-amber-400 fa-2x mb-2 block"></i>
+        <p class="font-bold text-navy text-sm">Click to select file</p>
+        <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
+        <input type="file" id="persFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewFile(this)" />
+      </div>
+      <div id="filePreview" class="hidden text-sm text-navy/60 mb-3"></div>
+      <button onclick="window.uploadPers()"
+        class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+        <i class="fas fa-upload mr-2"></i>Upload & Process
+      </button>
+      <div id="uploadMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    </div>
+  </div>
+
+  <!-- Change SVC No -->
+  <div id="ptab-svcno" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Change Service Number</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Current Service
+            Number</label>
+          <input id="oldSvcNo" type="text" placeholder="e.g. NA/0012345"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">New Service Number</label>
+          <input id="newSvcNo" type="text" placeholder="e.g. NA/0054321"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Reason / Authority</label>
+          <input id="svcNoReason" type="text" placeholder="e.g. Commissioned from rating"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+        </div>
+        <button onclick="window.changeSvcNo()"
+          class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+          <i class="fas fa-exchange-alt mr-2"></i>Change Service Number
+        </button>
+        <div id="svcNoMsg" class="hidden p-3 rounded-lg text-sm font-semibold"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commission -->
+  <div id="ptab-commission" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Commission Personnel Upload</h3>
+      <p class="text-sm text-blue-900/50 mb-4">Upload commissioned personnel data file to update records system-wide.
+      </p>
+      <div
+        class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
+        onclick="document.getElementById('commFile').click()">
+        <i class="fas fa-star text-amber-400 fa-2x mb-2 block"></i>
+        <p class="font-bold text-navy text-sm">Click to select commissioned personnel file</p>
+        <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
+        <input type="file" id="commFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewCommFile(this)" />
+      </div>
+      <div id="commFilePreview" class="hidden text-sm text-navy/60 mb-3"></div>
+      <button onclick="window.uploadCommission()"
+        class="w-full py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
+        <i class="fas fa-upload mr-2"></i>Upload Commission Data
+      </button>
+      <div id="commMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ptab {
+    color: rgba(30, 64, 175, 0.4);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .ptab.active {
+    background: rgb(30 64 175);
+    color: white;
+  }
+</style>
+
+<script>
+  (() => {
+    const token = localStorage.getItem('token');
+
+    window.pTab = function(name) {
+      document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ptab-panel').forEach(p => p.classList.add('hidden'));
+      document.querySelector('[data-ptab="' + name + '"]').classList.add('active');
+      document.getElementById('ptab-' + name).classList.remove('hidden');
+    }
+
+    window.searchPersonnel = function() {
+      const q = document.getElementById('searchSvcNo').value.trim();
+      if (!q) return;
+      const el = document.getElementById('searchResults');
+      el.innerHTML = '<div class="flex items-center gap-2 text-navy/30 text-sm"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+
+      fetch('/admin/personnel/search?q=' + encodeURIComponent(q), { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : [])
+        .then(rows => {
+          if (!rows.length) { el.innerHTML = '<div class="text-sm text-blue-900/40 py-2">No results found</div>'; return; }
+          el.innerHTML = `<div class="space-y-2">` + rows.map(r => `
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-white/40">
+          <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-user text-blue-400" style="font-size:14px"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-navy text-sm">${r.full_name}</div>
+            <div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · ${r.rank || '—'} · ${r.ship || '—'}</div>
+          </div>
+          <button onclick="openEditModal('${r.user_id}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer border border-blue-200 rounded px-2 py-1 bg-blue-50">Edit</button>
+        </div>`).join('') + `</div>`;
+        })
+        .catch(() => { el.innerHTML = '<div class="text-sm text-red-400 py-2">Search failed</div>'; });
+    }
+
+    window.openEditModal = function(userId) {
+      // Placeholder — full edit modal would load from emolument form routes
+      alert('Edit record for ' + userId + '\n(Full record editor loads here via /admin/personnel/' + userId + ')');
+    }
+
+    window.previewFile = function(input) {
+      const f = input.files[0];
+      if (f) { document.getElementById('filePreview').textContent = 'Selected: ' + f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)'; document.getElementById('filePreview').classList.remove('hidden'); }
+    };
+
+    window.uploadPers = function() {
+      const file = document.getElementById('persFile').files[0];
+      const msg = document.getElementById('uploadMsg');
+      if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/admin/personnel/batch-upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Upload successful.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
+        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
+    }
+
+    window.previewCommFile = function(input) {
+      const f = input.files[0];
+      if (f) { document.getElementById('commFilePreview').textContent = 'Selected: ' + f.name; document.getElementById('commFilePreview').classList.remove('hidden'); }
+    };
+
+    window.uploadCommission = function() {
+      const file = document.getElementById('commFile').files[0];
+      const msg = document.getElementById('commMsg');
+      if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/admin/personnel/commission-upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Commission data uploaded.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
+        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
+    }
+
+    window.changeSvcNo = function() {
+      const oldNo = document.getElementById('oldSvcNo').value.trim();
+      const newNo = document.getElementById('newSvcNo').value.trim();
+      const reason = document.getElementById('svcNoReason').value.trim();
+      const msg = document.getElementById('svcNoMsg');
+      if (!oldNo || !newNo) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Both service numbers are required.'; msg.classList.remove('hidden'); return; }
+      if (!confirm('Change service number from ' + oldNo + ' to ' + newNo + '?')) return;
+      fetch('/admin/personnel/change-svcno', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ old_svc_no: oldNo, new_svc_no: newNo, reason })
+      })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Service number changed.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
+        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
+    }
+  })();
+</script>

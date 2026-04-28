@@ -1,0 +1,155 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">System-wide settings and maintenance controls</h3>
+  </div>
+
+  <!-- System health -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">System Health</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="healthGrid">
+      <div class="flex items-center justify-center py-6 col-span-full text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+    </div>
+  </div>
+
+  <!-- System toggles -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">System Toggles</h3>
+    <div class="space-y-3" id="systemToggles">
+      <div class="flex items-center justify-between p-3 rounded-lg border border-amber-50 bg-white/40">
+        <div>
+          <div class="font-bold text-navy text-sm">Maintenance Mode</div>
+          <div class="text-xs text-blue-900/40 mt-0.5">Disable system access for all users except admins</div>
+        </div>
+        <button onclick="toggleSetting('maintenance_mode', this)" data-active="false"
+          class="sys-toggle w-12 h-6 rounded-full border-2 border-blue-900/15 bg-blue-900/10 relative transition-all cursor-pointer">
+          <span class="toggle-knob absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"></span>
+        </button>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-lg border border-amber-50 bg-white/40">
+        <div>
+          <div class="font-bold text-navy text-sm">Email Notifications</div>
+          <div class="text-xs text-blue-900/40 mt-0.5">Send email alerts on form status changes</div>
+        </div>
+        <button onclick="toggleSetting('email_notifications', this)" data-active="true"
+          class="sys-toggle w-12 h-6 rounded-full border-2 border-navy bg-navy relative transition-all cursor-pointer">
+          <span class="toggle-knob absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"></span>
+        </button>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-lg border border-amber-50 bg-white/40">
+        <div>
+          <div class="font-bold text-navy text-sm">Allow Late Submission</div>
+          <div class="text-xs text-blue-900/40 mt-0.5">Accept forms after the cycle close date</div>
+        </div>
+        <button onclick="toggleSetting('allow_late_submission', this)" data-active="false"
+          class="sys-toggle w-12 h-6 rounded-full border-2 border-blue-900/15 bg-blue-900/10 relative transition-all cursor-pointer">
+          <span class="toggle-knob absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"></span>
+        </button>
+      </div>
+    </div>
+    <div id="toggleMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-5">
+    <h3 class="font-bold text-red-700 text-sm uppercase tracking-wide mb-4"><i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone</h3>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-red-100">
+        <div>
+          <div class="font-bold text-red-700 text-sm">Reset Current Cycle Data</div>
+          <div class="text-xs text-red-500/70 mt-0.5">Wipes all form submissions for the current cycle only</div>
+        </div>
+        <button onclick="dangerAction('reset_cycle')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sys-toggle[data-active="true"]  { background: rgb(30 64 175); border-color: rgb(30 64 175); }
+  .sys-toggle[data-active="true"] .toggle-knob  { right: 2px; left: auto; }
+  .sys-toggle[data-active="false"] { background: rgba(30,64,175,0.1); border-color: rgba(30,64,175,0.15); }
+  .sys-toggle[data-active="false"] .toggle-knob { left: 2px; right: auto; }
+</style>
+
+<script>
+(() => {
+const token = localStorage.getItem('token');
+// Load health
+(function() {
+  fetch('/admin/system/health', { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      const el = document.getElementById('healthGrid');
+      if (!d) { el.innerHTML='<div class="col-span-full text-center py-4 text-blue-900/30 text-sm">Health data unavailable</div>'; return; }
+      const items = [
+        { label:'Database',   status: d.db,      icon:'fa-database'  },
+        { label:'Payroll API',status: d.payroll,  icon:'fa-plug'      },
+        { label:'Email Svc',  status: d.email,    icon:'fa-envelope'  },
+        { label:'Storage',    status: d.storage,  icon:'fa-hdd'       },
+      ];
+      el.innerHTML = items.map(i => {
+        const ok = i.status === 'OK' || i.status === true;
+        return `<div class="flex items-center gap-2 p-3 rounded-xl border ${ok?'border-green-100 bg-green-50/40':'border-red-100 bg-red-50/40'}">
+          <i class="fas ${i.icon} ${ok?'text-green-500':'text-red-400'}" style="font-size:14px"></i>
+          <div>
+            <div class="font-bold text-navy text-xs">${i.label}</div>
+            <div class="text-xs ${ok?'text-green-600':'text-red-500'} font-bold">${ok?'OK':'DOWN'}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }).catch(() => {
+      document.getElementById('healthGrid').innerHTML='<div class="col-span-full text-center py-4 text-blue-900/30 text-sm">Could not reach health endpoint</div>';
+    });
+})();
+
+// Load settings
+(function() {
+  fetch('/admin/system/settings', { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (!d) return;
+      document.querySelectorAll('.sys-toggle').forEach(btn => {
+        const key = btn.getAttribute('onclick').match(/toggleSetting\('([^']+)'/)?.[1];
+        if (key && d[key] !== undefined) {
+          btn.setAttribute('data-active', d[key] ? 'true' : 'false');
+        }
+      });
+    }).catch(() => {});
+})();
+
+function toggleSetting(key, btn) {
+  const current = btn.getAttribute('data-active') === 'true';
+  const newVal  = !current;
+  const msg     = document.getElementById('toggleMsg');
+
+  fetch('/admin/system/settings', {
+    method:'PUT', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body: JSON.stringify({ [key]: newVal })
+  })
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(() => {
+    btn.setAttribute('data-active', String(newVal));
+    msg.className='mt-3 p-3 rounded-lg text-sm font-semibold bg-green-50 text-green-700';
+    msg.textContent=key.replace(/_/g,' ')+' '+(newVal?'enabled':'disabled')+'.';
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 3000);
+  })
+  .catch(() => {
+    msg.className='mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+    msg.textContent='Failed to update setting.';
+    msg.classList.remove('hidden');
+  });
+}
+
+function dangerAction(action) {
+  if (!confirm('WARNING: This action is irreversible. Are you absolutely sure?')) return;
+  if (!confirm('FINAL CONFIRM: Type YES mentally — this will reset cycle data. Continue?')) return;
+  fetch('/admin/system/' + action, {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}
+  })
+  .then(r => r.json().then(d => ({ ok:r.ok, d })))
+  .then(({ ok, d }) => alert(ok ? (d.message||'Done.') : (d.error||'Failed')))
+  .catch(() => alert('Server error'));
+}
+})();
+</script>

@@ -268,25 +268,119 @@ async function loadDocuments(serviceNo) {
   return out;
 }
 
+// ─────────────────────────────────────────────────────────────
+// LOAD HISTORICAL FORM — fetch from snapshot (post-migration)
+//
+// After migration_drop_flat_columns.sql is run,
+// ef_personalinfoshist is a slim index table only.
+// Full historical form data lives in ef_emolument_forms.snapshot.
+//
+// This function:
+//   1. Looks up the index row in ef_personalinfoshist (for metadata)
+//   2. Fetches the full snapshot from ef_emolument_forms
+//   3. Returns both merged — snapshot is the authoritative data source
+//
+// If no snapshot exists (form confirmed before this system was live),
+// falls back to whatever is in ef_personalinfoshist index row.
+// ─────────────────────────────────────────────────────────────
+
 async function loadHistoricalForm(serviceNo, year) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT p.*,
-            rel1.description AS nok_relation_desc,
-            rel2.description AS nok_relation2_desc,
-            cmd.commandName, br.branchName,
-            lga.lgaName, st.Name AS stateName
-     FROM ef_personalinfoshist p
-     LEFT JOIN ef_relationships rel1 ON rel1.Id  = p.nok_relation
-     LEFT JOIN ef_relationships rel2 ON rel2.Id  = p.nok_relation2
-     LEFT JOIN ef_commands      cmd  ON cmd.code = p.command
-     LEFT JOIN ef_branches      br   ON br.code  = p.branch
-     LEFT JOIN ef_localgovts    lga  ON lga.Id   = p.LocalGovt
-     LEFT JOIN ef_states        st   ON st.StateId = p.StateofOrigin
-     WHERE p.serviceNumber = ? AND p.FormYear = ?`,
+
+  // 1. Get index row from ef_personalinfoshist
+  const [histRows] = await pool.query(
+    `SELECT
+       h.FormYear, h.serviceNumber, h.Surname, h.OtherName,
+       h.Title, h.Rank, h.payrollclass, h.classes,
+       h.ship, h.command, h.branch, h.Status,
+       h.formNumber, h.emolumentform,
+       h.confirmedBy, h.dateconfirmed,
+       h.div_off_name, h.div_off_rank, h.div_off_svcno, h.div_off_date,
+       h.hod_name,     h.hod_rank,     h.hod_svcno,     h.hod_date,
+       h.fo_name,      h.fo_rank,      h.fo_svcno,       h.fo_date,
+       h.NIN, h.upload,
+       cmd.commandName, br.branchName
+     FROM ef_personalinfoshist h
+     LEFT JOIN ef_commands cmd ON cmd.code = h.command
+     LEFT JOIN ef_branches br  ON br.code  = h.branch
+     WHERE h.serviceNumber = ? AND h.FormYear = ?
+     LIMIT 1`,
     [serviceNo, year],
   );
-  return rows[0] || null;
+
+  const histRow = histRows[0] || null;
+
+  // 2. Get full snapshot from ef_emolument_forms
+  const [snapRows] = await pool.query(
+    `SELECT snapshot, submitted_at, updated_at
+     FROM ef_emolument_forms
+     WHERE service_no = ?
+       AND form_year  = ?
+       AND status     = 'CPO_CONFIRMED'
+     LIMIT 1`,
+    [serviceNo, String(year)],
+  );
+
+  const snapRow = snapRows[0] || null;
+
+  // No data at all — form never confirmed for this year
+  if (!histRow && !snapRow) return null;
+
+  // 3. Parse snapshot if available
+  let snapshotData = null;
+  if (snapRow?.snapshot) {
+    try {
+      snapshotData =
+        typeof snapRow.snapshot === "string"
+          ? JSON.parse(snapRow.snapshot)
+          : snapRow.snapshot;
+    } catch {
+      // Snapshot malformed — log and continue with index row only
+      console.warn(`⚠️  Malformed snapshot for ${serviceNo}/${year}`);
+    }
+  }
+
+  // 4. Merge: snapshot is authoritative for form data,
+  //    histRow provides index metadata as fallback
+  return {
+    // Index metadata (always from histRow where available)
+    FormYear: histRow?.FormYear ?? year,
+    serviceNumber: histRow?.serviceNumber ?? serviceNo,
+    Surname: histRow?.Surname,
+    OtherName: histRow?.OtherName,
+    Title: histRow?.Title,
+    Rank: histRow?.Rank,
+    payrollclass: histRow?.payrollclass,
+    classes: histRow?.classes,
+    ship: histRow?.ship,
+    command: histRow?.command,
+    commandName: histRow?.commandName,
+    branch: histRow?.branch,
+    branchName: histRow?.branchName,
+    Status: histRow?.Status,
+    formNumber: histRow?.formNumber,
+    emolumentform: histRow?.emolumentform,
+    confirmedBy: histRow?.confirmedBy,
+    dateconfirmed: histRow?.dateconfirmed,
+    div_off_name: histRow?.div_off_name,
+    div_off_rank: histRow?.div_off_rank,
+    div_off_svcno: histRow?.div_off_svcno,
+    div_off_date: histRow?.div_off_date,
+    hod_name: histRow?.hod_name,
+    hod_rank: histRow?.hod_rank,
+    hod_svcno: histRow?.hod_svcno,
+    hod_date: histRow?.hod_date,
+    fo_name: histRow?.fo_name,
+    fo_rank: histRow?.fo_rank,
+    fo_svcno: histRow?.fo_svcno,
+    fo_date: histRow?.fo_date,
+    NIN: histRow?.NIN,
+
+    // Full snapshot data — null if not available (pre-migration forms)
+    snapshot: snapshotData,
+    hasSnapshot: snapshotData !== null,
+    submittedAt: snapRow?.submitted_at ?? null,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────

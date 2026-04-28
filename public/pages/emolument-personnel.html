@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emolument — Personnel</title>
+  <link rel="stylesheet" href="../styles/output.css" />
+  <link rel="stylesheet" href="../more-assets/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="../more-assets/css/boxicons.min.css" />
+  <link rel="stylesheet" href="../styles/emolument-personnel.css" />
+</head>
+
+<body class="bg-gradient-to-br from-amber-50 to-blue-100">
+  <div id="ship-dashboard-overlay"
+    style="display:none;position:fixed;inset:0;z-index:200;background:#f7f5f1;overflow-y:auto;"></div>
+
+  <!-- Ship picker modal -->
+  <div class="ship-modal-backdrop" id="shipModalBackdrop" onclick="closeShipModal(event)">
+    <div class="ship-modal">
+      <div class="ship-modal-title"><i class="fas fa-ship mr-2"></i>Select Ship / Command</div>
+      <div id="shipOptionsList"></div>
+      <button onclick="document.getElementById('shipModalBackdrop').classList.remove('open')"
+        class="mt-2 w-full text-sm text-center text-gray-400 hover:text-navy py-2 cursor-pointer border-none bg-none">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Main shell -->
+  <div class="emol-shell">
+
+    <!-- Sidebar (desktop) -->
+    <nav class="emol-sidebar shadow-lg backdrop-blur">
+      <div style="display:flex;align-items:center;gap:0.3rem;padding:0 0.75rem;margin-bottom:1rem;min-width:0;">
+        <span
+          style="font-size:0.65rem;font-weight:800;letter-spacing:0.1em;color:rgba(30,64,175,0.4);text-transform:uppercase;flex-shrink:0;">
+          Emolument
+        </span>
+        <div id="shipStrip" style="display:none;align-items:center;min-width:0;overflow:hidden;">
+          <div id="shipBtnContainer" style="min-width:0;overflow:hidden;"></div>
+        </div>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.25rem;">
+        <li>
+          <button class="emol-nav-item active" data-section="home" onclick="showSection('home',this)">
+            <i class="fas fa-home w-4 text-center"></i> Dashboard
+          </button>
+        </li>
+        <li>
+          <button class="emol-nav-item" data-section="my-form" onclick="showSection('my-form',this)">
+            <i class="fas fa-file-alt w-4 text-center"></i> My Form
+          </button>
+        </li>
+        <li>
+          <button class="emol-nav-item" data-section="progress" onclick="showSection('progress',this)">
+            <i class="fas fa-tasks w-4 text-center"></i> Approval Progress
+          </button>
+        </li>
+        <li>
+          <button class="emol-nav-item" data-section="history" onclick="showSection('history',this)">
+            <i class="fas fa-history w-4 text-center"></i> Form History
+          </button>
+        </li>
+        <li>
+          <button class="emol-nav-item" data-section="ticket" onclick="showSection('ticket',this)">
+            <i class="fas fa-headset w-4 text-center"></i> Support Ticket
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Content -->
+    <div class="emol-content">
+      <div id="section-home" class="emol-section active"></div>
+      <div id="section-my-form" class="emol-section"></div>
+      <div id="section-progress" class="emol-section"></div>
+      <div id="section-history" class="emol-section"></div>
+      <div id="section-ticket" class="emol-section"></div>
+    </div>
+  </div>
+
+  <!-- Bottom nav (mobile) -->
+  <nav class="emol-bottom-nav">
+    <button class="emol-bn-item active" id="bn-home" onclick="showSection('home',this)">
+      <i class="fas fa-home"></i>Home
+    </button>
+    <button class="emol-bn-item" id="bn-my-form" onclick="showSection('my-form',this)">
+      <i class="fas fa-file-alt"></i>My Form
+    </button>
+    <button class="emol-bn-item" id="bn-progress" onclick="showSection('progress',this)">
+      <i class="fas fa-tasks"></i>Progress
+    </button>
+    <button class="emol-bn-item" id="bn-history" onclick="showSection('history',this)">
+      <i class="fas fa-history"></i>History
+    </button>
+    <button class="emol-bn-item" id="bn-ticket" onclick="showSection('ticket',this)">
+      <i class="fas fa-headset"></i>Support
+    </button>
+  </nav>
+
+  <script>
+    // ── Section navigation ──────────────────────────────────
+    const loaded = {};
+
+    function showSection(name, triggerEl) {
+      // Hide all sections
+      document.querySelectorAll('.emol-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.emol-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.emol-bn-item').forEach(b => b.classList.remove('active'));
+
+      // Show target
+      document.getElementById('section-' + name).classList.add('active');
+
+      // Mark active in sidebar + bottom nav
+      document.querySelectorAll('[data-section="' + name + '"]').forEach(el => el.classList.add('active'));
+      const bn = document.getElementById('bn-' + name);
+      if (bn) bn.classList.add('active');
+
+      // Load section if not yet loaded
+      if (!loaded[name]) {
+        loaded[name] = true;
+        loadSection(name);
+      }
+    }
+
+    function loadSection(name) {
+      const el = document.getElementById('section-' + name);
+      const fileMap = {
+        'home': '../emolument-sections/personnel/home.html',
+        'my-form': '../emolument-sections/personnel/my-form.html',
+        'progress': '../emolument-sections/personnel/progress.html',
+        'history': '../emolument-sections/personnel/history.html',
+        'ticket': '../emolument-sections/personnel/ticket.html',
+      };
+      const url = fileMap[name];
+      if (!url) return;
+
+      el.innerHTML = '<div class="flex items-center justify-center py-12 text-navy/40"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</div>';
+      fetch(url)
+        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+        .then(html => {
+          el.innerHTML = html;
+          // Execute any scripts in loaded fragment
+          el.querySelectorAll('script').forEach(old => {
+            const s = document.createElement('script');
+            s.textContent = old.textContent;
+            old.replaceWith(s);
+          });
+        })
+        .catch(() => {
+          el.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-tools fa-2x mb-3 block"></i><p class="font-semibold">Section coming soon</p></div>';
+        });
+    }
+
+    // ── Ship button logic ───────────────────────────────────
+    function initShipButtons() {
+      let caps = {};
+      let roleDetail = [];
+      try {
+        caps = JSON.parse(localStorage.getItem('capabilities') || '{}');
+        roleDetail = JSON.parse(localStorage.getItem('emol_role_detail') || '[]');
+      } catch (e) { }
+
+      const shipRoles = roleDetail.filter(r =>
+        ['DO', 'FO'].includes(r.role) && r.scope_type === 'SHIP' && r.scope_value
+      );
+      const cpoRoles = roleDetail.filter(r =>
+        r.role === 'CPO' && r.scope_type === 'COMMAND' && r.scope_value
+      );
+
+      let allAssignments = [
+        ...shipRoles.map(r => ({ label: r.scope_value, role: r.role, type: 'SHIP' })),
+        ...cpoRoles.map(r => ({ label: r.scope_value, role: r.role, type: 'COMMAND' })),
+      ];
+
+      // ── Fallback: build from caps directly if roleDetail yielded nothing ──
+      if (allAssignments.length === 0) {
+        const roles = caps.emol_roles || [];
+        const shipRole = roles.find(r => ['DO', 'FO'].includes(r)) || 'FO';
+        const cpoRole = roles.includes('CPO');
+
+        (caps.assigned_ships || []).forEach(ship => {
+          allAssignments.push({ label: ship, role: shipRole, type: 'SHIP' });
+        });
+        (caps.assigned_commands || []).forEach(cmd => {
+          allAssignments.push({ label: cmd, role: 'CPO', type: 'COMMAND' });
+        });
+      }
+
+      if (allAssignments.length === 0) return;
+
+      const strip = document.getElementById('shipStrip');
+      const container = document.getElementById('shipBtnContainer');
+      strip.style.display = 'flex';
+
+      if (allAssignments.length === 1) {
+        const a = allAssignments[0];
+        container.innerHTML = `
+          <button class="ship-btn" onclick="openShipDashboard('${a.label}','${a.role}','${a.type}')">
+            <span class="ship-dot"></span>
+            <i class="fas fa-ship" style="font-size:11px"></i>
+            ${a.label}
+          </button>`;
+      } else {
+        container.innerHTML = `
+          <button class="ship-btn" onclick="openShipPicker()">
+            <span class="ship-dot"></span>
+            <i class="fas fa-ship" style="font-size:11px"></i>
+            Ships (${allAssignments.length})
+          </button>`;
+        // Populate modal options
+        const list = document.getElementById('shipOptionsList');
+        list.innerHTML = allAssignments.map(a => `
+          <div class="ship-option" onclick="openShipDashboard('${a.label}','${a.role}','${a.type}'); document.getElementById('shipModalBackdrop').classList.remove('open')">
+            <div>
+              <div class="ship-option-name"><i class="fas fa-${a.type === 'COMMAND' ? 'building' : 'ship'} mr-1"></i>${a.label}</div>
+              <div style="font-size:0.7rem;color:rgba(30,64,175,0.5);margin-top:2px;">${a.type}</div>
+            </div>
+            <span class="ship-role-badge badge-${a.role}">${a.role}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openShipPicker() {
+      document.getElementById('shipModalBackdrop').classList.add('open');
+    }
+
+    function closeShipModal(e) {
+      if (e.target === document.getElementById('shipModalBackdrop')) {
+        document.getElementById('shipModalBackdrop').classList.remove('open');
+      }
+    }
+
+    function openShipDashboard(shipName, role, scopeType) {
+      sessionStorage.setItem('active_ship', shipName);
+      sessionStorage.setItem('active_ship_role', role);
+      sessionStorage.setItem('active_ship_scope', scopeType);
+
+      if (window.loadShipDashboard) {
+        window.loadShipDashboard(shipName, role, scopeType);
+      } else {
+        var target = window.parent !== window ? window.parent : window;
+        target.dispatchEvent(new CustomEvent('openShipDashboard', {
+          detail: { shipName, role, scopeType }
+        }));
+      }
+    }
+
+    // ── Init ────────────────────────────────────────────────
+    showSection('home', null);
+    initShipButtons();
+  </script>
+</body>
+
+</html>

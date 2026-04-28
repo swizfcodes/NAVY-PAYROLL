@@ -5,6 +5,21 @@
 // ── Clear payroll class on dashboard load ──────────────────
 localStorage.removeItem("current_class");
 
+// ── Read capabilities from localStorage ───────────────────
+// Populated during pre-login by unified-login.js
+function getCaps() {
+  try {
+    return JSON.parse(localStorage.getItem("capabilities") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+var _caps = getCaps();
+var _canPayroll = !!_caps.can_payroll;
+var _emolRoles = _caps.emol_roles || [];
+var _isEmolAdmin = _emolRoles.includes("EMOL_ADMIN");
+
 // ── Encrypt/decrypt ────────────────────────────────────────
 function encryptVal(val) {
   return btoa(
@@ -183,7 +198,7 @@ function applyGreeting() {
       },
       {
         icon: "⭐",
-        tag: "Slient Night",
+        tag: "Silent Night",
         sub: "Don't forget to get some rest.",
       },
       { icon: "🌌", tag: "Good Night", sub: "Time for bed, a new day awaits." },
@@ -203,7 +218,6 @@ function applyGreeting() {
   else pool = greetings.night;
 
   var pick = pool[Math.floor(Math.random() * pool.length)];
-
   var iconEl = document.getElementById("greeting-icon");
   var textEl = document.getElementById("greeting-text");
   var subEl = document.getElementById("greeting-sub");
@@ -216,8 +230,9 @@ applyGreeting();
 setInterval(applyGreeting, 60 * 1000);
 
 // ══════════════════════════════════════════════════════════
-// HEADER: logo ↔ username swap
+// HEADER: logo ↔ username swap + emolument bg mode
 // ══════════════════════════════════════════════════════════
+var headerEl = document.querySelector("header");
 var headerLogo = document.getElementById("header-logo");
 var headerUsername = document.getElementById("header-username");
 
@@ -231,6 +246,34 @@ function updateHeaderSlot(pageId) {
     headerUsername.classList.add("visible-slot");
   }
 }
+
+function updateHeaderEmolMode(pageId) {
+  if (!headerEl) return;
+  if (pageId === "emolument") {
+    headerEl.classList.add("emol-mode");
+  } else {
+    headerEl.classList.remove("emol-mode");
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CONDITIONAL NAV VISIBILITY
+// Hide payroll nav link if user is not a payroll admin.
+// This runs immediately before any click handler is set up.
+// ══════════════════════════════════════════════════════════
+(function applyNavVisibility() {
+  // Payroll link — only visible to payroll admins
+  var payrollLink = document.getElementById("nav-payroll");
+  if (payrollLink && !_canPayroll) {
+    payrollLink.style.display = "none";
+  }
+
+  // Also hide any quick-action payroll buttons on the home page
+  var payrollBtn = document.querySelector("button[data-page='payroll']");
+  if (payrollBtn && !_canPayroll) {
+    payrollBtn.style.display = "none";
+  }
+})();
 
 // ══════════════════════════════════════════════════════════
 // PAGE SWITCHER
@@ -249,9 +292,103 @@ function showPage(id) {
   if (nav) nav.classList.add("active");
 
   updateHeaderSlot(id);
+  updateHeaderEmolMode(id);
 
   sessionStorage.setItem("activePage", id);
 }
+
+// ══════════════════════════════════════════════════════════
+// EMOLUMENT — lazy load
+// ══════════════════════════════════════════════════════════
+var emolumentLoaded = false;
+
+function loadEmolumentPage() {
+  if (emolumentLoaded) return;
+  emolumentLoaded = true;
+
+  var container = document.getElementById("page-emolument");
+  var loading = document.getElementById("emolument-loading");
+
+  // ── Determine which page to load ─────────────────────────
+  // EMOL_ADMIN → emolument-admin.html (full system management)
+  // Everyone else (PERSONNEL, DO, FO, CPO) → emolument-form.html
+  // emolument-form.html + emolument-dashboard.js handle all
+  // non-admin roles internally via the capabilities check
+  var src = _isEmolAdmin
+    ? "pages/emolument-admin.html"
+    : "pages/emolument-personnel.html";
+
+  var iframe = document.createElement("iframe");
+  iframe.id = "emolument-frame";
+  iframe.src = src;
+
+  // Hide spinner and reveal iframe once it has loaded
+  iframe.addEventListener("load", function () {
+    if (loading) loading.style.display = "none";
+    iframe.classList.add("ready");
+
+    // Expose loadShipDashboard to the iframe's inner page
+    try {
+      iframe.contentWindow.loadShipDashboard = function (
+        shipName,
+        role,
+        scopeType,
+      ) {
+        sessionStorage.setItem("active_ship", shipName);
+        sessionStorage.setItem("active_ship_role", role);
+        sessionStorage.setItem("active_ship_scope", scopeType || "SHIP");
+        loadShipDashboardOverlay(shipName, role, scopeType);
+      };
+    } catch (e) {}
+  });
+
+  container.appendChild(iframe);
+}
+
+// ── Ship dashboard overlay ──────────────────────────────────
+var shipDashboardLoaded = false;
+
+function loadShipDashboardOverlay(shipName, role, scopeType) {
+  var overlay = document.getElementById("ship-dashboard-overlay");
+  if (!overlay) return;
+
+  overlay.style.display = "block";
+
+  if (!shipDashboardLoaded) {
+    // First time — fetch the ship dashboard shell
+    fetch("pages/ship-dashboard.html")
+      .then(function (r) {
+        return r.text();
+      })
+      .then(function (html) {
+        injectWithScripts(overlay, html);
+        shipDashboardLoaded = true;
+        // ship-dashboard.html calls initShipDashboard() on load via its own script
+      })
+      .catch(function () {
+        overlay.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-size:0.875rem;">Failed to load ship dashboard.</div>';
+      });
+  } else {
+    // Already loaded — just re-init with new ship/role
+    if (typeof window._reinitShipDashboard === "function") {
+      window._reinitShipDashboard(shipName, role, scopeType);
+    }
+  }
+}
+
+// Listen for ship dashboard close event
+window.addEventListener("closeShipDashboard", function () {
+  var overlay = document.getElementById("ship-dashboard-overlay");
+  if (overlay) overlay.style.display = "none";
+  shipDashboardLoaded = false; // allow fresh re-init on next ship open
+});
+
+// Listen for openShipDashboard event (fired from within emolument pages)
+window.addEventListener("openShipDashboard", function (e) {
+  var d = e.detail || {};
+  if (d.shipName) loadShipDashboardOverlay(d.shipName, d.role, d.scopeType);
+});
 
 // ══════════════════════════════════════════════════════════
 // NAV LINKS
@@ -268,6 +405,8 @@ document.querySelectorAll("nav a[data-page]").forEach(function (link) {
 
     if (page === "payroll") {
       e.preventDefault();
+      // Guard: only payroll admins can access payroll
+      if (!_canPayroll) return;
       var currentClass = localStorage.getItem("current_class");
       if (currentClass) {
         window.location.href = "/dashboard.html";
@@ -282,6 +421,8 @@ document.querySelectorAll("nav a[data-page]").forEach(function (link) {
 
     if (page === "email") loadEmailPage();
     if (page === "payslip") loadPayslipPage();
+    if (page === "emolument") loadEmolumentPage();
+
     showPage(page);
   });
 });
@@ -292,6 +433,7 @@ document.querySelectorAll("button[data-page]").forEach(function (btn) {
     var page = this.getAttribute("data-page");
     if (page === "email") loadEmailPage();
     if (page === "payslip") loadPayslipPage();
+    if (page === "emolument") loadEmolumentPage();
     showPage(page);
   });
 });
@@ -304,6 +446,7 @@ document.querySelectorAll("button[data-page]").forEach(function (btn) {
   if (saved && saved !== "home") {
     if (saved === "email") loadEmailPage();
     if (saved === "payslip") loadPayslipPage();
+    if (saved === "emolument") loadEmolumentPage();
     showPage(saved);
   }
 })();
@@ -606,15 +749,11 @@ function confirmLogout() {
               color:rgba(200,220,255,0.7);font-family:'DM Sans',sans-serif;
               font-size:14px;font-weight:600;
               border:1px solid rgba(200,220,255,0.2);border-radius:8px;
-              cursor:pointer;transition:all 0.2s;">
-            Cancel
-          </button>
+              cursor:pointer;transition:all 0.2s;">Cancel</button>
           <button id="logoutConfirmBtn"
             style="flex:1;padding:13px;background:#e74c3c;color:#fff;
               font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
-              border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-            Sign Out
-          </button>
+              border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;">Sign Out</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -680,39 +819,40 @@ async function logout() {
   } catch (err) {
     console.error("Logout error:", err);
   } finally {
-  sessionStorage.clear();
-  localStorage.clear();
-  window.location.href = "personnel-user-login.html";
+    sessionStorage.clear();
+    localStorage.clear();
+    window.location.href = "personnel-user-login.html";
   }
 }
 
 // ══════════════════════════════════════════════════════════
 // PAYROLL MODAL
+// Only loaded for payroll admins (_canPayroll === true).
+// Personnel who are not in the payroll users table never
+// see this modal — they have no use for it.
 // ══════════════════════════════════════════════════════════
-fetch("pages/payroll-modal.html")
-  .then((r) => r.text())
-  .then(function (html) {
-    var container = document.createElement("div");
-    document.body.appendChild(container);
-    injectWithScripts(container, html);
+if (_canPayroll) {
+  fetch("pages/payroll-modal.html")
+    .then((r) => r.text())
+    .then(function (html) {
+      var container = document.createElement("div");
+      document.body.appendChild(container);
+      injectWithScripts(container, html);
 
-    if (
-      sessionStorage.getItem("_pid") &&
-      sessionStorage.getItem("_from_logout")
-    ) {
-      sessionStorage.removeItem("_from_logout");
-      window.openPayrollModal();
-    }
-  })
-  .catch((err) => console.error("Failed to load payroll modal:", err));
+      // If returning from payroll logout → re-open class picker
+      if (
+        sessionStorage.getItem("_pid") &&
+        sessionStorage.getItem("_from_logout")
+      ) {
+        sessionStorage.removeItem("_from_logout");
+        window.openPayrollModal();
+      }
+    })
+    .catch((err) => console.error("Failed to load payroll modal:", err));
+}
 
 // ══════════════════════════════════════════════════════════
-// ATTACHMENT PREVIEW LIGHTBOX — global functions
-//
-// Defined here (not inside any page IIFE) so the overlay
-// buttons in user-dashboard.html can call them via onclick
-// regardless of which lazy page has loaded.
-// email.html and user-payslip.html both rely on these.
+// ATTACHMENT PREVIEW LIGHTBOX — global functions (unchanged)
 // ══════════════════════════════════════════════════════════
 (function () {
   var _isFullscreen = false;
@@ -724,13 +864,10 @@ fetch("pages/payroll-modal.html")
   var _fsIgnoreNextClick = false;
   var _previewBlobUrl = null;
 
-  // Let other scripts (payslip, email) register the active blob URL
-  // so closeAttPreview can revoke it correctly.
   window._attSetBlobUrl = function (url) {
     _previewBlobUrl = url;
   };
 
-  // ── Fullscreen bar helpers ────────────────────────────────
   function showFsBar() {
     var bar = document.querySelector(".att-preview-bar");
     var hint = document.getElementById("attEscHint");
@@ -805,7 +942,6 @@ fetch("pages/payroll-modal.html")
     );
   }
 
-  // ── toggleAttFullscreen — global ──────────────────────────
   window.toggleAttFullscreen = function () {
     var overlay = document.getElementById("attPreviewOverlay");
     var box = overlay.querySelector(".att-preview-box");
@@ -836,7 +972,6 @@ fetch("pages/payroll-modal.html")
     }
   };
 
-  // ── closeAttPreview — global ──────────────────────────────
   window.closeAttPreview = function () {
     var overlay = document.getElementById("attPreviewOverlay");
     var box = overlay.querySelector(".att-preview-box");
@@ -863,7 +998,6 @@ fetch("pages/payroll-modal.html")
     }, 250);
   };
 
-  // ── showAttPreview — used by email.html for attachments ───
   window.showAttPreview = function (blobUrl, filename, mime) {
     _previewBlobUrl = blobUrl;
     _isFullscreen = false;
@@ -888,7 +1022,6 @@ fetch("pages/payroll-modal.html")
       img.alt = filename;
       content.appendChild(img);
     } else {
-      // PDF or HTML blob (payslip preview uses text/html)
       var wrap = document.createElement("div");
       wrap.style.cssText =
         "position:relative;width:100%;height:100%;flex:1;min-height:0;display:flex;flex-direction:column;";
@@ -935,7 +1068,6 @@ fetch("pages/payroll-modal.html")
     };
   };
 
-  // ── ESC key ───────────────────────────────────────────────
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     var overlay = document.getElementById("attPreviewOverlay");

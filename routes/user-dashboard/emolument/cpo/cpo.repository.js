@@ -6,7 +6,13 @@
  * CPO actions (from old SPs — UpdatePayroll):
  *   - List FO_APPROVED forms scoped to CPO's command
  *   - View full form detail
- *   - Confirm individual form (three-table write — see below)
+ *   - Confirm individual form:
+ *       ef_personalinfos.Status     → 'Verified'   (legacy)
+ *       ef_personalinfos.emolumentform → 'Yes'
+ *       ef_personalinfos.exittype   → 'Yes'
+ *       ef_personalinfos.hod_svcno  → confirming CPO's service number
+ *       ef_emolument_forms.status   → 'CPO_CONFIRMED' (clean)
+ *       ef_emolument_forms.snapshot → full JSON snapshot of form at confirm time
  *   - Reject (any FO_APPROVED form in CPO's command)
  *
  * TRANSACTION SAFETY — CPO confirm is the most complex write in the system:
@@ -28,6 +34,9 @@
  *
  * CPO scope: COMMAND — they see all ships under their command.
  * CPO action: individual only — no bulk in the original SPs.
+ *
+ * The snapshot written to ef_emolument_forms.snapshot fixes the
+ * old UpdatePayroll bug (hardcoded WHERE Id=332).
  */
 
 "use strict";
@@ -88,7 +97,8 @@ async function getFoApprovedForms(command) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GET FORM DETAIL — gates on ef_emolument_forms.status = 'FO_APPROVED'
+// GET FORM DETAIL — full form for CPO view
+// Gates on ef_emolument_forms.status = 'FO_APPROVED'
 // ─────────────────────────────────────────────────────────────
 
 async function getFormDetail(formId) {
@@ -253,18 +263,18 @@ async function confirmFormWithHistory(
     // 1. Update ef_personalinfos — gate on Status='CPO' and command match
     const [r1] = await conn.query(
       `UPDATE ef_personalinfos
-       SET Status        = ?,
-           emolumentform = 'Yes',
-           exittype      = 'Yes',
-           hod_svcno     = ?,
-           hod_date      = NOW(),
-           dateconfirmed = NOW(),
-           confirmedBy   = ?,
-           dateModify    = NOW()
-       WHERE serviceNumber = ?
-         AND command       = ?
-         AND Status        = 'CPO'
-         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+      SET Status        = ?,
+          emolumentform = 'Yes',
+          exittype      = 'Yes',
+          hod_svcno     = ?,
+          hod_date      = NOW(),
+          dateconfirmed = NOW(),
+          confirmedBy   = ?,
+          dateModify    = NOW()
+      WHERE serviceNumber = ?
+        AND command       = ?
+        AND Status        = 'CPO'
+        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, cpoSvcNo, cpoSvcNo, serviceNo, command],
     );
 
@@ -278,11 +288,11 @@ async function confirmFormWithHistory(
     // 2. Update ef_emolument_forms — write clean status + full snapshot
     await conn.query(
       `UPDATE ef_emolument_forms
-       SET status     = 'CPO_CONFIRMED',
-           snapshot   = ?,
-           updated_at = NOW()
-       WHERE id     = ?
-         AND status  = 'FO_APPROVED'`,
+      SET status     = 'CPO_CONFIRMED',
+          snapshot   = ?,
+          updated_at = NOW()
+      WHERE id     = ?
+        AND status  = 'FO_APPROVED'`,
       [JSON.stringify(snapshot), formId],
     );
 
@@ -290,47 +300,29 @@ async function confirmFormWithHistory(
     //    index on (serviceNumber, FormYear). A retry or duplicate call
     //    is silently skipped; it does NOT cause a rollback.
     await conn.query(
-      `INSERT IGNORE INTO ef_personalinfoshist (
-         FormYear, serviceNumber, Surname, OtherName, Title, Rank,
-         Sex, MaritalStatus, Birthdate, religion,
-         gsm_number, gsm_number2, email, home_address,
-         Bankcode, bankbranch, BankACNumber, pfacode, payrollclass,
-         specialisation, command, branch, ship,
-         exittype, DateEmpl, DateLeft, seniorityDate, yearOfPromotion,
-         expirationOfEngagementDate, StateofOrigin, LocalGovt, TaxCode,
-         entry_mode, Status, taxed, gradelevel, gradetype,
-         entitlement, town, accomm_type, GBC, GBC_Number,
-         NSITFcode, NHFcode,
-         div_off_name, div_off_rank, div_off_svcno, div_off_date,
-         hod_name, hod_rank, hod_svcno, hod_date,
-         fo_name, fo_rank, fo_svcno, fo_date,
-         qualification, division, emolumentform,
-         dateconfirmed, confirmedBy, formNumber,
-         NIN, upload, classes,
-         AcommodationStatus, AddressofAcommodation,
-         nok_phone12, nok_phone22, advanceDate, runoutDate
-       )
-       SELECT
-         ?, serviceNumber, Surname, OtherName, Title, Rank,
-         Sex, MaritalStatus, Birthdate, religion,
-         gsm_number, gsm_number2, email, home_address,
-         Bankcode, bankbranch, BankACNumber, pfacode, payrollclass,
-         specialisation, command, branch, ship,
-         exittype, DateEmpl, DateLeft, seniorityDate, yearOfPromotion,
-         expirationOfEngagementDate, StateofOrigin, LocalGovt, TaxCode,
-         entry_mode, Status, taxed, gradelevel, gradetype,
-         entitlement, town, accomm_type, GBC, GBC_Number,
-         NSITFcode, NHFcode,
-         div_off_name, div_off_rank, div_off_svcno, div_off_date,
-         hod_name, hod_rank, hod_svcno, hod_date,
-         fo_name, fo_rank, fo_svcno, fo_date,
-         qualification, division, emolumentform,
-         dateconfirmed, confirmedBy, formNumber,
-         NIN, upload, classes,
-         AcommodationStatus, AddressofAcommodation,
-         nok_phone12, nok_phone22, advanceDate, runoutDate
-       FROM ef_personalinfos
-       WHERE serviceNumber = ?`,
+      `INSERT INTO ef_personalinfoshist (
+        FormYear,
+        serviceNumber, Surname, OtherName, Title, Rank,
+        payrollclass, classes, ship, command, branch,
+        Status, formNumber, emolumentform,
+        confirmedBy, dateconfirmed,
+        div_off_name, div_off_rank, div_off_svcno, div_off_date,
+        hod_name,     hod_rank,     hod_svcno,     hod_date,
+        fo_name,      fo_rank,      fo_svcno,       fo_date,
+        NIN, upload
+      )
+      SELECT
+        ?,
+        serviceNumber, Surname, OtherName, Title, Rank,
+        payrollclass, classes, ship, command, branch,
+        Status, formNumber, emolumentform,
+        confirmedBy, dateconfirmed,
+        div_off_name, div_off_rank, div_off_svcno, div_off_date,
+        hod_name,     hod_rank,     hod_svcno,     hod_date,
+        fo_name,      fo_rank,      fo_svcno,       fo_date,
+        NIN, upload
+      FROM ef_personalinfos
+      WHERE serviceNumber = ?`,
       [formYear, serviceNo],
     );
 
@@ -348,11 +340,11 @@ async function rejectForm(serviceNo, formId, command) {
   return withTransaction(async (conn) => {
     const [r1] = await conn.query(
       `UPDATE ef_personalinfos
-       SET Status     = NULL,
-           dateModify = NOW()
-       WHERE serviceNumber = ?
-         AND command       = ?
-         AND Status        = 'CPO'`,
+     SET Status     = NULL,
+         dateModify = NOW()
+     WHERE serviceNumber = ?
+       AND command       = ?
+       AND Status        = 'CPO'`,
       [serviceNo, command],
     );
 
@@ -364,10 +356,10 @@ async function rejectForm(serviceNo, formId, command) {
 
     await conn.query(
       `UPDATE ef_emolument_forms
-       SET status     = 'REJECTED',
-           updated_at = NOW()
-       WHERE id     = ?
-         AND status  = 'FO_APPROVED'`,
+     SET status     = 'REJECTED',
+         updated_at = NOW()
+     WHERE id     = ?
+       AND status  = 'FO_APPROVED'`,
       [formId],
     );
 

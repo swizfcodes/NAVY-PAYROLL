@@ -97,7 +97,7 @@ function handleMulterError(err, req, res, next) {
 // PERSONNEL ROUTES — own documents only
 // ─────────────────────────────────────────────────────────────
 
-// GET /api/emolument/documents/my
+// GET /documents/my
 router.get("/my", requirePersonnel, async (req, res) => {
   try {
     const result = await documentsService.getMyDocuments(req.user_id);
@@ -110,7 +110,7 @@ router.get("/my", requirePersonnel, async (req, res) => {
   }
 });
 
-// POST /api/emolument/documents/upload/:doc_type
+// POST /documents/upload/:doc_type
 // Field: 'document' (multipart file)
 router.post(
   "/upload/:doc_type",
@@ -147,7 +147,7 @@ router.post(
   },
 );
 
-// DELETE /api/emolument/documents/:doc_type
+// DELETE /documents/:doc_type
 router.delete("/:doc_type", requirePersonnel, async (req, res) => {
   const { doc_type } = req.params;
   try {
@@ -167,7 +167,7 @@ router.delete("/:doc_type", requirePersonnel, async (req, res) => {
   }
 });
 
-// GET /api/emolument/documents/view/:doc_type
+// GET /documents/view/:doc_type
 // Returns a signed Cloudinary URL valid for 1 hour
 router.get("/view/:doc_type", requirePersonnel, async (req, res) => {
   const { doc_type } = req.params;
@@ -191,7 +191,7 @@ router.get("/view/:doc_type", requirePersonnel, async (req, res) => {
 // OFFICER ROUTES — ship-scoped
 // ─────────────────────────────────────────────────────────────
 
-// GET /api/emolument/documents/ship/:ship
+// GET /documents/ship/:ship
 // All docs for a ship. DO/FO for their ship, EMOL_ADMIN all.
 router.get("/ship/:ship", requireShipAccess, async (req, res) => {
   const { ship } = req.params;
@@ -206,7 +206,7 @@ router.get("/ship/:ship", requireShipAccess, async (req, res) => {
   }
 });
 
-// GET /api/emolument/documents/ship/:ship/missing/:doc_type
+// GET /documents/ship/:ship/missing/:doc_type
 // Find personnel missing a specific document type on a ship.
 router.get(
   "/ship/:ship/missing/:doc_type",
@@ -230,7 +230,7 @@ router.get(
 // All require EMOL_ADMIN role.
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/documents/admin/:svcno/upload/:doc_type
+// POST /documents/admin/:svcno/upload/:doc_type
 router.post(
   "/admin/:svcno/upload/:doc_type",
   requireEmolRole("EMOL_ADMIN"),
@@ -266,7 +266,7 @@ router.post(
   },
 );
 
-// DELETE /api/emolument/documents/admin/:svcno/:doc_type
+// DELETE /documents/admin/:svcno/:doc_type
 router.delete(
   "/admin/:svcno/:doc_type",
   requireEmolRole("EMOL_ADMIN"),
@@ -290,7 +290,7 @@ router.delete(
   },
 );
 
-// GET /api/emolument/documents/admin/:svcno/view/:doc_type
+// GET /documents/admin/:svcno/view/:doc_type
 router.get(
   "/admin/:svcno/view/:doc_type",
   requireEmolRole("EMOL_ADMIN"),

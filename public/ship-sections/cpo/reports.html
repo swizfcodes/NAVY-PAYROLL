@@ -1,0 +1,52 @@
+<div>
+  <div class="mb-6">
+    <h2 class="text-xl font-black text-navy">Staff Report</h2>
+    <p class="text-sm text-blue-900/50 mt-1">Full list of all staff and their form status for this command</p>
+  </div>
+  <div class="flex gap-2 mb-4">
+    <select id="cpoReportStatus"
+      class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+      <option value="">All Statuses</option>
+      <option value="DRAFT">Draft</option>
+      <option value="SUBMITTED">Submitted</option>
+      <option value="DO_REVIEWED">DO Reviewed</option>
+      <option value="FO_APPROVED">FO Approved</option>
+      <option value="CPO_CONFIRMED">CPO Confirmed</option>
+      <option value="REJECTED">Rejected</option>
+    </select>
+    <button onclick="loadCpoReport()"
+      class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800"><i
+        class="fas fa-filter"></i></button>
+    <button onclick="exportCpoReport()"
+      class="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-amber-600"><i
+        class="fas fa-download"></i></button>
+  </div>
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+    <div id="cpo-report-content">
+      <div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+    </div>
+  </div>
+</div>
+<script>
+  const token = localStorage.getItem('token'); const ship = sessionStorage.getItem('active_ship');
+  const STATUS_CLS = { CPO_CONFIRMED: 'bg-green-50 text-green-600', REJECTED: 'bg-red-50 text-red-500', FO_APPROVED: 'bg-blue-50 text-blue-600', DO_REVIEWED: 'bg-amber-50 text-amber-600', SUBMITTED: 'bg-blue-50 text-blue-400', DRAFT: 'bg-gray-100 text-gray-500' };
+
+  function loadCpoReport() {
+    const status = document.getElementById('cpoReportStatus').value;
+    const el = document.getElementById('cpo-report-content');
+    el.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+    const q = status ? '&status=' + status : '';
+    fetch('/ship/cpo/staff-list?ship=' + encodeURIComponent(ship) + q, { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.ok ? r.json() : [])
+      .then(rows => {
+        if (!rows.length) { el.innerHTML = '<div class="text-center py-8 text-blue-900/30 text-sm">No staff found</div>'; return; }
+        el.innerHTML = '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-amber-100"><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Updated</th></tr></thead><tbody>' +
+          rows.map(r => { const cls = STATUS_CLS[r.status] || 'bg-gray-100 text-gray-500'; const dt = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'; return `<tr class="border-b border-amber-50 hover:bg-amber-50/30"><td class="py-2 font-semibold text-navy">${r.user_id}</td><td class="py-2 text-blue-900/70">${r.full_name}</td><td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${cls}">${r.status?.replace(/_/g, ' ')}</span></td><td class="py-2 text-blue-900/40 text-xs">${dt}</td></tr>`; }).join('') +
+          '</tbody></table></div>';
+      }).catch(() => { el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>'; });
+  }
+
+  function exportCpoReport() { window.open('/ship/cpo/staff-list/export?ship=' + encodeURIComponent(ship) + '&token=' + token, '_blank'); }
+
+  loadCpoReport();
+</script>

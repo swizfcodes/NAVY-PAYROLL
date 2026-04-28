@@ -1,0 +1,149 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Control the emolument form submission cycle</h3>
+  </div>
+
+  <!-- Current cycle status -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-1">Current Cycle Status</h3>
+        <div id="cycleStatusText" class="text-blue-900/40 text-sm">Loading...</div>
+      </div>
+      <div id="cycleStatusBadge" class="text-sm font-black px-4 py-1.5 rounded-full">Loading...</div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Period</div>
+        <div class="font-bold text-navy mt-0.5" id="cyclePeriod">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Opened By</div>
+        <div class="font-bold text-navy mt-0.5" id="cycleOpenedBy">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Open Since</div>
+        <div class="font-bold text-navy mt-0.5" id="cycleOpenDate">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Submissions</div>
+        <div class="font-bold text-navy mt-0.5" id="cycleSubmissions">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle action -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Toggle Form Cycle</h3>
+    <div class="space-y-3">
+      <div id="openFormWrapper">
+        <label class="block text-xs font-bold text-navy/60 uppercase lg tracking-wide mb-1">Period Label</label>
+        <input id="newPeriodLabel" type="date"
+          class="w-full lg:w-1/4 md:w-1/2 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy mb-3" />
+      </div>
+      <div class="flex gap-3">
+        <button onclick="openCycle()" id="btnOpen"
+          class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
+          <i class="fas fa-lock-open mr-2"></i>Open Forms
+        </button>
+        <button onclick="closeCycle()" id="btnClose"
+          class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
+          <i class="fas fa-lock mr-2"></i>Close Forms
+        </button>
+      </div>
+    </div>
+    <div id="cycleMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+  </div>
+
+  <!-- Cycle history -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Cycle History</h3>
+    <div id="cycleHistory">
+      <div class="text-center py-6 text-blue-900/30 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+
+  function loadCycleStatus() {
+    fetch('/admin/cycle/status', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const isOpen = data.is_open;
+        const badge = document.getElementById('cycleStatusBadge');
+        const text = document.getElementById('cycleStatusText');
+        badge.textContent = isOpen ? 'OPEN' : 'CLOSED';
+        badge.className = 'text-sm font-black px-4 py-1.5 rounded-full ' + (isOpen ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500');
+        text.textContent = isOpen ? 'Personnel can currently submit forms.' : 'Forms are closed. Personnel cannot submit.';
+        document.getElementById('cyclePeriod').textContent = data.period_label || '—';
+        document.getElementById('cycleOpenedBy').textContent = data.opened_by || '—';
+        document.getElementById('cycleOpenDate').textContent = data.opened_at ? new Date(data.opened_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        document.getElementById('cycleSubmissions').textContent = data.submission_count ?? '—';
+      })
+      .catch(() => { });
+  }
+
+  function loadCycleHistory() {
+    fetch('/admin/cycle/history', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.ok ? r.json() : [])
+      .then(rows => {
+        const el = document.getElementById('cycleHistory');
+        if (!rows.length) { el.innerHTML = '<div class="text-center py-4 text-blue-900/30 text-sm">No history found</div>'; return; }
+        el.innerHTML = `<div class="space-y-2">` + rows.map(r => `
+        <div class="flex items-center justify-between p-3 rounded-lg border border-amber-50 bg-white/40">
+          <div>
+            <div class="font-bold text-navy text-sm">${r.period_label || '—'}</div>
+            <div class="text-xs text-blue-900/40 mt-0.5">${r.opened_at ? new Date(r.opened_at).toLocaleDateString('en-GB') : '—'} → ${r.closed_at ? new Date(r.closed_at).toLocaleDateString('en-GB') : 'ongoing'}</div>
+          </div>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full ${r.is_open ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">${r.is_open ? 'OPEN' : 'CLOSED'}</span>
+        </div>`).join('') + `</div>`;
+      })
+      .catch(() => { });
+  }
+
+  function showMsg(text, ok) {
+    const el = document.getElementById('cycleMsg');
+    el.className = 'mt-3 p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
+    el.textContent = text;
+    el.classList.remove('hidden');
+  }
+
+  function openCycle() {
+    const label = document.getElementById('newPeriodLabel').value.trim();
+    if (!label) { showMsg('Please enter a period label (e.g. Q1 2025)', false); return; }
+    fetch('/admin/cycle/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ period_label: label })
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => { showMsg(ok ? 'Form cycle opened successfully.' : (d.error || 'Failed'), ok); loadCycleStatus(); loadCycleHistory(); })
+      .catch(() => showMsg('Server error', false));
+  }
+
+  function closeCycle() {
+    if (!confirm('Close the current form cycle? Personnel will not be able to submit.')) return;
+    fetch('/admin/cycle/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => { showMsg(ok ? 'Form cycle closed.' : (d.error || 'Failed'), ok); loadCycleStatus(); loadCycleHistory(); })
+      .catch(() => showMsg('Server error', false));
+  }
+
+  loadCycleStatus();
+  loadCycleHistory();
+</script>

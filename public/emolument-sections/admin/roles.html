@@ -1,0 +1,251 @@
+<!-- FILE: emolument-sections/admin/roles.html
+     APIs: GET /admin/roles  POST /admin/roles/assign  DELETE /admin/roles/:id/revoke -->
+
+<style>
+  .badge-DO {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+  }
+
+  .badge-FO {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+  }
+
+  .badge-CPO {
+    background: rgba(16, 185, 129, 0.12);
+    color: #065f46;
+  }
+
+  .badge-EMOL_ADMIN {
+    background: rgba(245, 200, 66, 0.2);
+    color: #92400e;
+  }
+</style>
+
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Assign and revoke emolument roles (DO,
+      FO, CPO)</h3>
+  </div>
+
+  <!-- Desktop: 2-col. Mobile: stacked -->
+  <div class="flex flex-col lg:flex-row gap-4">
+
+    <!-- LEFT: Active role assignments -->
+    <div class="flex-1 min-w-0">
+      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Active Role Assignments</h3>
+          <div class="flex gap-2">
+            <select id="filterRole"
+              class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none">
+              <option value="">All Roles</option>
+              <option value="DO">DO</option>
+              <option value="FO">FO</option>
+              <option value="CPO">CPO</option>
+              <option value="EMOL_ADMIN">EMOL_ADMIN</option>
+            </select>
+            <button onclick="loadRoles()"
+              class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="rolesTable">
+          <div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="rolesPagination" class="flex items-center justify-between mt-3 hidden">
+          <button id="rolesPrev" onclick="rolesPage(-1)"
+            class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+            <i class="fas fa-chevron-left mr-1"></i>Prev
+          </button>
+          <span id="rolesPageInfo" class="text-xs text-navy/40 font-semibold"></span>
+          <button id="rolesNext" onclick="rolesPage(1)"
+            class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+            Next<i class="fas fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Assign new role -->
+    <div class="lg:w-80 flex-shrink-0">
+      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Assign New Role</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service Number</label>
+            <input id="assignUserId" type="text" placeholder="e.g. NA/0012345"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
+            <select id="assignRole"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+              onchange="toggleScopeField()">
+              <option value="">— Select role —</option>
+              <option value="DO">DO (Divisional Officer)</option>
+              <option value="FO">FO (Flag Officer)</option>
+              <option value="CPO">CPO (Command Payroll Officer)</option>
+              <option value="EMOL_ADMIN">EMOL_ADMIN</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Scope Type</label>
+            <select id="assignScopeType"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+              onchange="toggleScopeField()">
+              <option value="GLOBAL">GLOBAL</option>
+              <option value="SHIP">SHIP</option>
+              <option value="COMMAND">COMMAND</option>
+            </select>
+          </div>
+          <div id="scopeValueWrapper">
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Scope Value (Ship /
+              Command)</label>
+            <input id="assignScopeValue" type="text" placeholder="e.g. NNS BEECROFT"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+          </div>
+          <button onclick="assignRole()"
+            class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+            <i class="fas fa-plus mr-2"></i>Assign Role
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const token = localStorage.getItem('token');
+    const PAGE_SIZE = 10;
+    let allRows = [];
+    let currentPage = 1;
+
+    function toggleScopeField() {
+      const scope = document.getElementById('assignScopeType').value;
+      document.getElementById('scopeValueWrapper').style.display = (scope === 'GLOBAL') ? 'none' : 'block';
+    }
+    toggleScopeField();
+
+    function renderPage() {
+      const el = document.getElementById('rolesTable');
+      const total = allRows.length;
+      const pages = Math.ceil(total / PAGE_SIZE) || 1;
+      currentPage = Math.max(1, Math.min(currentPage, pages));
+      const slice = allRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+      if (!slice.length) {
+        el.innerHTML = '<div class="text-center py-6 text-blue-900/30 text-sm">No roles found</div>';
+        document.getElementById('rolesPagination').classList.add('hidden');
+        return;
+      }
+
+      el.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead><tr class="border-b border-amber-100">
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">User</th>
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Role</th>
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide sm:table-cell">Scope</th>
+        <th class="py-2 w-16"></th>
+      </tr></thead>
+      <tbody>` +
+        slice.map(r => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+        <td class="py-2 font-semibold text-navy text-xs">${r.user_id}</td>
+        <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full badge-${r.role}">${r.role}</span></td>
+        <td class="py-2 text-blue-900/50 text-xs sm:table-cell">${r.scope_type}${r.scope_value ? ' · ' + r.scope_value : ''}</td>
+        <td class="py-2 text-right">
+          <button onclick="revokeRole(${r.id},'${r.user_id}')"
+            class="text-xs text-red-400 hover:text-red-600 font-bold cursor-pointer border border-red-100 rounded px-2 py-0.5 bg-red-50/50">Revoke</button>
+        </td>
+      </tr>`).join('') +
+        `</tbody></table></div>`;
+
+      const pg = document.getElementById('rolesPagination');
+      const pi = document.getElementById('rolesPageInfo');
+      pg.classList.toggle('hidden', pages <= 1);
+      pi.textContent = `Page ${currentPage} of ${pages} · ${total} total`;
+      document.getElementById('rolesPrev').disabled = currentPage <= 1;
+      document.getElementById('rolesNext').disabled = currentPage >= pages;
+    }
+
+    window.rolesPage = function (dir) { currentPage += dir; renderPage(); };
+
+    window.loadRoles = function () {
+      const role = document.getElementById('filterRole').value;
+      const el = document.getElementById('rolesTable');
+      el.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      const q = role ? '?role=' + role : '';
+      fetch('/admin/roles' + q, { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : [])
+        .then(rows => { allRows = rows; currentPage = 1; renderPage(); })
+        .catch(() => { el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load roles</div>'; });
+    };
+
+    window.revokeRole = async function (roleId, userId) {
+      const ok = await window.EmolModal.confirm(
+        `Revoke role for ${userId}? This will immediately remove their access.`,
+        { title: 'Revoke Role', icon: '🔒', danger: true }
+      );
+      if (!ok) return;
+      try {
+        const r = await fetch('/admin/roles/' + roleId + '/revoke', {
+          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
+        });
+        const d = await r.json();
+        if (r.ok) {
+          window.EmolModal.toast('Role revoked successfully.', 'success');
+          loadRoles();
+        } else {
+          window.EmolModal.alert(window.EmolModal.apiErr(d), { title: 'Revoke Failed', icon: '❌' });
+        }
+      } catch {
+        window.EmolModal.alert('Server error. Please try again.', { title: 'Error', icon: '❌' });
+      }
+    };
+
+    window.assignRole = async function () {
+      const body = {
+        user_id: document.getElementById('assignUserId').value.trim(),
+        role: document.getElementById('assignRole').value,
+        scope_type: document.getElementById('assignScopeType').value,
+        scope_value: document.getElementById('assignScopeValue').value.trim() || undefined,
+      };
+      if (!body.user_id || !body.role) {
+        window.EmolModal.alert('Service number and role are required.', { title: 'Validation', icon: '⚠️' });
+        return;
+      }
+      if (body.scope_type !== 'GLOBAL' && !body.scope_value) {
+        window.EmolModal.alert('Scope value is required for SHIP and COMMAND scope types.', { title: 'Validation', icon: '⚠️' });
+        return;
+      }
+      try {
+        const r = await fetch('/admin/roles/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (r.ok) {
+          window.EmolModal.toast('Role assigned to ' + body.user_id + '.', 'success');
+          document.getElementById('assignUserId').value = '';
+          document.getElementById('assignScopeValue').value = '';
+          loadRoles();
+        } else {
+          window.EmolModal.alert(window.EmolModal.apiErr(d), { title: 'Assignment Failed', icon: '❌' });
+        }
+      } catch {
+        window.EmolModal.alert('Server error. Please try again.', { title: 'Error', icon: '❌' });
+      }
+    };
+
+    // Auto-load on mount
+    loadRoles();
+  })();
+</script>

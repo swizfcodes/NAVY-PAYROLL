@@ -1,0 +1,134 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Approve all verified forms for a ship
+      or command at once</h3>
+  </div>
+
+  <!-- Filter -->
+  <div class="max-w-lg mr-auto ml-auto bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Select Ship / Command</h3>
+    <div class="flex gap-2">
+      <select id="bulkShipSelect"
+        class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+        <option value="">— Select ship or command —</option>
+      </select>
+      <button onclick="loadBulkPreview()"
+        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Preview table -->
+  <div id="bulkPreviewWrapper" class="hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Forms Ready for Approval</h3>
+          <p class="text-xs text-blue-900/40 mt-0.5" id="bulkPreviewMeta"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="selectAll" onchange="toggleAll(this)" class="accent-navy w-4 h-4" />
+          <label for="selectAll" class="text-xs font-bold text-navy/60">Select All</label>
+        </div>
+      </div>
+      <div id="bulkTable" class="overflow-x-auto"></div>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="executeBulkApprove()"
+        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
+        <i class="fas fa-check-double mr-2"></i>Approve Selected
+      </button>
+    </div>
+    <div id="bulkMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const token = localStorage.getItem('token');
+    let bulkForms = [];
+
+    // Load ships for dropdown
+    (function () {
+      fetch('/admin/ships', { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : [])
+        .then(ships => {
+          const sel = document.getElementById('bulkShipSelect');
+          ships.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name || s.ship_name;
+            opt.textContent = s.name || s.ship_name;
+            sel.appendChild(opt);
+          });
+        })
+        .catch(() => { });
+    })();
+
+    function loadBulkPreview() {
+      const ship = document.getElementById('bulkShipSelect').value;
+      if (!ship) return;
+      const el = document.getElementById('bulkTable');
+      el.innerHTML = '<div class="flex items-center justify-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      document.getElementById('bulkPreviewWrapper').classList.remove('hidden');
+
+      fetch('/admin/bulk-approve/preview?ship=' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : [])
+        .then(rows => {
+          bulkForms = rows;
+          document.getElementById('bulkPreviewMeta').textContent = ship + ' · ' + rows.length + ' form(s) pending approval';
+          if (!rows.length) {
+            el.innerHTML = '<div class="text-center py-6 text-blue-900/30 text-sm">No forms pending approval for this ship</div>';
+            return;
+          }
+          el.innerHTML = `<table class="w-full text-sm">
+        <thead><tr class="border-b border-amber-100">
+          <th class="py-2 w-8"></th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Service No</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Stage</th>
+        </tr></thead>
+        <tbody>` +
+            rows.map((r, i) => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+          <td class="py-2"><input type="checkbox" class="bulk-chk accent-navy w-4 h-4" data-idx="${i}" checked /></td>
+          <td class="py-2 font-semibold text-navy">${r.user_id}</td>
+          <td class="py-2 text-blue-900/70">${r.full_name}</td>
+          <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">${r.status?.replace('_', ' ')}</span></td>
+        </tr>`).join('') +
+            `</tbody></table>`;
+        })
+        .catch(() => { el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>'; });
+    }
+
+    function toggleAll(cb) {
+      document.querySelectorAll('.bulk-chk').forEach(c => c.checked = cb.checked);
+    }
+
+    function executeBulkApprove() {
+      const selected = [...document.querySelectorAll('.bulk-chk:checked')].map(c => bulkForms[+c.dataset.idx]?.form_id).filter(Boolean);
+      const msg = document.getElementById('bulkMsg');
+      if (!selected.length) {
+        msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+        msg.textContent = 'No forms selected.';
+        msg.classList.remove('hidden');
+        return;
+      }
+      if (!confirm('Approve ' + selected.length + ' form(s)?')) return;
+
+      fetch('/admin/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ form_ids: selected })
+      })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
+          msg.textContent = ok ? (d.message || selected.length + ' forms approved.') : (d.error || 'Failed');
+          msg.classList.remove('hidden');
+          if (ok) loadBulkPreview();
+        })
+        .catch(() => { msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
+    }
+  })();
+</script>

@@ -92,3 +92,4 @@ preview.xlsx
 EMOL-README.md
 problems.md
 UNIFIED_AUTH_INTEGRATION.md
+config/sql/Migration drop flat columns.sql

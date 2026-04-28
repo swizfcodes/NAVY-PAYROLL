@@ -56,7 +56,7 @@ function resolveCpoCommands(req) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/cpo/pending
+// GET /cpo/pending
 // List all FO_APPROVED forms across all CPO's commands.
 // requireEmolRole('CPO') — scope comes from the CPO's roles.
 // ─────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/cpo/pending/:command
+// GET /cpo/pending/:command
 // List FO_APPROVED forms for a specific command.
 // Used by EMOL_ADMIN and CPOs who want to filter by command.
 // requireEmolRole('CPO') with command in params.
@@ -121,7 +121,7 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/cpo/forms/:form_id
+// GET /cpo/forms/:form_id
 // View full form detail before confirming.
 // requireFormRole resolves command from ef_emolument_forms.
 // ─────────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ router.get("/forms/:form_id", requireFormRole("CPO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/cpo/forms/:form_id/confirm
+// POST /cpo/forms/:form_id/confirm
 // Confirm form. CPO's svcno comes from req.user_id.
 // Writes full snapshot to ef_emolument_forms.snapshot.
 // No body required — CPO identity is the confirmation.
@@ -189,7 +189,7 @@ router.post(
 );
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/cpo/forms/:form_id/reject
+// POST /cpo/forms/:form_id/reject
 // Reject a FO_APPROVED form. Resets to NULL.
 // Body: { remarks }
 // ─────────────────────────────────────────────────────────────

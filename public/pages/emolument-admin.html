@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emolument — Admin</title>
+  <link rel="stylesheet" href="../styles/output.css" />
+  <link rel="stylesheet" href="../more-assets/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="../more-assets/css/boxicons.min.css" />
+  <link rel="stylesheet" href="../styles/emolument-admin.css" />
+</head>
+
+<body class="bg-gradient-to-br from-amber-50 to-blue-100">
+
+  <!-- Ship strip -->
+  <div class="ship-strip" id="shipStrip">
+    <span
+      style="font-size:0.7rem;font-weight:700;color:rgba(30,64,175,0.5);text-transform:uppercase;letter-spacing:0.06em;">Ship
+      Duties:</span>
+    <div id="shipBtnContainer"></div>
+  </div>
+
+  <!-- Ship modal -->
+  <div class="ship-modal-backdrop" id="shipModalBackdrop" onclick="closeShipModal(event)">
+    <div class="ship-modal">
+      <div class="ship-modal-title"><i class="fas fa-ship mr-2"></i>Select Ship / Command</div>
+      <div id="shipOptionsList"></div>
+      <button onclick="document.getElementById('shipModalBackdrop').classList.remove('open')"
+        class="mt-2 w-full text-sm text-center text-gray-400 hover:text-navy py-2 cursor-pointer border-none bg-none">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Drawer (mobile overflow menu) -->
+  <div class="emol-drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer(event)">
+    <div class="emol-drawer" id="drawerPanel">
+      <div class="emol-drawer-handle"></div>
+      <div class="emol-drawer-title">More</div>
+      <div id="drawerItems"></div>
+    </div>
+  </div>
+
+  <!-- Main shell -->
+  <div class="emol-shell">
+
+    <!-- Sidebar (desktop) — built by JS -->
+    <nav class="emol-sidebar shadow-lg backdrop-blur" id="emolSidebar">
+      <!-- injected by JS -->
+    </nav>
+
+    <!-- Content -->
+    <div class="emol-content" id="emolContent">
+      <!-- section divs injected by JS -->
+    </div>
+  </div>
+
+  <!-- Bottom nav (mobile) -->
+  <nav class="emol-bottom-nav" id="bottomNav">
+    <!-- injected by JS -->
+  </nav>
+
+  <script>
+    // ── NAV CONFIG ───────────────────────────────────────────
+    const NAV_GROUPS = [
+      {
+        items: [
+          { key: 'home', icon: 'fas fa-home', label: 'Dashboard', short: 'Home', long: 'Admin Dashboard' },
+        ]
+      },
+      {
+        group: 'Administration',
+        items: [
+          { key: 'progress', icon: 'fas fa-chart-pie', label: 'Progress Report', short: 'Progress', long: 'Progress Report' },
+          { key: 'roles', icon: 'fas fa-user-shield', label: 'Role Management', short: 'Roles', long: 'Role Management' },
+        ]
+      },
+      {
+        group: 'Form Control',
+        items: [
+          //{ key: 'form-cycle', icon: 'fas fa-toggle-on', label: 'Open / Close Forms', short: 'Forms', long: 'Form Cycle Control' },
+          { key: 'accept-verified', icon: 'fas fa-check-circle', label: 'Accept Verified Forms', short: 'Verified', long: 'Accept Verified Forms' },
+          { key: 'my-form', icon: 'fas fa-file-signature', label: 'My Form', short: 'My Form', long: 'My Emolument Form' },
+
+        ]
+      },
+      {
+        group: 'Personnel',
+        items: [
+          { key: 'personnel', icon: 'fas fa-users', label: 'Personnel Mgt', short: 'People', long: 'Personnel Management' },
+        ]
+      },
+      {
+        group: 'Ships',
+        items: [
+          { key: 'ships', icon: 'fas fa-ship', label: 'Ships Overview', short: 'Ships', long: 'Ships Overview' },
+          { key: 'bulk-approve', icon: 'fas fa-check-double', label: 'Authenticate Ships', short: 'Authenticate', long: 'Authenticate Ships' },
+        ]
+      },
+      {
+        group: 'System',
+        items: [
+          { key: 'system', icon: 'fas fa-cogs', label: 'Control System', short: 'System', long: 'Control System' },
+          { key: 'payroll-sync', icon: 'fas fa-sync', label: 'Payroll Update', short: 'Payroll', long: 'Update Payroll' },
+          { key: 'tickets', icon: 'fas fa-ticket-alt', label: 'View Tickets', short: 'Tickets', long: 'View Tickets' },
+          { key: 'audit', icon: 'fas fa-search', label: 'Audit Trail', short: 'Audit', long: 'Audit Trail' },
+        ]
+      },
+    ];
+
+    const NAV = NAV_GROUPS.flatMap(g => g.items);
+    const BOTTOM_NAV_COUNT = 5;
+
+    const FILE_MAP = {
+      'home': '../emolument-sections/admin/home.html',
+      'progress': '../emolument-sections/admin/progress.html',
+      'form-cycle': '../emolument-sections/admin/form-cycle.html',
+      'bulk-approve': '../emolument-sections/admin/bulk-approve.html',
+      'personnel': '../emolument-sections/admin/personnel.html',
+      'roles': '../emolument-sections/admin/roles.html',
+      'ships': '../emolument-sections/admin/ships.html',
+      'payroll-sync': '../emolument-sections/admin/payroll-sync.html',
+      'audit': '../emolument-sections/admin/audit.html',
+      'system': '../emolument-sections/admin/system.html',
+      'my-form': '../emolument-sections/personnel/my-form.html',
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // EMOLUMENT NAVIGATION SYSTEM
+    // ═══════════════════════════════════════════════════════════
+    class EmolumentNav {
+      constructor() {
+        this.currentSection = null;
+        this.cache = new Map();
+        this.history = [];
+        this.isNavigating = false;
+        this._clockTimers = {};
+        this._healthTimers = {};
+
+        this._buildSidebar();
+        this._buildContentSlots();
+        this._buildBottomNav();
+        this._buildDrawer();
+        this._bindDrawer();
+        this._bindShipButtons();
+        this._bindPopState();
+        this._handleInitialLoad();
+
+        // Fragments can dispatch this to navigate programmatically
+        document.addEventListener('emolAdminNav', e => this.navigate(e.detail));
+      }
+
+      // ── USER HELPERS ─────────────────────────────────────────
+
+      _getDisplayName() {
+        const full = localStorage.getItem('full_name') || '';
+        const parts = full.trim().split(/\s+/);
+        if (!parts[0]) return 'Officer';
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return parts[0] + ' ' + parts[1];
+        return parts[0] + ' ' + parts[1] + ' ' + parts[parts.length - 1][0] + '.';
+      }
+
+      _getTime() {
+        return new Date().toLocaleTimeString([], {
+          hour: '2-digit', minute: '2-digit', hour12: true
+        }).toLowerCase();
+      }
+
+      // ── BUILD UI ─────────────────────────────────────────────
+
+      _buildSidebar() {
+        const sidebar = document.getElementById('emolSidebar');
+
+        const brand = document.createElement('div');
+        brand.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0 0.75rem;margin-bottom:1rem;';
+        brand.innerHTML = `
+      <span style="font-size:0.65rem;font-weight:800;letter-spacing:0.1em;
+                   color:rgba(30,64,175,0.4);text-transform:uppercase;">Emolument</span>
+      <span class="admin-badge">
+        <i class="fas fa-shield-alt" style="font-size:9px"></i>Admin
+      </span>`;
+        sidebar.appendChild(brand);
+
+        NAV_GROUPS.forEach(({ group, items }) => {
+          const groupLabel = document.createElement('div');
+          groupLabel.className = 'emol-nav-group';
+          groupLabel.textContent = group;
+          sidebar.appendChild(groupLabel);
+
+          const ul = document.createElement('ul');
+          ul.style.cssText = 'list-style:none;padding:0;margin:0 0 0.5rem;display:flex;flex-direction:column;gap:0.2rem;';
+
+          items.forEach(item => {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.className = 'emol-nav-item';
+            btn.dataset.section = item.key;
+            btn.innerHTML = `<i class="${item.icon} w-4 text-center"></i>${item.label}`;
+            btn.addEventListener('click', () => this.navigate(item.key));
+            li.appendChild(btn);
+            ul.appendChild(li);
+          });
+
+          sidebar.appendChild(ul);
+        });
+      }
+
+      _buildContentSlots() {
+        const content = document.getElementById('emolContent');
+        NAV.forEach(item => {
+          const sec = document.createElement('div');
+          sec.id = 'section-' + item.key;
+          sec.className = 'emol-section';
+          content.appendChild(sec);
+        });
+      }
+
+      _buildBottomNav() {
+        const bottomNav = document.getElementById('bottomNav');
+
+        NAV.slice(0, BOTTOM_NAV_COUNT).forEach(item => {
+          const btn = document.createElement('button');
+          btn.className = 'emol-bn-item';
+          btn.id = 'bn-' + item.key;
+          btn.dataset.section = item.key;
+          btn.innerHTML = `<i class="${item.icon}"></i>${item.short || item.label}`;
+          btn.addEventListener('click', () => this.navigate(item.key));
+          bottomNav.appendChild(btn);
+        });
+
+        this._hamburger = document.createElement('button');
+        this._hamburger.className = 'emol-hamburger';
+        this._hamburger.id = 'hamburgerBtn';
+        this._hamburger.innerHTML = `<i class="fas fa-bars"></i>More`;
+        this._hamburger.addEventListener('click', () => this._openDrawer());
+        bottomNav.appendChild(this._hamburger);
+      }
+
+      _buildDrawer() {
+        const drawerEl = document.getElementById('drawerItems');
+
+        NAV.slice(BOTTOM_NAV_COUNT).forEach(item => {
+          const btn = document.createElement('button');
+          btn.className = 'emol-drawer-item';
+          btn.id = 'drawer-' + item.key;
+          btn.dataset.section = item.key;
+          btn.innerHTML = `<i class="${item.icon}"></i><span>${item.label}</span>`;
+          btn.addEventListener('click', () => {
+            this.navigate(item.key);
+            this._closeDrawer();
+          });
+          drawerEl.appendChild(btn);
+        });
+      }
+
+      _bindDrawer() {
+        document.getElementById('drawerBackdrop')
+          .addEventListener('click', e => {
+            if (e.target === document.getElementById('drawerBackdrop'))
+              this._closeDrawer();
+          });
+      }
+
+      _openDrawer() { document.getElementById('drawerBackdrop').classList.add('open'); }
+      _closeDrawer() { document.getElementById('drawerBackdrop').classList.remove('open'); }
+
+      // ── ACTIVE STATE ─────────────────────────────────────────
+
+      _setActiveUI(key) {
+        document.querySelectorAll('.emol-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.emol-bn-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.emol-drawer-item').forEach(b => b.classList.remove('active'));
+
+        document.querySelectorAll(`[data-section="${key}"]`)
+          .forEach(el => el.classList.add('active'));
+
+        const isDrawerItem = NAV.slice(BOTTOM_NAV_COUNT).some(n => n.key === key);
+        this._hamburger.classList.toggle('has-active', isDrawerItem);
+      }
+
+      // ── SECTION VISIBILITY ───────────────────────────────────
+
+      _showSection(key) {
+        document.querySelectorAll('.emol-section').forEach(s => s.classList.remove('active'));
+        const sec = document.getElementById('section-' + key);
+        if (sec) sec.classList.add('active');
+      }
+
+      // ── LOADING STATE ────────────────────────────────────────
+
+      _showLoadingState(key) {
+        const sec = document.getElementById('section-' + key);
+        if (!sec) return;
+        sec.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;
+                  padding:4rem 2rem;gap:0.6rem;
+                  color:rgba(30,64,175,0.35);font-size:0.85rem;font-family:inherit;">
+        <i class="fas fa-spinner fa-spin"></i> Loading…
+      </div>`;
+      }
+
+      // ── CONTENT FETCHING ─────────────────────────────────────
+
+      async _fetchSection(key) {
+        if (this.cache.has(key)) return this.cache.get(key);
+
+        const url = FILE_MAP[key];
+        if (!url) return null;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const html = await res.text();
+        this.cache.set(key, html);
+        return html;
+      }
+
+      _injectScripts(el) {
+        el.querySelectorAll('script').forEach(old => {
+          const s = document.createElement('script');
+          s.textContent = old.textContent;
+          old.replaceWith(s);
+        });
+      }
+
+      // ── SECTION WRAPPER RENDER ───────────────────────────────
+
+      _renderWrapper(key, html) {
+        const item = NAV.find(n => n.key === key);
+        const label = item ? item.long : key;
+        const sec = document.getElementById('section-' + key);
+        if (!sec) return;
+
+        // Clean up any previous timers for this slot
+        this._clearTimers(key);
+
+        sec.innerHTML = `
+      <div class="emol-section-header">
+        <h2 class="emol-section-title">${label}</h2>
+
+        <div class="emol-section-meta">
+          <div class="emol-status-group">
+            <span class="emol-status-dot" id="statusDot-${key}">
+              <span class="emol-ping"></span>
+              <span class="emol-dot-inner"></span>
+            </span>
+            <span class="emol-status-label online" id="statusLabel-${key}">Online</span>
+          </div>
+
+          <span class="emol-meta-divider">|</span>
+          <span class="emol-meta-name hidden">${this._getDisplayName()}</span>
+          <span class="emol-meta-divider hidden">|</span>
+          <span class="emol-meta-clock" id="clock-${key}">${this._getTime()}</span>
+        </div>
+      </div>
+
+      <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
+        ${html}
+      </div>`;
+
+        this._injectScripts(sec);
+        this._startClock(key);
+        this._startHealthCheck(key);
+        sec.dataset.loaded = 'true';
+
+        // Animate in
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            sec.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            sec.style.opacity = '1';
+            sec.style.transform = 'translateY(0)';
+          });
+        });
+      }
+
+      _showError(key) {
+        const item = NAV.find(n => n.key === key);
+        const label = item ? item.label : key;
+        const sec = document.getElementById('section-' + key);
+        if (!sec) return;
+
+        sec.innerHTML = `
+      <div class="emol-section-header">
+        <h2 class="emol-section-title">${label}</h2>
+      </div>
+      <div class="emol-section-card" style="text-align:center;padding:3rem 2rem;">
+        <i class="fas fa-tools fa-2x"
+           style="color:rgba(30,64,175,0.25);display:block;margin-bottom:0.75rem;"></i>
+        <p style="font-weight:700;color:rgba(30,64,175,0.5);margin-bottom:0.25rem;">
+          Section coming soon
+        </p>
+        <p style="font-size:0.75rem;color:rgba(30,64,175,0.35);margin-bottom:1rem;">
+          Could not load <code>${FILE_MAP[key] || key}</code>
+        </p>
+        <button onclick="window.emolNav.reload('${key}')"
+          style="font-size:0.75rem;font-weight:700;color:rgb(30,64,175);
+                 background:rgba(30,64,175,0.07);border:1px solid rgba(30,64,175,0.2);
+                 border-radius:6px;padding:0.4rem 1rem;cursor:pointer;">
+          <i class="fas fa-redo" style="margin-right:0.35rem;font-size:10px;"></i>Try again
+        </button>
+      </div>`;
+      }
+
+      // ── CLOCK ────────────────────────────────────────────────
+
+      _startClock(key) {
+        const tick = () => {
+          const el = document.getElementById('clock-' + key);
+          if (!el) { clearInterval(this._clockTimers[key]); return; }
+          el.textContent = this._getTime();
+        };
+        this._clockTimers[key] = setInterval(tick, 60000);
+      }
+
+      // ── SERVER HEALTH ────────────────────────────────────────
+
+      _startHealthCheck(key) {
+        const check = async () => {
+          const dot = document.getElementById('statusDot-' + key);
+          const label = document.getElementById('statusLabel-' + key);
+          if (!dot || !label) { clearInterval(this._healthTimers[key]); return; }
+
+          if (!navigator.onLine) {
+            this._setStatus(dot, label, false, 'No Network'); return;
+          }
+          try {
+            const res = await fetch('/health', {
+              method: 'GET', cache: 'no-store',
+              signal: AbortSignal.timeout(4000)
+            });
+            this._setStatus(dot, label, res.ok);
+          } catch {
+            this._setStatus(dot, label, false, 'Offline');
+          }
+        };
+
+        // Bound handlers so we can remove them later
+        this._onOnline = () => check();
+        this._onOffline = () => {
+          const dot = document.getElementById('statusDot-' + key);
+          const label = document.getElementById('statusLabel-' + key);
+          if (dot && label) this._setStatus(dot, label, false, 'No Network');
+        };
+
+        check();
+        this._healthTimers[key] = setInterval(check, 30000);
+        window.addEventListener('online', this._onOnline);
+        window.addEventListener('offline', this._onOffline);
+      }
+
+      _setStatus(dot, label, online, reason = 'Offline') {
+        const ping = dot.querySelector('.emol-ping');
+        const inner = dot.querySelector('.emol-dot-inner');
+
+        if (online) {
+          if (ping) { ping.style.display = ''; ping.style.background = '#4ade80'; }
+          if (inner) inner.style.background = '#22c55e';
+          label.textContent = 'Online';
+          label.className = 'emol-status-label online';
+        } else {
+          if (ping) ping.style.display = 'none';
+          if (inner) inner.style.background = '#ef4444';
+          label.textContent = reason;
+          label.className = 'emol-status-label offline';
+        }
+      }
+
+      _clearTimers(key) {
+        if (this._clockTimers[key]) { clearInterval(this._clockTimers[key]); delete this._clockTimers[key]; }
+        if (this._healthTimers[key]) { clearInterval(this._healthTimers[key]); delete this._healthTimers[key]; }
+        if (this._onOnline) { window.removeEventListener('online', this._onOnline); this._onOnline = null; }
+        if (this._onOffline) { window.removeEventListener('offline', this._onOffline); this._onOffline = null; }
+      }
+
+      // ── HISTORY ──────────────────────────────────────────────
+
+      _pushHistory(key) {
+        const item = NAV.find(n => n.key === key);
+        const label = item ? item.label : key;
+        window.history.replaceState({ emolSection: key }, '', `#emol-${key}`);
+        document.title = `Emolument — ${label}`;
+
+        // Persist so iframe reload can restore this section
+        sessionStorage.setItem('emol_active_section', key);
+      }
+
+      _pushNewHistory(key) {
+        const item = NAV.find(n => n.key === key);
+        const label = item ? item.label : key;
+        window.history.pushState({ emolSection: key }, '', `#emol-${key}`);
+        document.title = `Emolument — ${label}`;
+
+        // Persist so iframe reload can restore this section
+        sessionStorage.setItem('emol_active_section', key);
+      }
+
+
+      _bindPopState() {
+        window.addEventListener('popstate', e => {
+          const key = e.state?.emolSection;
+          if (key) this.navigate(key, { addHistory: false });
+        });
+      }
+
+      _handleInitialLoad() {
+        // 1. Try the iframe's own hash first (back/forward within iframe)
+        const hash = window.location.hash;
+        const fromHash = hash.startsWith('#emol-') ? hash.slice(6) : null;
+
+        // 2. Fall back to sessionStorage (survives parent page refresh)
+        const fromStorage = sessionStorage.getItem('emol_active_section');
+
+        const key = fromHash || fromStorage || 'home';
+        const valid = NAV.some(n => n.key === key);
+
+        this.navigate(valid ? key : 'home', { addHistory: false });
+      }
+
+      // ── CORE NAVIGATE ────────────────────────────────────────
+
+      async navigate(key, { addHistory = true } = {}) {
+        if (this.isNavigating) return;
+        if (key === this.currentSection) return;
+
+        const item = NAV.find(n => n.key === key);
+        if (!item) return;
+
+        this.isNavigating = true;
+
+        try {
+          if (addHistory && this.currentSection)
+            this.history.push(this.currentSection);
+
+          this._setActiveUI(key);
+          this._showSection(key);
+
+          const sec = document.getElementById('section-' + key);
+          const alreadyLoaded = sec?.dataset.loaded === 'true';
+
+          if (!alreadyLoaded) {
+            // Prep for animation
+            if (sec) { sec.style.opacity = '0'; sec.style.transform = 'translateY(8px)'; }
+
+            this._showLoadingState(key);
+            const html = await this._fetchSection(key);
+
+            if (html !== null) {
+              this._renderWrapper(key, html);
+            } else {
+              this._showError(key);
+            }
+          }
+
+          if (addHistory) {
+            this._pushNewHistory(key);   // pushState for user clicks
+          } else {
+            this._pushHistory(key);      // replaceState for restore/back — keeps URL in sync without polluting history stack
+          }
+          this.currentSection = key;
+
+        } catch {
+          this._showError(key);
+        } finally {
+          this.isNavigating = false;
+        }
+      }
+
+      // ── PUBLIC API ───────────────────────────────────────────
+
+      goBack() {
+        const prev = this.history.pop();
+        if (prev) this.navigate(prev, { addHistory: false });
+      }
+
+      reload(key) {
+        this.cache.delete(key);
+        const sec = document.getElementById('section-' + key);
+        if (sec) { delete sec.dataset.loaded; sec.style.opacity = ''; sec.style.transform = ''; }
+        this.navigate(key, { addHistory: false });
+      }
+
+      // ── SHIP BUTTONS ─────────────────────────────────────────
+
+      _bindShipButtons() {
+        let roleDetail = [];
+        try { roleDetail = JSON.parse(localStorage.getItem('emol_role_detail') || '[]'); } catch { }
+
+        const shipRoles = roleDetail.filter(r =>
+          ['DO', 'FO'].includes(r.role) && r.scope_type === 'SHIP' && r.scope_value);
+        const cpoRoles = roleDetail.filter(r =>
+          r.role === 'CPO' && r.scope_type === 'COMMAND' && r.scope_value);
+
+        const all = [
+          ...shipRoles.map(r => ({ label: r.scope_value, role: r.role, type: 'SHIP' })),
+          ...cpoRoles.map(r => ({ label: r.scope_value, role: r.role, type: 'COMMAND' })),
+        ];
+        if (!all.length) return;
+
+        const strip = document.getElementById('shipStrip');
+        const container = document.getElementById('shipBtnContainer');
+        strip.classList.add('visible');
+
+        if (all.length === 1) {
+          const a = all[0];
+          container.innerHTML = `
+        <button class="ship-btn" data-ship="${a.label}" data-role="${a.role}" data-type="${a.type}">
+          <span class="ship-dot"></span>
+          <i class="fas fa-ship" style="font-size:11px"></i>${a.label}
+        </button>`;
+        } else {
+          container.innerHTML = `
+        <button class="ship-btn" id="shipPickerBtn">
+          <span class="ship-dot"></span>
+          <i class="fas fa-ship" style="font-size:11px"></i>
+          Ships (${all.length})
+          <i class="fas fa-chevron-down" style="font-size:9px"></i>
+        </button>`;
+
+          document.getElementById('shipPickerBtn')
+            .addEventListener('click', () => this._openShipModal());
+
+          document.getElementById('shipOptionsList').innerHTML = all.map(a => `
+        <div class="ship-option"
+             data-ship="${a.label}" data-role="${a.role}" data-type="${a.type}">
+          <div>
+            <div class="ship-option-name">
+              <i class="fas fa-${a.type === 'COMMAND' ? 'building' : 'ship'} mr-1"></i>
+              ${a.label}
+            </div>
+            <div style="font-size:0.7rem;color:rgba(30,64,175,0.5);margin-top:2px;">
+              ${a.type}
+            </div>
+          </div>
+          <span class="ship-role-badge badge-${a.role}">${a.role}</span>
+        </div>`).join('');
+
+          document.getElementById('shipOptionsList')
+            .addEventListener('click', e => {
+              const opt = e.target.closest('.ship-option');
+              if (!opt) return;
+              this._openShipDashboard(opt.dataset.ship, opt.dataset.role, opt.dataset.type);
+              this._closeShipModal();
+            });
+        }
+
+        // Single ship button click
+        container.addEventListener('click', e => {
+          const btn = e.target.closest('.ship-btn[data-ship]');
+          if (!btn) return;
+          this._openShipDashboard(btn.dataset.ship, btn.dataset.role, btn.dataset.type);
+        });
+
+        // Modal backdrop close
+        document.getElementById('shipModalBackdrop')
+          .addEventListener('click', e => {
+            if (e.target === document.getElementById('shipModalBackdrop'))
+              this._closeShipModal();
+          });
+      }
+
+      _openShipModal() { document.getElementById('shipModalBackdrop').classList.add('open'); }
+      _closeShipModal() { document.getElementById('shipModalBackdrop').classList.remove('open'); }
+
+      _openShipDashboard(shipName, role, scopeType) {
+        sessionStorage.setItem('active_ship', shipName);
+        sessionStorage.setItem('active_ship_role', role);
+        sessionStorage.setItem('active_ship_scope', scopeType);
+        if (window.loadShipDashboard) {
+          window.loadShipDashboard(shipName, role, scopeType);
+        } else {
+          window.dispatchEvent(new CustomEvent('openShipDashboard', {
+            detail: { shipName, role, scopeType }
+          }));
+        }
+      }
+    }
+
+    // ── BOOT ──────────────────────────────────────────────────
+    window.emolNav = new EmolumentNav();
+  </script>
+</body>
+
+</html>

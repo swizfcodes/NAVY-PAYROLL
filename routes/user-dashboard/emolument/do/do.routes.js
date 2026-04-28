@@ -52,7 +52,7 @@ function resolveDoShips(req) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/do/ship/:ship/personnel
+// GET /do/ship/:ship/personnel
 // List all SUBMITTED forms on a ship.
 // requireEmolRole('DO') scopes the ship from req.params.ship.
 // ─────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ router.get("/ship/:ship/personnel", requireEmolRole("DO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/do/forms/:form_id
+// GET /do/forms/:form_id
 // View full form detail for a specific submission.
 // requireFormRole('DO') resolves ship from ef_emolument_forms.
 // ─────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ router.get("/forms/:form_id", requireFormRole("DO"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/do/forms/:form_id/review
+// POST /do/forms/:form_id/review
 // DO marks form as reviewed. Forwards to FO.
 // Body: { do_name, do_rank, do_date }
 // do_svcno is taken from req.user_id (the DO themselves).
@@ -138,7 +138,7 @@ router.post(
 );
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/do/forms/:form_id/reject
+// POST /do/forms/:form_id/reject
 // DO rejects form. Resets status to NULL — personnel must re-fill.
 // Body: { remarks }
 // ─────────────────────────────────────────────────────────────

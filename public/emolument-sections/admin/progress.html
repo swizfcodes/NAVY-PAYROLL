@@ -1,0 +1,443 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
+      Submission and approval status across all ships and commands
+    </h3>
+  </div>
+
+  <!-- Summary cards — 2 col mobile, 4 col desktop -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
+      <div class="text-2xl font-black text-navy" id="rpt-total">—</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);" class="mt-1">Total Personnel</div>
+    </div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
+      <div class="text-2xl font-black text-amber-500" id="rpt-submitted">—</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);" class="mt-1">Submitted</div>
+    </div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
+      <div class="text-2xl font-black text-green-600" id="rpt-confirmed">—</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);" class="mt-1">CPO Confirmed</div>
+    </div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
+      <div class="text-2xl font-black text-red-500" id="rpt-notfiled">—</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);" class="mt-1">Not Filed</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="flex gap-2 mb-4 flex-wrap">
+    <select id="rptCommandFilter"
+      class="flex-1 min-w-32 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+      <option value="">All Commands</option>
+    </select>
+    <button onclick="window.rptLoad()"
+      class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+      <i class="fas fa-filter mr-1"></i>Filter
+    </button>
+    <button onclick="window.rptExport()"
+      class="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-amber-600 transition-colors">
+      <i class="fas fa-download mr-1"></i>Export
+    </button>
+  </div>
+
+  <!-- Desktop: two-column layout. Mobile: stacked -->
+  <div class="lg:grid lg:grid-cols-2 lg:gap-4">
+
+    <!-- LEFT: Per-command/ship breakdown -->
+    <div>
+      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">Progress by Command & Ship</h3>
+        <div id="rptByCommand">
+          <div class="flex items-center justify-center py-8 text-navy/30">
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Processed forms list with pagination -->
+    <div>
+      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Personnel List</h3>
+          <span class="text-xs text-blue-900/40" id="rptCount"></span>
+        </div>
+
+        <!-- Search within table -->
+        <input id="rptSearch" type="text" placeholder="Search name or service no..."
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none mb-3"
+          oninput="window.rptSearchFilter()" />
+
+        <div id="rptTable">
+          <div class="flex items-center justify-center py-8 text-navy/30">
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="rptPagination" class="flex items-center justify-between mt-3 hidden">
+          <button id="rptPrevBtn" onclick="window.rptChangePage(-1)"
+            class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+            <i class="fas fa-chevron-left mr-1"></i>Prev
+          </button>
+          <span class="text-xs text-navy/50" id="rptPageInfo"></span>
+          <button id="rptNextBtn" onclick="window.rptChangePage(1)"
+            class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+            Next<i class="fas fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end desktop grid -->
+
+</div>
+
+<!-- Modal: Ship drill-down -->
+<div id="rptShipModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b border-amber-100">
+      <h3 class="font-black text-navy text-sm uppercase tracking-wide" id="rptShipModalTitle">Ship Detail</h3>
+      <button onclick="window.rptCloseShipModal()"
+        class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-navy/40 hover:text-navy cursor-pointer border-none text-lg font-bold">
+        ×
+      </button>
+    </div>
+    <div id="rptShipModalBody" class="p-5">
+      <div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="rptToast" class="hidden fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs"></div>
+
+<script>
+(function () {
+  const TOKEN = localStorage.getItem('token');
+  const PAGE_SIZE = 20;
+  let _allRows = [];
+  let _filtered = [];
+  let _page = 1;
+
+  // ── Toast ─────────────────────────────────────────────────
+  function toast(msg, ok) {
+    const el = document.getElementById('rptToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs '
+      + (ok !== false ? 'bg-green-600 text-white' : 'bg-red-500 text-white');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+
+  // ── Load commands into filter ─────────────────────────────
+  fetch('/system/commands', { headers: { Authorization: 'Bearer ' + TOKEN } })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      const sel = document.getElementById('rptCommandFilter');
+      if (!sel || !data) return;
+      const commands = data.commands || data || [];
+      commands.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.code || c.commandCode || c.commandName;
+        opt.textContent = c.commandName || c.name || c.code;
+        sel.appendChild(opt);
+      });
+    }).catch(() => {});
+
+  // ── Load progress report ──────────────────────────────────
+  window.rptLoad = function () {
+    const command = document.getElementById('rptCommandFilter').value;
+
+    // Summary — from dashboard
+    fetch('/reports/dashboard', { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const g = data.global || {};
+        document.getElementById('rpt-total').textContent     = (g.total_personnel   || 0).toLocaleString();
+        document.getElementById('rpt-submitted').textContent = (g.total_submitted    || 0).toLocaleString();
+        document.getElementById('rpt-confirmed').textContent = (g.total_confirmed    || 0).toLocaleString();
+        document.getElementById('rpt-notfiled').textContent  = (g.total_not_filed    || 0).toLocaleString();
+      }).catch(() => {});
+
+    // Per-command/ship breakdown
+    const url = command
+      ? '/reports/command/' + encodeURIComponent(command)
+      : '/reports/progress';
+
+    const byCommandEl = document.getElementById('rptByCommand');
+    byCommandEl.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+    fetch(url, { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        if (command) {
+          // Single command view — data.byShip
+          renderCommandDetail(data, byCommandEl);
+        } else {
+          // All commands — data.commands[]
+          renderAllCommands(data.commands || [], byCommandEl);
+        }
+      })
+      .catch(() => {
+        byCommandEl.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load progress data</div>';
+      });
+
+    // Personnel list — GET /admin/personnel with pagination
+    loadPersonnelList(1);
+  };
+
+  function renderAllCommands(commands, el) {
+    if (!commands.length) {
+      el.innerHTML = '<div class="text-center py-8 text-blue-900/30 text-sm">No data available</div>';
+      return;
+    }
+    el.innerHTML = commands.map(cmd => {
+      const t = cmd.totals || {};
+      const pct = t.total > 0 ? Math.round((t.completed / t.total) * 100) : 0;
+      const ships = (cmd.ships || []).map(s => `
+        <div class="flex items-center gap-2 py-1.5 border-b border-amber-50 last:border-0 cursor-pointer hover:bg-amber-50/40 rounded px-1 transition-colors"
+             onclick="window.rptOpenShip('${s.ship_name}')">
+          <i class="fas fa-ship text-blue-300" style="font-size:11px;flex-shrink:0"></i>
+          <span class="flex-1 text-xs font-semibold text-navy truncate">${s.ship_name}</span>
+          <span class="text-xs text-blue-900/40">${s.completed}/${s.total}</span>
+          <span class="text-xs font-bold text-navy/50 min-w-8 text-right">${s.completion_pct || 0}%</span>
+        </div>`).join('');
+
+      return `
+        <div class="mb-3 border border-amber-100 rounded-xl overflow-hidden">
+          <div class="bg-amber-50/60 px-4 py-2.5 flex items-center justify-between">
+            <span class="font-black text-navy text-xs uppercase tracking-wide">${cmd.commandName}</span>
+            <span class="text-xs font-bold text-navy/50">${pct}% complete</span>
+          </div>
+          <div class="px-3 py-1">
+            <div class="h-1 bg-amber-100 rounded-full mb-2 overflow-hidden">
+              <div class="h-full rounded-full" style="width:${pct}%;background:linear-gradient(90deg,#f5c842,rgb(30 64 175))"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-1 text-center mb-2">
+              <div class="text-xs"><span class="font-black text-navy">${t.submitted||0}</span><br><span class="text-blue-900/35" style="font-size:9px">Filed</span></div>
+              <div class="text-xs"><span class="font-black text-navy">${t.completed||0}</span><br><span class="text-blue-900/35" style="font-size:9px">Confirmed</span></div>
+              <div class="text-xs"><span class="font-black text-navy">${t.not_filed||0}</span><br><span class="text-blue-900/35" style="font-size:9px">Not Filed</span></div>
+            </div>
+            ${ships}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderCommandDetail(data, el) {
+    const s = data.summary || {};
+    const pct = s.total > 0 ? Math.round(((s.completed || 0) / s.total) * 100) : 0;
+    const ships = (data.byShip || []).map(ship => {
+      const sp = ship.total > 0 ? Math.round(((ship.completed || 0) / ship.total) * 100) : 0;
+      return `
+        <div class="flex items-center gap-2 py-2 border-b border-amber-50 last:border-0 cursor-pointer hover:bg-amber-50/40 rounded px-1 transition-colors"
+             onclick="window.rptOpenShip('${ship.ship}')">
+          <i class="fas fa-ship text-blue-300" style="font-size:11px;flex-shrink:0"></i>
+          <span class="flex-1 text-xs font-semibold text-navy truncate">${ship.ship}</span>
+          <div class="w-16 h-1.5 bg-amber-100 rounded-full overflow-hidden flex-shrink-0">
+            <div class="h-full rounded-full bg-navy" style="width:${sp}%"></div>
+          </div>
+          <span class="text-xs font-bold text-navy/50 min-w-8 text-right">${sp}%</span>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="mb-2">
+        <div class="flex justify-between text-xs mb-1">
+          <span class="font-bold text-navy">${data.command || '—'}</span>
+          <span class="text-navy/50">${pct}% complete · ${s.total||0} total</span>
+        </div>
+        <div class="h-1.5 bg-amber-100 rounded-full overflow-hidden mb-3">
+          <div class="h-full rounded-full" style="width:${pct}%;background:linear-gradient(90deg,#f5c842,rgb(30 64 175))"></div>
+        </div>
+        ${ships || '<div class="text-center py-4 text-blue-900/30 text-sm">No ships found</div>'}
+      </div>`;
+  }
+
+  // ── Personnel list with pagination ───────────────────────
+  function loadPersonnelList(page) {
+    _page = page;
+    const tableEl = document.getElementById('rptTable');
+    const countEl = document.getElementById('rptCount');
+    tableEl.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+    const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
+    const command = document.getElementById('rptCommandFilter').value;
+    if (command) params.set('command', command);
+
+    fetch('/admin/personnel?' + params, { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        const rows = data.rows || [];
+        const pagination = data.pagination || {};
+        _allRows = rows;
+        _filtered = rows;
+
+        if (countEl) countEl.textContent = (pagination.total || 0).toLocaleString() + ' record(s)';
+        renderTable(rows);
+        renderPagination(pagination);
+      })
+      .catch(() => {
+        tableEl.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load personnel</div>';
+      });
+  }
+
+  function renderTable(rows) {
+    const tableEl = document.getElementById('rptTable');
+    if (!rows.length) {
+      tableEl.innerHTML = '<div class="text-center py-8 text-blue-900/30 text-sm">No records found</div>';
+      return;
+    }
+    const STATUS_CLS = {
+      Filled:   'bg-amber-50 text-amber-600',
+      FO:       'bg-blue-50 text-blue-600',
+      CPO:      'bg-purple-50 text-purple-600',
+      Verified: 'bg-green-50 text-green-600',
+    };
+    const STATUS_LBL = {
+      Filled:   'Submitted',
+      FO:       'DO Reviewed',
+      CPO:      'FO Approved',
+      Verified: 'Confirmed',
+    };
+    tableEl.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead><tr class="border-b border-amber-100">
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Ship</th>
+        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
+      </tr></thead>
+      <tbody>` +
+      rows.map(r => {
+        const cls = STATUS_CLS[r.Status] || 'bg-gray-100 text-gray-500';
+        const lbl = STATUS_LBL[r.Status] || (r.emolumentform === 'Yes' ? 'Completed' : 'Not Filed');
+        const badgeCls = r.Status
+          ? cls
+          : r.emolumentform === 'Yes'
+            ? 'bg-green-50 text-green-600'
+            : 'bg-red-50 text-red-400';
+        return `<tr class="border-b border-amber-50 hover:bg-amber-50/30 cursor-pointer" onclick="window.rptOpenShip('${r.ship || ''}')">
+          <td class="py-2 font-semibold text-navy text-xs">${r.serviceNumber}</td>
+          <td class="py-2 text-blue-900/70 text-xs">${r.Surname} ${r.OtherName || ''}</td>
+          <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${r.ship || '—'}</td>
+          <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${badgeCls}">${lbl}</span></td>
+        </tr>`;
+      }).join('') +
+      `</tbody></table></div>`;
+  }
+
+  function renderPagination(p) {
+    const el = document.getElementById('rptPagination');
+    const info = document.getElementById('rptPageInfo');
+    const prev = document.getElementById('rptPrevBtn');
+    const next = document.getElementById('rptNextBtn');
+    if (!el || !p.totalPages) return;
+    el.classList.remove('hidden');
+    if (info) info.textContent = `Page ${p.page} of ${p.totalPages}`;
+    if (prev) prev.disabled = p.page <= 1;
+    if (next) next.disabled = p.page >= p.totalPages;
+  }
+
+  window.rptChangePage = function (delta) {
+    loadPersonnelList(_page + delta);
+  };
+
+  window.rptSearchFilter = function () {
+    const q = (document.getElementById('rptSearch')?.value || '').toLowerCase();
+    if (!q) { renderTable(_allRows); return; }
+    const f = _allRows.filter(r =>
+      (r.serviceNumber || '').toLowerCase().includes(q) ||
+      (r.Surname || '').toLowerCase().includes(q) ||
+      (r.OtherName || '').toLowerCase().includes(q)
+    );
+    renderTable(f);
+  };
+
+  // ── Ship drill-down modal ─────────────────────────────────
+  window.rptOpenShip = function (ship) {
+    if (!ship) return;
+    const modal = document.getElementById('rptShipModal');
+    const title = document.getElementById('rptShipModalTitle');
+    const body  = document.getElementById('rptShipModalBody');
+    if (!modal) return;
+    title.textContent = ship;
+    body.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    fetch('/reports/ship/' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        const s = data.summary || {};
+        const byClass = data.byClass || [];
+        const pct = s.total > 0 ? Math.round(((s.completed||0) / s.total) * 100) : 0;
+        const classHtml = byClass.map(c => `
+          <div class="flex items-center justify-between py-1.5 border-b border-amber-50 last:border-0">
+            <span class="text-xs font-semibold text-navy">${c.classes === 1 ? 'Officers' : c.classes === 2 ? 'Ratings' : 'Training'}</span>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-navy/50">${c.submitted||0} filed</span>
+              <span class="text-xs text-navy/50">${c.cpo_confirmed||0} confirmed</span>
+              <span class="text-xs font-bold text-navy">${c.total||0} total</span>
+            </div>
+          </div>`).join('');
+
+        body.innerHTML = `
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-navy/50">${s.confirmed||0} of ${s.total||0} confirmed</span>
+              <span class="text-sm font-black text-navy">${pct}%</span>
+            </div>
+            <div class="h-2 bg-amber-100 rounded-full overflow-hidden mb-4">
+              <div class="h-full rounded-full" style="width:${pct}%;background:linear-gradient(90deg,#f5c842,rgb(30 64 175))"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center mb-4">
+              <div class="bg-amber-50/60 rounded-lg py-2">
+                <div class="font-black text-navy">${s.not_filed||0}</div>
+                <div class="text-blue-900/40" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Not Filed</div>
+              </div>
+              <div class="bg-blue-50/60 rounded-lg py-2">
+                <div class="font-black text-navy">${(s.submitted||0)+(s.do_reviewed||0)+(s.fo_approved||0)}</div>
+                <div class="text-blue-900/40" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">In Pipeline</div>
+              </div>
+              <div class="bg-green-50/60 rounded-lg py-2">
+                <div class="font-black text-navy">${s.completed||0}</div>
+                <div class="text-blue-900/40" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Confirmed</div>
+              </div>
+            </div>
+            <h4 class="font-bold text-navy text-xs uppercase tracking-wide mb-2">By Class</h4>
+            ${classHtml || '<div class="text-center py-2 text-blue-900/30 text-xs">No class data</div>'}
+          </div>`;
+      })
+      .catch(() => {
+        body.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load ship detail</div>';
+      });
+  };
+
+  window.rptCloseShipModal = function () {
+    const modal = document.getElementById('rptShipModal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  };
+
+  // Close modal on backdrop click
+  document.getElementById('rptShipModal')?.addEventListener('click', function (e) {
+    if (e.target === this) window.rptCloseShipModal();
+  });
+
+  // ── Export ────────────────────────────────────────────────
+  window.rptExport = function () {
+    const command = document.getElementById('rptCommandFilter').value;
+    const params = new URLSearchParams();
+    if (command) params.set('command', command);
+    params.set('token', TOKEN);
+    window.open('/admin/personnel/export?' + params, '_blank');
+  };
+
+  // ── Boot ─────────────────────────────────────────────────
+  window.rptLoad();
+})();
+</script>

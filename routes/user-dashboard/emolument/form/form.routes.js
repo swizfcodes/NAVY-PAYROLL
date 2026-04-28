@@ -57,10 +57,22 @@ const verifyToken = require("../../../../middware/authentication");
 const { requirePersonnel } = require("../../../../middware/emolumentAuth");
 const formService = require("./form.service");
 
+const DB = () => process.env.DB_OFFICERS || config.databases.officers;
+
+// Set DB context for all routes in this module
+router.use((req, res, next) => {
+  pool.useDatabase(DB());
+  next();
+});
+
 router.use(verifyToken, requirePersonnel);
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/form/load
+// GET /form/load
+//
+// First-timers (no ef_ record) are transparently initialised
+// from hr_employees on first call. Response shape is identical
+// for both existing personnel and first-timers.
 // ─────────────────────────────────────────────────────────────
 router.get("/load", async (req, res) => {
   try {
@@ -75,18 +87,28 @@ router.get("/load", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/form/history/:year
+// GET /form/history/:year
+//
+// Returns full snapshot if available (forms confirmed after
+// this system went live). For pre-migration legacy forms,
+// returns index metadata only with a notice field explaining
+// why full data is unavailable.
 // ─────────────────────────────────────────────────────────────
 router.get("/history/:year", async (req, res) => {
   const { year } = req.params;
   if (!year || !/^\d{4}$/.test(year)) {
-    return res.status(400).json({ error: "Invalid year format." });
+    return res
+      .status(400)
+      .json({ error: "Invalid year format. Use 4-digit year e.g. 2024." });
   }
   try {
     const result = await formService.loadFormHistory(req.user_id, year);
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
+    return res.json({
+      data: result.data,
+      notice: result.notice ?? null,
+    });
   } catch (err) {
     console.error("❌ GET /form/history/:year:", err);
     return res.status(500).json({ error: "Server error" });
@@ -94,7 +116,7 @@ router.get("/history/:year", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// PUT /api/emolument/form/save  (draft — no status change)
+// PUT /form/save  (draft — no status change)
 // ─────────────────────────────────────────────────────────────
 router.put("/save", async (req, res) => {
   const body = req.body;
@@ -120,7 +142,7 @@ router.put("/save", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/form/submit
+// POST /form/submit
 // ─────────────────────────────────────────────────────────────
 router.post("/submit", async (req, res) => {
   const body = req.body;

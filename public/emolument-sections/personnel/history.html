@@ -1,0 +1,64 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h2 class="text-xl font-black text-navy">Form History</h2>
+    <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">Previous emolument form submissions</p>
+  </div>
+
+  <div id="historyContent">
+    <div class="flex items-center justify-center py-16 text-navy/30">
+      <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const STATUS_BADGE = {
+    DRAFT:         'bg-gray-100 text-gray-500',
+    SUBMITTED:     'bg-blue-50 text-blue-600',
+    DO_REVIEWED:   'bg-amber-50 text-amber-600',
+    FO_APPROVED:   'bg-green-50 text-green-600',
+    CPO_CONFIRMED: 'bg-green-100 text-green-700',
+    REJECTED:      'bg-red-50 text-red-600',
+  };
+
+  function render(records) {
+    const el = document.getElementById('historyContent');
+    if (!records || records.length === 0) {
+      el.innerHTML = `<div class="text-center py-16 text-blue-900/30">
+        <i class="fas fa-history fa-2x mb-3 block"></i>
+        <p class="font-semibold">No form history found</p>
+        <p class="text-sm mt-1">Submit your first emolument form to see history here.</p>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = `<div class="space-y-3">` +
+      records.map(r => {
+        const badgeCls = STATUS_BADGE[r.status] || 'bg-gray-100 text-gray-500';
+        const date = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+        return `
+          <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-file-alt text-amber-500" style="font-size:16px"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-navy text-sm">${r.form_number || 'Form #' + r.id}</div>
+              <div class="text-xs text-blue-900/40 mt-0.5">${r.ship || '—'} · ${date}</div>
+            </div>
+            <span class="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${badgeCls}">${r.status?.replace('_',' ') || 'DRAFT'}</span>
+          </div>`;
+      }).join('') +
+    `</div>`;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) { render([]); return; }
+
+  const currentYear = new Date().getFullYear();
+  fetch(`/form/history/${currentYear}`, { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : [])
+    .then(data => render(Array.isArray(data) ? data : data?.records || []))
+    .catch(() => render([]));
+})();
+</script>

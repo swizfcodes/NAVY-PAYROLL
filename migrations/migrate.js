@@ -3,8 +3,8 @@
 // ============================================
 
 // #!/usr/bin/env node
-const migrator = require("./config/sql/migrator");
-const config = require("./config");
+const migrator = require("../config/sql/migrator");
+const config = require("../config");
 
 const command = process.argv[2];
 const arg1 = process.argv[3];

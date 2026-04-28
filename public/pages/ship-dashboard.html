@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ship Dashboard</title>
+  <link rel="stylesheet" href="../styles/output.css" />
+  <link rel="stylesheet" href="../more-assets/css/fontawesome.all.min.css" />
+  <style>
+    :root {
+      --emol-navy: rgb(30 64 175);
+    }
+
+    body {
+      background: transparent;
+      margin: 0;
+      font-size: 90%;
+    }
+
+    /* Full overlay above emolument page */
+    .ship-overlay {
+      position: fixed;
+      inset: 0;
+      background: #f7f5f1;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Ship header bar */
+    .ship-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: transparent;
+      color: var(--emol-navy);
+      flex-shrink: 0;
+    }
+
+    .ship-header-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(245, 111, 81, 0.3);
+      cursor: pointer;
+      border: none;
+      color: var(--emol-navy);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .ship-header-back:hover {
+      background: rgba(177, 12, 12, 0.3);
+    }
+
+    .ship-header-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ship-header-role {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .role-DO {
+      background: rgba(96, 165, 250, 0.3);
+    }
+
+    .role-FO {
+      background: rgba(245, 200, 66, 0.3);
+    }
+
+    .role-CPO {
+      background: rgba(52, 211, 153, 0.3);
+    }
+
+    /* Shell */
+    .ship-shell {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .ship-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: transparent;
+      padding: 1.5rem 0.75rem;
+      display: none;
+      overflow-y: auto;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 1024px) {
+      .ship-sidebar {
+        display: block;
+        box-shadow:
+          var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+          var(--tw-shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .ship-bottom-nav {
+        display: none !important;
+      }
+    }
+
+    .ship-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.375rem;
+      color: rgb(30 64 175);
+      font-weight: 500;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .ship-nav-item:hover {
+      background: rgba(251, 191, 36, 0.15);
+    }
+
+    .ship-nav-item.active {
+      background: rgba(251, 191, 36, 0.25);
+      font-weight: 700;
+    }
+
+    /* Content */
+    .ship-content {
+      flex: 1;
+      min-width: 0;
+      overflow-y: auto;
+      padding: 1.25rem 1rem 5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .ship-content {
+        padding: 1.25rem 2rem 2rem;
+      }
+    }
+
+    .ship-section {
+      display: none;
+    }
+
+    .ship-section.active {
+      display: block;
+    }
+
+    /* Bottom nav */
+    .ship-bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #f7f5f1;
+      gap: 0 !important;
+      border-top: 1px solid rgba(251, 191, 36, 0.3);
+      display: flex;
+      z-index: 10;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      overflow-x: auto;
+    }
+
+    .ship-bn-item {
+      flex: 1;
+      min-width: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 8px 4px 6px;
+      font-size: 8px;
+      font-weight: 600;
+      color: rgba(30, 64, 175, 0.35);
+      cursor: pointer;
+      border: none;
+      background: none;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .ship-bn-item i {
+      font-size: 17px;
+    }
+
+    .ship-bn-item.active {
+      color: rgb(30 64 175);
+    }
+
+    /* ── Section wrapper ── */
+    .ship-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .ship-section-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--emol-navy);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .ship-section-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .ship-status-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .ship-status-dot {
+      position: relative;
+      display: inline-flex;
+      width: 10px;
+      height: 10px;
+      flex-shrink: 0;
+    }
+
+    .ship-ping {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: #4ade80;
+      opacity: 0.75;
+      animation: shipPing 1.2s ease-in-out infinite;
+    }
+
+    .ship-dot-inner {
+      position: relative;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    @keyframes shipPing {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.75;
+      }
+
+      50% {
+        transform: scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    .ship-status-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .ship-status-label.online {
+      color: #16a34a;
+    }
+
+    .ship-status-label.offline {
+      color: #ef4444;
+    }
+
+    .ship-meta-divider {
+      color: rgba(30, 64, 175, 0.2);
+      font-weight: 300;
+    }
+
+    .ship-meta-name {
+      font-weight: 700;
+      color: var(--emol-navy);
+      font-size: 0.8rem;
+    }
+
+    .ship-meta-clock {
+      font-weight: 700;
+      color: #b45309;
+      font-size: 0.8rem;
+    }
+
+    .ship-section-card {
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      border-radius: 0.875rem;
+      box-shadow: 0 2px 16px rgba(30, 64, 175, 0.06);
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="ship-overlay" id="shipOverlay">
+
+    <!-- Header -->
+    <div class="ship-header">
+      <button class="ship-header-back" onclick="window.closeShipDashboard()" title="Back">
+        <i class="fas fa-arrow-left" style="font-size:13px"></i>
+      </button>
+      <div class="ship-header-title" id="shipHeaderTitle">Ship Dashboard</div>
+      <span class="ship-header-role" id="shipHeaderRole">—</span>
+    </div>
+
+    <div class="ship-shell">
+
+      <!-- Sidebar (desktop, built dynamically per role) -->
+      <nav class="ship-sidebar shadow-lg backdrop-blur" id="shipSidebar"></nav>
+
+      <!-- Content -->
+      <div class="ship-content" id="shipContentArea"></div>
+    </div>
+
+    <!-- Bottom nav (mobile, built dynamically per role) -->
+    <nav class="ship-bottom-nav" id="shipBottomNav"></nav>
+  </div>
+
+  <script>
+    (function () {
+
+      // ── MENU & FILE CONFIG ──────────────────────────────────
+      const SHIP_MENUS = {
+        DO: [
+          { key: 'home', label: 'Dashboard', icon: 'fa-home' },
+          { key: 'pending', label: 'Pending Review', icon: 'fa-inbox' },
+          { key: 'reviewed', label: 'Reviewed', icon: 'fa-check' },
+        ],
+        FO: [
+          { key: 'home', label: 'Dashboard', icon: 'fa-home' },
+          { key: 'pending', label: 'For Approval', icon: 'fa-inbox' },
+          { key: 'bulk', label: 'Bulk Approve', icon: 'fa-check-double' },
+          { key: 'approved', label: 'Approved', icon: 'fa-check-circle' },
+        ],
+        CPO: [
+          { key: 'home', label: 'Dashboard', icon: 'fa-home' },
+          { key: 'pending', label: 'For Confirm', icon: 'fa-inbox' },
+          { key: 'payroll', label: 'CPO Payroll', icon: 'fa-sync' },
+          { key: 'report', label: 'Staff Report', icon: 'fa-list-alt' },
+          { key: 'confirmed', label: 'Confirmed', icon: 'fa-stamp' },
+        ],
+      };
+
+      const SECTION_FILES = {
+        DO: {
+          home: 'do/home.html',
+          pending: 'do/pending.html',
+          reviewed: 'do/reviewed.html',
+        },
+        FO: {
+          home: 'fo/home.html',
+          pending: 'fo/pending.html',
+          bulk: 'fo/bulk.html',
+          approved: 'fo/approved.html',
+        },
+        CPO: {
+          home: 'cpo/home.html',
+          pending: 'cpo/pending.html',
+          payroll: 'cpo/payroll.html',
+          report: 'cpo/report.html',
+          confirmed: 'cpo/confirmed.html',
+        },
+      };
+
+      // ═══════════════════════════════════════════════════════
+      // SHIP NAVIGATION SYSTEM
+      // ═══════════════════════════════════════════════════════
+      class ShipNav {
+        constructor() {
+          this.currentSection = null;
+          this.currentRole = '';
+          this.currentShip = '';
+          this.currentScope = '';
+          this.cache = new Map();
+          this.history = [];
+          this.isNavigating = false;
+          this._clockTimers = {};
+          this._healthTimers = {};
+          this._onOnline = null;
+          this._onOffline = null;
+        }
+
+        // ── USER HELPERS ──────────────────────────────────────
+
+        _getDisplayName() {
+          const full = localStorage.getItem('full_name') || '';
+          const parts = full.trim().split(/\s+/);
+          if (!parts[0]) return 'Officer';
+          if (parts.length === 1) return parts[0];
+          if (parts.length === 2) return parts[0] + ' ' + parts[1];
+          return parts[0] + ' ' + parts[1] + ' ' + parts[parts.length - 1][0] + '.';
+        }
+
+        _getTime() {
+          return new Date().toLocaleTimeString([], {
+            hour: '2-digit', minute: '2-digit', hour12: true
+          }).toLowerCase();
+        }
+
+        _getMenus() { return SHIP_MENUS[this.currentRole] || []; }
+        _getFiles() { return SECTION_FILES[this.currentRole] || {}; }
+
+        // ── INIT ──────────────────────────────────────────────
+
+        init(shipName, role, scopeType) {
+          this.currentShip = shipName || sessionStorage.getItem('active_ship') || '—';
+          this.currentRole = role || sessionStorage.getItem('active_ship_role') || 'DO';
+          this.currentScope = scopeType || sessionStorage.getItem('active_ship_scope') || 'SHIP';
+
+          // Reset state for fresh load
+          this.currentSection = null;
+          this.cache.clear();
+          this.history = [];
+          this._clearAllTimers();
+
+          this._updateHeader();
+          this._buildUI();
+
+          // Restore last section for this ship+role, else default to first item
+          const storageKey = `ship_section_${this.currentShip}_${this.currentRole}`;
+          const saved = sessionStorage.getItem(storageKey);
+          const menus = this._getMenus();
+          const firstKey = menus[0]?.key || 'home';
+          const restoreKey = saved && menus.some(m => m.key === saved) ? saved : firstKey;
+
+          this.navigate(restoreKey, { addHistory: false });
+        }
+
+        // ── HEADER ────────────────────────────────────────────
+
+        _updateHeader() {
+          const titleEl = document.getElementById('shipHeaderTitle');
+          const roleEl = document.getElementById('shipHeaderRole');
+          if (titleEl) titleEl.textContent = this.currentShip;
+          if (roleEl) {
+            roleEl.textContent = this.currentRole;
+            roleEl.className = 'ship-header-role role-' + this.currentRole;
+          }
+        }
+
+        // ── BUILD UI ──────────────────────────────────────────
+
+        _buildUI() {
+          const menus = this._getMenus();
+          const sidebar = document.getElementById('shipSidebar');
+          const bottomNav = document.getElementById('shipBottomNav');
+          const contentArea = document.getElementById('shipContentArea');
+
+          // Clear previous
+          sidebar.innerHTML = `
+        <div style="font-size:0.6rem;font-weight:800;letter-spacing:0.1em;
+                    color:rgba(30,64,175,0.35);text-transform:uppercase;
+                    padding:0 0.75rem;margin-bottom:0.75rem;">
+          ${this.currentRole} Dashboard
+        </div>`;
+          bottomNav.innerHTML = '';
+          contentArea.innerHTML = '';
+
+          menus.forEach(m => {
+            // Sidebar button
+            const btn = document.createElement('button');
+            btn.className = 'ship-nav-item';
+            btn.dataset.section = m.key;
+            btn.innerHTML = `<i class="fas ${m.icon} w-4 text-center"></i> ${m.label}`;
+            btn.addEventListener('click', () => this.navigate(m.key));
+            sidebar.appendChild(btn);
+
+            // Bottom nav button
+            const bnBtn = document.createElement('button');
+            bnBtn.className = 'ship-bn-item';
+            bnBtn.id = 'sbn-' + m.key;
+            bnBtn.dataset.section = m.key;
+            bnBtn.innerHTML = `<i class="fas ${m.icon}"></i>${m.label}`;
+            bnBtn.addEventListener('click', () => this.navigate(m.key));
+            bottomNav.appendChild(bnBtn);
+
+            // Section slot
+            const sec = document.createElement('div');
+            sec.id = 'ship-section-' + m.key;
+            sec.className = 'ship-section';
+            contentArea.appendChild(sec);
+          });
+        }
+
+        // ── ACTIVE STATE ──────────────────────────────────────
+
+        _setActiveUI(key) {
+          document.querySelectorAll('.ship-nav-item').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.ship-bn-item').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll(`[data-section="${key}"]`)
+            .forEach(el => el.classList.add('active'));
+        }
+
+        // ── SECTION VISIBILITY ────────────────────────────────
+
+        _showSection(key) {
+          document.querySelectorAll('.ship-section').forEach(s => s.classList.remove('active'));
+          const sec = document.getElementById('ship-section-' + key);
+          if (sec) sec.classList.add('active');
+        }
+
+        // ── LOADING STATE ─────────────────────────────────────
+
+        _showLoadingState(key) {
+          const sec = document.getElementById('ship-section-' + key);
+          if (!sec) return;
+          sec.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;
+                    padding:4rem 2rem;gap:0.6rem;
+                    color:rgba(30,64,175,0.35);font-size:0.85rem;font-family:inherit;">
+          <i class="fas fa-spinner fa-spin"></i> Loading…
+        </div>`;
+        }
+
+        // ── CONTENT FETCHING ──────────────────────────────────
+
+        async _fetchSection(key) {
+          const cacheKey = `${this.currentRole}:${key}`;
+          if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+
+          const file = this._getFiles()[key];
+          if (!file) return null;
+
+          const res = await fetch('../ship-sections/' + file);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          const html = await res.text();
+          this.cache.set(cacheKey, html);
+          return html;
+        }
+
+        _injectScripts(el) {
+          el.querySelectorAll('script').forEach(old => {
+            const s = document.createElement('script');
+            s.textContent = old.textContent;
+            old.replaceWith(s);
+          });
+        }
+
+        // ── SECTION WRAPPER RENDER ────────────────────────────
+
+        _renderWrapper(key, html) {
+          const menus = this._getMenus();
+          const item = menus.find(m => m.key === key);
+          const label = item ? item.label : key;
+          const sec = document.getElementById('ship-section-' + key);
+          if (!sec) return;
+
+          this._clearTimers(key);
+
+          sec.innerHTML = `
+        <div class="ship-section-header">
+          <h2 class="ship-section-title">${label}</h2>
+
+          <div class="ship-section-meta">
+            <div class="ship-status-group">
+              <span class="ship-status-dot" id="shipStatusDot-${key}">
+                <span class="ship-ping"></span>
+                <span class="ship-dot-inner"></span>
+              </span>
+              <span class="ship-status-label online" id="shipStatusLabel-${key}">Online</span>
+            </div>
+
+            <span class="ship-meta-divider">|</span>
+            <span class="ship-meta-name">${this._getDisplayName()}</span>
+            <span class="ship-meta-divider">|</span>
+            <span class="ship-meta-clock" id="shipClock-${key}">${this._getTime()}</span>
+          </div>
+        </div>
+
+      <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
+        ${html}
+      </div>`;
+
+          this._injectScripts(sec);
+          this._startClock(key);
+          this._startHealthCheck(key);
+          sec.dataset.loaded = 'true';
+
+          // Animate in
+          sec.style.opacity = '0';
+          sec.style.transform = 'translateY(8px)';
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              sec.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+              sec.style.opacity = '1';
+              sec.style.transform = 'translateY(0)';
+            });
+          });
+        }
+
+        _showError(key) {
+          const menus = this._getMenus();
+          const item = menus.find(m => m.key === key);
+          const label = item ? item.label : key;
+          const sec = document.getElementById('ship-section-' + key);
+          if (!sec) return;
+
+          sec.innerHTML = `
+        <div class="ship-section-header">
+          <h2 class="ship-section-title">${label}</h2>
+        </div>
+        <div class="ship-section-card"
+             style="text-align:center;padding:3rem 2rem;">
+          <i class="fas fa-tools fa-2x"
+             style="color:rgba(30,64,175,0.25);display:block;margin-bottom:0.75rem;"></i>
+          <p style="font-weight:700;color:rgba(30,64,175,0.5);margin-bottom:0.25rem;">
+            Section coming soon
+          </p>
+          <p style="font-size:0.75rem;color:rgba(30,64,175,0.35);margin-bottom:1rem;">
+            Could not load <code>${this._getFiles()[key] || key}</code>
+          </p>
+          <button onclick="window.shipNav.reload('${key}')"
+            style="font-size:0.75rem;font-weight:700;color:rgb(30,64,175);
+                   background:rgba(30,64,175,0.07);border:1px solid rgba(30,64,175,0.2);
+                   border-radius:6px;padding:0.4rem 1rem;cursor:pointer;">
+            <i class="fas fa-redo" style="margin-right:0.35rem;font-size:10px;"></i>Try again
+          </button>
+        </div>`;
+        }
+
+        // ── CLOCK ─────────────────────────────────────────────
+
+        _startClock(key) {
+          const tick = () => {
+            const el = document.getElementById('shipClock-' + key);
+            if (!el) { clearInterval(this._clockTimers[key]); return; }
+            el.textContent = this._getTime();
+          };
+          this._clockTimers[key] = setInterval(tick, 60000);
+        }
+
+        // ── SERVER HEALTH ─────────────────────────────────────
+
+        _startHealthCheck(key) {
+          const check = async () => {
+            const dot = document.getElementById('shipStatusDot-' + key);
+            const label = document.getElementById('shipStatusLabel-' + key);
+            if (!dot || !label) { clearInterval(this._healthTimers[key]); return; }
+
+            if (!navigator.onLine) {
+              this._setStatus(dot, label, false, 'No Network'); return;
+            }
+            try {
+              const res = await fetch('/health', {
+                method: 'GET', cache: 'no-store',
+                signal: AbortSignal.timeout(4000)
+              });
+              this._setStatus(dot, label, res.ok);
+            } catch {
+              this._setStatus(dot, label, false, 'Offline');
+            }
+          };
+
+          // Remove previous listeners before adding new ones
+          if (this._onOnline) window.removeEventListener('online', this._onOnline);
+          if (this._onOffline) window.removeEventListener('offline', this._onOffline);
+
+          this._onOnline = () => check();
+          this._onOffline = () => {
+            const dot = document.getElementById('shipStatusDot-' + key);
+            const label = document.getElementById('shipStatusLabel-' + key);
+            if (dot && label) this._setStatus(dot, label, false, 'No Network');
+          };
+
+          check();
+          this._healthTimers[key] = setInterval(check, 30000);
+          window.addEventListener('online', this._onOnline);
+          window.addEventListener('offline', this._onOffline);
+        }
+
+        _setStatus(dot, label, online, reason = 'Offline') {
+          const ping = dot.querySelector('.ship-ping');
+          const inner = dot.querySelector('.ship-dot-inner');
+
+          if (online) {
+            if (ping) { ping.style.display = ''; ping.style.background = '#4ade80'; }
+            if (inner) inner.style.background = '#22c55e';
+            label.textContent = 'Online';
+            label.className = 'ship-status-label online';
+          } else {
+            if (ping) ping.style.display = 'none';
+            if (inner) inner.style.background = '#ef4444';
+            label.textContent = reason;
+            label.className = 'ship-status-label offline';
+          }
+        }
+
+        // ── TIMER CLEANUP ─────────────────────────────────────
+
+        _clearTimers(key) {
+          if (this._clockTimers[key]) {
+            clearInterval(this._clockTimers[key]);
+            delete this._clockTimers[key];
+          }
+          if (this._healthTimers[key]) {
+            clearInterval(this._healthTimers[key]);
+            delete this._healthTimers[key];
+          }
+        }
+
+        _clearAllTimers() {
+          Object.keys(this._clockTimers).forEach(k => { clearInterval(this._clockTimers[k]); delete this._clockTimers[k]; });
+          Object.keys(this._healthTimers).forEach(k => { clearInterval(this._healthTimers[k]); delete this._healthTimers[k]; });
+          if (this._onOnline) { window.removeEventListener('online', this._onOnline); this._onOnline = null; }
+          if (this._onOffline) { window.removeEventListener('offline', this._onOffline); this._onOffline = null; }
+        }
+
+        // ── HISTORY / SESSION PERSIST ─────────────────────────
+
+        _saveSection(key) {
+          const storageKey = `ship_section_${this.currentShip}_${this.currentRole}`;
+          sessionStorage.setItem(storageKey, key);
+        }
+
+        // ── CORE NAVIGATE ─────────────────────────────────────
+
+        async navigate(key, { addHistory = true } = {}) {
+          if (this.isNavigating) return;
+          if (key === this.currentSection) return;
+
+          const menus = this._getMenus();
+          const item = menus.find(m => m.key === key);
+          if (!item) return;
+
+          this.isNavigating = true;
+
+          try {
+            if (addHistory && this.currentSection)
+              this.history.push(this.currentSection);
+
+            this._setActiveUI(key);
+            this._showSection(key);
+
+            const sec = document.getElementById('ship-section-' + key);
+            const alreadyLoaded = sec?.dataset.loaded === 'true';
+
+            if (!alreadyLoaded) {
+              if (sec) { sec.style.opacity = '0'; sec.style.transform = 'translateY(8px)'; }
+              this._showLoadingState(key);
+
+              const html = await this._fetchSection(key);
+              if (html !== null) {
+                this._renderWrapper(key, html);
+              } else {
+                this._showError(key);
+              }
+            }
+
+            this._saveSection(key);         // persist for refresh restore
+            this.currentSection = key;
+
+          } catch {
+            this._showError(key);
+          } finally {
+            this.isNavigating = false;
+          }
+        }
+
+        // ── PUBLIC API ────────────────────────────────────────
+
+        goBack() {
+          const prev = this.history.pop();
+          if (prev) this.navigate(prev, { addHistory: false });
+        }
+
+        reload(key) {
+          const cacheKey = `${this.currentRole}:${key}`;
+          this.cache.delete(cacheKey);
+          const sec = document.getElementById('ship-section-' + key);
+          if (sec) { delete sec.dataset.loaded; sec.style.opacity = ''; sec.style.transform = ''; }
+          this.navigate(key, { addHistory: false });
+        }
+
+        // ── CLOSE ─────────────────────────────────────────────
+
+        close() {
+          this._clearAllTimers();
+          sessionStorage.removeItem('active_ship');
+          sessionStorage.removeItem('active_ship_role');
+          sessionStorage.removeItem('active_ship_scope');
+          window.dispatchEvent(new CustomEvent('closeShipDashboard'));
+          document.getElementById('shipOverlay').style.display = 'none';
+        }
+      }
+
+      // ── BOOT ──────────────────────────────────────────────
+      window.shipNav = new ShipNav();
+      window.shipNav.init();
+
+      // ── EXTERNAL HOOKS ────────────────────────────────────
+      // Called by emolument-admin when a ship button is clicked
+      window.loadShipDashboard = function (shipName, role, scopeType) {
+        sessionStorage.setItem('active_ship', shipName);
+        sessionStorage.setItem('active_ship_role', role);
+        sessionStorage.setItem('active_ship_scope', scopeType || 'SHIP');
+        document.getElementById('shipOverlay').style.display = '';
+        window.shipNav.init(shipName, role, scopeType);
+      };
+
+      // Wire the back button
+      window.closeShipDashboard = function () {
+        window.shipNav.close();
+      };
+
+    })();
+  </script>
+</body>
+
+</html>

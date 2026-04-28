@@ -54,7 +54,7 @@ router.use(verifyToken, requireEmolRole('EMOL_ADMIN'));
 // ROLE MANAGEMENT
 // ─────────────────────────────────────────────────────────────
 
-// GET /api/emolument/admin/roles
+// GET /admin/roles
 // Query: ?role=DO&scope_type=SHIP&scope_value=NNS+BEECROFT&user_id=X1234
 router.get('/roles', async (req, res) => {
   const filters = {
@@ -72,7 +72,7 @@ router.get('/roles', async (req, res) => {
   }
 });
 
-// POST /api/emolument/admin/roles/assign
+// POST /admin/roles/assign
 // Body: { user_id, role, scope_type, scope_value? }
 router.post('/roles/assign', async (req, res) => {
   try {
@@ -85,7 +85,7 @@ router.post('/roles/assign', async (req, res) => {
   }
 });
 
-// DELETE /api/emolument/admin/roles/:role_id/revoke
+// DELETE /admin/roles/:role_id/revoke
 router.delete('/roles/:role_id/revoke', async (req, res) => {
   const roleId = Number(req.params.role_id);
   if (!Number.isInteger(roleId) || roleId < 1) {
@@ -105,7 +105,7 @@ router.delete('/roles/:role_id/revoke', async (req, res) => {
 // PERSONNEL MANAGEMENT
 // ─────────────────────────────────────────────────────────────
 
-// GET /api/emolument/admin/personnel
+// GET /admin/personnel
 // Query: ?serviceNumber=X&surname=ADU&ship=NNS+BEECROFT&command=&payrollclass=2&status=Filled&page=1&pageSize=50
 router.get('/personnel', async (req, res) => {
   const filters = {
@@ -130,7 +130,7 @@ router.get('/personnel', async (req, res) => {
   }
 });
 
-// PUT /api/emolument/admin/personnel/commission
+// PUT /admin/personnel/commission
 // Body: { old_svc_no, new_svc_no }
 // MUST be declared before /:svcno routes — 'commission' is a literal
 // path segment and would otherwise be matched as a :svcno param value.
@@ -145,7 +145,7 @@ router.put('/personnel/commission', async (req, res) => {
   }
 });
 
-// GET /api/emolument/admin/personnel/:svcno
+// GET /admin/personnel/:svcno
 router.get('/personnel/:svcno', async (req, res) => {
   try {
     const result = await adminService.getPersonnel(req.params.svcno);
@@ -157,7 +157,7 @@ router.get('/personnel/:svcno', async (req, res) => {
   }
 });
 
-// PUT /api/emolument/admin/personnel/:svcno/contact
+// PUT /admin/personnel/:svcno/contact
 // Body: { email?, phone_number? }
 router.put('/personnel/:svcno/contact', async (req, res) => {
   const { svcno } = req.params;
@@ -171,7 +171,7 @@ router.put('/personnel/:svcno/contact', async (req, res) => {
   }
 });
 
-// DELETE /api/emolument/admin/personnel/exits/:payrollclass
+// DELETE /admin/personnel/exits/:payrollclass
 router.delete('/personnel/exits/:payrollclass', async (req, res) => {
   const { payrollclass } = req.params;
   try {
@@ -188,7 +188,7 @@ router.delete('/personnel/exits/:payrollclass', async (req, res) => {
 // FORM ACTIONS
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/admin/ship/:ship/bulk-approve
+// POST /admin/ship/:ship/bulk-approve
 // Body: { fo_name, fo_rank, fo_date }
 router.post('/ship/:ship/bulk-approve', async (req, res) => {
   const { ship } = req.params;
@@ -202,7 +202,7 @@ router.post('/ship/:ship/bulk-approve', async (req, res) => {
   }
 });
 
-// POST /api/emolument/admin/forms/:form_id/reject
+// POST /admin/forms/:form_id/reject
 // Body: { ship, remarks }
 router.post('/forms/:form_id/reject', async (req, res) => {
   const formId = Number(req.params.form_id);
@@ -223,7 +223,7 @@ router.post('/forms/:form_id/reject', async (req, res) => {
 // UPLOAD
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/admin/upload/personnel
+// POST /admin/upload/personnel
 // Body: single personnel object OR array of personnel objects
 // Shape: { serviceNumber, surname, otherName, rank, email,
 //          phoneNumber, accountNo, bankCode, ship,
@@ -246,7 +246,7 @@ router.post('/upload/personnel', async (req, res) => {
 // PAYROLL SYNC
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/admin/payroll/sync
+// POST /admin/payroll/sync
 // Body: { payrollclass }
 router.post('/payroll/sync', async (req, res) => {
   if (!req.body?.payrollclass) {

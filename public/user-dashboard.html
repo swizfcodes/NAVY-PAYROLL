@@ -10,6 +10,79 @@
   <link rel="stylesheet" href="more-assets/css/fontawesome.all.min.css">
   <link rel="stylesheet" href="styles/output.css">
   <link rel="stylesheet" href="styles/user-dashboard.css">
+  <style>
+    #page-emolument {
+      padding: 0 !important;
+      background: transparent !important;
+      overflow: hidden;
+      position: fixed !important;
+      top: 0px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+
+    #emolument-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #emolument-frame.ready {
+      opacity: 1;
+    }
+
+    /* ── Header background transition ──────────────────────── */
+    header {
+      transition: background 0.35s ease, backdrop-filter 0.35s ease,
+                  border-color 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    header.emol-mode {
+      background: transparent !important;
+      border-bottom-color: rgba(251, 191, 36, 0.1) !important;
+    }
+
+    header.emol-mode nav a {
+      color: rgba(30, 64, 175, 0.65);
+    }
+
+    header.emol-mode nav a:hover,
+    header.emol-mode nav a.active {
+      color: rgb(30, 64, 175);
+    }
+
+    header.emol-mode .header-logo {
+      filter: none;
+    }
+
+    header.emol-mode .header-username-name {
+      color: #1e40af;
+      font-weight: bold;
+    }
+
+    header.emol-mode .header-username-label {
+      color: rgba(30, 64, 175, 0.65);
+    }
+
+    /* Loading spinner */
+    #emolument-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: rgba(30, 64, 175, 0.4);
+      pointer-events: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -17,10 +90,7 @@
   <!-- HEADER -->
   <header>
     <div class="header-left">
-      <!-- Logo: visible on home page -->
       <img src="photos/logo.png" alt="Navy Pays logo" class="header-logo" id="header-logo">
-
-      <!-- User name: visible on inner pages -->
       <div class="header-username" id="header-username">
         <span class="header-username-label">Signed in as</span>
         <span class="header-username-name" id="header-username-text"></span>
@@ -28,16 +98,18 @@
     </div>
 
     <nav>
-      <a class="active" id="nav-home" data-page="home">Home</a>
-      <a id="nav-payroll" data-page="payroll">Payroll</a>
-      <a id="nav-payslip" data-page="payslip">Payslip</a>
-      <a id="nav-email" data-page="email">
+      <a class="active" id="nav-home"      data-page="home">Home</a>
+      <a id="nav-payroll"                  data-page="payroll">Payroll</a>
+      <a id="nav-payslip"                  data-page="payslip">Payslip</a>
+      <a id="nav-email"                    data-page="email">
         Email
         <span id="nav-mail-badge"
-          style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-left:2px;vertical-align:middle;display:none"></span>
+          style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;
+                 padding:2px 6px;border-radius:20px;margin-left:2px;
+                 vertical-align:middle;display:none"></span>
       </a>
-      <a id="nav-emolument" data-page="emolument">Emolument</a>
-      <a id="nav-logout" data-page="logout">
+      <a id="nav-emolument"                data-page="emolument">Emolument</a>
+      <a id="nav-logout"                   data-page="logout">
         <i class="fas fa-sign-out-alt"></i>
       </a>
     </nav>
@@ -46,24 +118,18 @@
   <!-- HOME -->
   <div class="page home-bg active" id="page-home">
     <div class="home-content">
-      <!-- time-based greeting injected by JS -->
       <p class="welcome-tag" id="greeting-tag">
         <span class="welcome-tag-icon" id="greeting-icon">☀️</span>
         <span id="greeting-text">Good Morning</span>
       </p>
-
-      <!-- Real name from localStorage -->
       <h1 class="welcome-name" id="welcome-name">
         Welcome, <span id="user-display-name">...</span>
       </h1>
-
-      <!-- Pleasant time-based sub-line -->
       <p class="welcome-sub" id="greeting-sub">Hope your morning is off to a great start.</p>
-
       <div class="divider"></div>
       <div class="quick-actions">
         <button class="btn btn-primary" data-page="email">My Email</button>
-        <button class="btn btn-ghost" data-page="payslip">My Payslip</button>
+        <button class="btn btn-ghost"   data-page="payslip">My Payslip</button>
       </div>
     </div>
   </div>
@@ -78,14 +144,17 @@
     <p class="page-label">EMAIL — COMING SOON</p>
   </div>
 
-  <!-- EMOLUMENT -->
-  <div class="page inner-page" id="page-emolument">
-    <p class="page-label">EMOLUMENT — COMING SOON</p>
+  <!-- EMOLUMENT — iframe injected lazily -->
+  <div class="page inner-page" id="page-emolument" style="position:relative;">
+    <div id="emolument-loading">
+      <i class="fas fa-spinner fa-spin"></i> Loading Emolument…
+    </div>
+    <!-- iframe inserted here by JS on first visit -->
   </div>
 
   <script src="script/user-dashboard.js"></script>
 
-  <!-- ATTACHMENT PREVIEW LIGHTBOX — body level so it can cover the header -->
+  <!-- ATTACHMENT PREVIEW LIGHTBOX -->
   <div class="att-preview-overlay" id="attPreviewOverlay">
     <div class="att-preview-box">
       <div class="att-preview-bar">
@@ -94,7 +163,7 @@
           <button class="att-preview-btn att-preview-download" id="attPreviewDownloadBtn">
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
             Download
           </button>
@@ -109,6 +178,8 @@
       </div>
     </div>
   </div>
+
+  <div id="ship-dashboard-overlay" style="display:none;position:fixed;inset:0;z-index:150;background:#f7f5f1;overflow-y:auto;"></div>
 </body>
 
 </html>

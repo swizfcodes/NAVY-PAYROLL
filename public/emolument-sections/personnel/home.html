@@ -1,0 +1,190 @@
+<div class="max-w-2xl mx-auto">
+
+  <!-- Greeting -->
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h2 class="text-xl font-black text-navy" id="pers-greeting">Welcome</h2>
+    <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">Emolument Form Portal</p>
+  </div>
+
+  <!-- Notice box -->
+  <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-xs md:text-sm text-amber-800  mb-4">
+    <i class="fas fa-info-circle mr-2"></i>
+    Ensure your form is submitted before the cycle closes. Contact support if you encounter any issues.
+  </div>
+
+  <!-- Status Card -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Form Status</h3>
+      <span id="formStatusBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-600">Loading...</span>
+    </div>
+
+    <!-- Progress pipeline -->
+    <div class="relative">
+      <div class="flex items-center justify-between mb-2">
+        <div class="step-node flex flex-col items-center gap-1 flex-1" data-step="DRAFT">
+          <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300">
+            <i class="fas fa-pencil-alt" style="font-size:11px"></i>
+          </div>
+          <span class="text-center" style="font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Draft</span>
+        </div>
+        <div class="step-line flex-1 h-0.5 bg-amber-100 mb-4 mx-1"></div>
+        <div class="step-node flex flex-col items-center gap-1 flex-1" data-step="SUBMITTED">
+          <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300">
+            <i class="fas fa-paper-plane" style="font-size:11px"></i>
+          </div>
+          <span class="text-center" style="font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Submitted</span>
+        </div>
+        <div class="step-line flex-1 h-0.5 bg-amber-100 mb-4 mx-1"></div>
+        <div class="step-node flex flex-col items-center gap-1 flex-1" data-step="DO_REVIEWED">
+          <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300">
+            <i class="fas fa-eye" style="font-size:11px"></i>
+          </div>
+          <span class="text-center" style="font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:rgba(30,64,175,0.4);">DO Review</span>
+        </div>
+        <div class="step-line flex-1 h-0.5 bg-amber-100 mb-4 mx-1"></div>
+        <div class="step-node flex flex-col items-center gap-1 flex-1" data-step="FO_APPROVED">
+          <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300">
+            <i class="fas fa-check" style="font-size:11px"></i>
+          </div>
+          <span class="text-center" style="font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:rgba(30,64,175,0.4);">FO Approval</span>
+        </div>
+        <div class="step-line flex-1 h-0.5 bg-amber-100 mb-4 mx-1"></div>
+        <div class="step-node flex flex-col items-center gap-1 flex-1" data-step="CPO_CONFIRMED">
+          <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300">
+            <i class="fas fa-stamp" style="font-size:11px"></i>
+          </div>
+          <span class="text-center" style="font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:rgba(30,64,175,0.4);">CPO Confirm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status message -->
+    <div id="statusMessage" class="mt-4 text-sm text-blue-900/60 text-center italic">Loading your form status...</div>
+  </div>
+
+  <!-- Action card -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <button onclick="if(window.showSection) showSection('my-form'); else document.dispatchEvent(new CustomEvent('emolNav',{detail:'my-form'}))"
+      class="flex items-center gap-3 p-4 bg-white/60 rounded-xl border border-amber-100 shadow hover:bg-amber-50/50 transition-all text-left cursor-pointer w-full">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+        <i class="fas fa-file-edit" style="font-size:16px"></i>
+      </div>
+      <div>
+        <div class="font-bold text-navy text-sm" id="formActionLabel">Fill My Form</div>
+        <div class="text-xs text-blue-900/40 mt-0.5">Personal emolument data</div>
+      </div>
+      <i class="fas fa-chevron-right ml-auto text-blue-900/20" style="font-size:11px"></i>
+    </button>
+
+    <button onclick="if(window.showSection) showSection('progress'); else document.dispatchEvent(new CustomEvent('emolNav',{detail:'progress'}))"
+      class="flex items-center gap-3 p-4 bg-white/60 rounded-xl border border-amber-100 shadow hover:bg-amber-50/50 transition-all text-left cursor-pointer w-full">
+      <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+        <i class="fas fa-tasks" style="font-size:16px"></i>
+      </div>
+      <div>
+        <div class="font-bold text-navy text-sm">Track Progress</div>
+        <div class="text-xs text-blue-900/40 mt-0.5">Approval pipeline status</div>
+      </div>
+      <i class="fas fa-chevron-right ml-auto text-blue-900/20" style="font-size:11px"></i>
+    </button>
+  </div>
+</div>
+
+<style>
+  .step-circle {
+    border-color: rgba(30,64,175,0.15);
+    color: rgba(30,64,175,0.3);
+    background: white;
+  }
+  .step-node.done .step-circle {
+    border-color: #22c55e;
+    background: #22c55e;
+    color: white;
+  }
+  .step-node.current .step-circle {
+    border-color: rgb(30 64 175);
+    background: rgb(30 64 175);
+    color: white;
+    box-shadow: 0 0 0 3px rgba(30,64,175,0.15);
+  }
+  .step-node.rejected .step-circle {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: white;
+  }
+  .step-line.done { background: #22c55e; }
+  .step-line.current { background: rgb(30 64 175); }
+</style>
+
+<script>
+(function() {
+  const STATUS_ORDER = ['DRAFT','SUBMITTED','DO_REVIEWED','FO_APPROVED','CPO_CONFIRMED'];
+  const STATUS_LABELS = {
+    DRAFT:         { label: 'Draft', color: 'bg-gray-100 text-gray-600', msg: 'Your form has not been submitted yet. Fill and submit to begin the approval process.' },
+    SUBMITTED:     { label: 'Submitted — Awaiting DO Review', color: 'bg-blue-50 text-blue-600', msg: 'Your form has been submitted. Waiting for your Divisional Officer to review.' },
+    DO_REVIEWED:   { label: 'DO Reviewed — Awaiting FO Approval', color: 'bg-amber-50 text-amber-600', msg: 'Your Divisional Officer has reviewed your form. Awaiting Flag Officer approval.' },
+    FO_APPROVED:   { label: 'FO Approved — Awaiting CPO Confirmation', color: 'bg-green-50 text-green-600', msg: 'Your Flag Officer has approved. Awaiting Command Payroll Officer final confirmation.' },
+    CPO_CONFIRMED: { label: 'Confirmed', color: 'bg-green-100 text-green-700', msg: 'Your form has been fully confirmed. No further action required.' },
+    REJECTED:      { label: 'Rejected — Action Required', color: 'bg-red-50 text-red-600', msg: 'Your form was rejected. Please review and resubmit.' },
+  };
+
+  function applyStatus(status) {
+    const badge = document.getElementById('formStatusBadge');
+    const msg   = document.getElementById('statusMessage');
+    const actionLabel = document.getElementById('formActionLabel');
+    const info  = STATUS_LABELS[status] || STATUS_LABELS.DRAFT;
+
+    badge.className = 'text-xs font-bold px-3 py-1 rounded-full ' + info.color;
+    badge.textContent = info.label;
+    msg.textContent = info.msg;
+
+    if (status === 'DRAFT' || status === 'REJECTED') {
+      actionLabel.textContent = status === 'REJECTED' ? 'Edit & Resubmit' : 'Fill My Form';
+    } else {
+      actionLabel.textContent = 'View My Form';
+    }
+
+    // Highlight pipeline steps
+    const nodes = document.querySelectorAll('.step-node');
+    const lines = document.querySelectorAll('.step-line');
+    const currentIdx = status === 'REJECTED' ? 0 : STATUS_ORDER.indexOf(status);
+
+    nodes.forEach((node, i) => {
+      node.classList.remove('done','current','rejected');
+      if (status === 'REJECTED' && i === 0) { node.classList.add('rejected'); }
+      else if (i < currentIdx) { node.classList.add('done'); }
+      else if (i === currentIdx) { node.classList.add('current'); }
+    });
+    lines.forEach((line, i) => {
+      line.classList.remove('done','current');
+      if (i < currentIdx - 1) line.classList.add('done');
+      else if (i === currentIdx - 1) line.classList.add('current');
+    });
+  }
+
+  // Greeting
+  try {
+    const name = localStorage.getItem('full_name') || 'Officer';
+    const first = name.trim().split(' ')[0];
+    const h = new Date().getHours();
+    const part = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+    const el = document.getElementById('pers-greeting');
+    if (el) el.textContent = 'Good ' + part + ', ' + first;
+  } catch(e) {}
+
+  // Fetch form status
+  const token = localStorage.getItem('token');
+  if (!token) { applyStatus('DRAFT'); return; }
+
+  fetch('/form/load', {
+    headers: { Authorization: 'Bearer ' + token }
+  })
+  .then(r => r.ok ? r.json() : null)
+  .then(data => {
+    const status = data?.status || 'DRAFT';
+    applyStatus(status);
+  })
+  .catch(() => applyStatus('DRAFT'));
+})();
+</script>

@@ -35,6 +35,7 @@ const {
   requirePersonnel,
   requireEmolRole,
 } = require("../../../../middware/emolumentAuth");
+const reportsService = require("./reports.service");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -48,7 +49,7 @@ router.use((req, res, next) => {
 router.use(verifyToken);
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/progress
+// GET /reports/progress
 // All ships grouped by command.
 // Visible to any elevated role.
 // ─────────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ router.get("/progress", requireAnyEmolRole, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/dashboard
+// GET /reports/dashboard
 // Aggregate counts + class breakdown + unfiled + top ships.
 // ─────────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ router.get("/dashboard", requireAnyEmolRole, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/years
+// GET /reports/years
 // Historical year summary from ef_personalinfoshist.
 // EMOL_ADMIN only — historical data is sensitive.
 // ─────────────────────────────────────────────────────────────
@@ -101,7 +102,7 @@ router.get("/years", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/ship/:ship
+// GET /reports/ship/:ship
 // Detailed breakdown for one ship.
 // requireShipAccess: DO/FO for their ship, EMOL_ADMIN all ships.
 // ─────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ router.get("/ship/:ship", requireShipAccess, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/command/:command
+// GET /reports/command/:command
 // Breakdown for one command + per-ship detail within it.
 // requireCommandAccess: CPO for their command, EMOL_ADMIN all.
 // ─────────────────────────────────────────────────────────────
@@ -139,7 +140,7 @@ router.get("/command/:command", requireCommandAccess, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/personnel/:svcno/history
+// GET /reports/personnel/:svcno/history
 // Approval trail for a specific personnel.
 // Own record: requirePersonnel (svcno must match req.user_id).
 // Other personnel: requireAnyEmolRole (officers can view anyone's trail).
@@ -165,7 +166,7 @@ router.get("/personnel/:svcno/history", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/emolument/reports/cache/bust
+// POST /reports/cache/bust
 // Invalidates report caches so the next request re-queries live data.
 // Any authenticated user can call this — useful after a bulk approve
 // or confirmation so the dashboard reflects changes immediately.
@@ -205,7 +206,7 @@ router.post("/cache/bust", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/emolument/reports/cache/status
+// GET /reports/cache/status
 // Shows live cache keys and hit/miss stats.
 // EMOL_ADMIN only — this is a debugging/ops endpoint.
 // ─────────────────────────────────────────────────────────────

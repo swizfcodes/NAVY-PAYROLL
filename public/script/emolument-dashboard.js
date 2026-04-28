@@ -627,7 +627,7 @@ async function loadStats() {
   const token = localStorage.getItem('token');
   try {
     const params = new URLSearchParams({ role: primaryRole });
-    const res = await fetch(`/api/emolument/dashboard/stats?${params}`, {
+    const res = await fetch(`/dashboard/stats?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -722,7 +722,7 @@ function updateTime() {
 async function loadProcessingYear() {
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/emolument/system/status', {
+    const res = await fetch('/system/status', {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;

@@ -1,0 +1,494 @@
+<!-- FILE: emolument-sections/admin/home.html
+     Data: GET /reports/dashboard -->
+
+<style>
+  .ah-name {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+    margin: 0 0 2px;
+  }
+
+  .ah-sub {
+    font-size: 0.75rem;
+    color: rgba(30, 64, 175, 0.45);
+    margin: 0;
+  }
+
+  .ah-lbl {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(30, 64, 175, 0.38);
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  /* ── Stat cell ── */
+  .ah-cell {
+    padding: 1.1rem 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* icon + label sit side by side */
+  .ah-cell-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    text-align: left;
+  }
+
+  .ah-cell-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .ah-cell-lbl {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgb(30 64 175);
+    line-height: 1.25;
+  }
+
+  /* value badge — centered below the head */
+  .ah-cell-val {
+    border-radius: 0.375rem;
+    padding: 0.3rem 1.1rem;
+    font-size: 1.4rem;
+    font-weight: 900;
+    min-width: 72px;
+    text-align: center;
+    display: block;
+  }
+
+  .ah-val-blue {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+  }
+
+  .ah-val-green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+  }
+
+  .ah-val-amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+  }
+
+  .ah-val-red {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+  }
+
+  /* ── Skeleton ── */
+  .ah-sk {
+    display: inline-block;
+    background: rgba(251, 191, 36, 0.18);
+    border-radius: 0.25rem;
+    animation: ah-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes ah-pulse {
+
+    0%,
+    100% {
+      opacity: 1
+    }
+
+    50% {
+      opacity: 0.4
+    }
+  }
+
+  /* ── Progress bar ── */
+  .ah-prog-bar {
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .ah-prog-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f5c842, rgb(30 64 175));
+    transition: width 1s ease;
+    width: 0%;
+  }
+
+  /* ── Top ships ── */
+  .ah-ship-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.32rem 0;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+  }
+
+  .ah-ship-row:last-child {
+    border-bottom: none;
+  }
+
+  .ah-ship-rank {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: rgba(30, 64, 175, 0.28);
+    min-width: 14px;
+  }
+
+  .ah-ship-name {
+    flex: 1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgb(30 64 175);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .ah-ship-bar {
+    width: 40px;
+    height: 3px;
+    background: rgba(251, 191, 36, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .ah-ship-fill {
+    height: 100%;
+    background: rgb(30 64 175);
+    border-radius: 999px;
+    transition: width 0.7s ease;
+  }
+
+  .ah-ship-pct {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(30, 64, 175, 0.5);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  /* ── Refresh badge ── */
+  .ah-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(30, 64, 175, 0.4);
+    background: rgba(30, 64, 175, 0.05);
+    border: 1px solid rgba(30, 64, 175, 0.1);
+    border-radius: 999px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ah-refresh:hover {
+    background: rgba(30, 64, 175, 0.1);
+  }
+
+  .ah-rdot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #22c55e;
+  }
+
+  .ah-rdot.stale {
+    background: #f59e0b;
+  }
+</style>
+
+<div class="p-2 md:p-4 lg:p-6">
+
+  <!-- Greeting -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:1rem;">
+    <div>
+      <h2 class="ah-name" id="ah-name">Admin Dashboard</h2>
+    </div>
+    <button class="ah-refresh" onclick="window.ahLoad(true)">
+      <span class="ah-rdot" id="ah-rdot"></span>
+      <span id="ah-rlbl">Live</span>
+      <i class="fas fa-sync-alt" style="font-size:8px" id="ah-rspin"></i>
+    </button>
+  </div>
+
+  <section class="flex justify-center p-2 md:p-4">
+    <div class="w-full max-w-7xl">
+
+      <div class="grid grid-cols-4">
+
+        <!-- ROW 1: Officers -->
+        <div class="p-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Officers</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl text-xs md:text-xs" style="font-size:clamp(9px,1.5vw,12px)">All Officers</span>
+            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-o-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Officers Approved</span>
+            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-o-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
+            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-o-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
+            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-o-nf">
+            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+        </div>
+
+        <!-- ROW 2: Ratings -->
+        <div class="p-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Ratings</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">All Ratings</span>
+            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-r-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Rating Approved</span>
+            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-r-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
+            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-r-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-b-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
+            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-r-nf">
+            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+        </div>
+
+        <!-- ROW 3: Training -->
+        <div class="p-2">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Training</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">All Trainee Personnel</span>
+            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-t-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Trainee Approved</span>
+            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-t-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
+            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
+            id="s-t-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          </p>
+        </div>
+        <div class="p-2 border-l-2 border-gray-200">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
+            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
+            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+          </div>
+          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-t-nf">
+            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── OVERALL + TOP SHIPS side by side on md+ ── -->
+  <div class="mt-4 md:grid md:grid-cols-2 md:gap-4">
+
+    <section class="flex justify-center mb-4 md:mb-0">
+      <div class="frame-2 w-full p-4">
+        <p class="ah-lbl" style="margin-top:0;">Overall Completion</p>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">
+          <span style="font-size:1.6rem;font-weight:900;color:rgb(30 64 175);line-height:1;" id="ah-pct">—%</span>
+          <span style="font-size:0.72rem;color:rgba(30,64,175,0.45);" id="ah-of">— / — personnel</span>
+        </div>
+        <div class="ah-prog-bar mb-2">
+          <div class="ah-prog-fill" id="ah-fill"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:rgba(30,64,175,0.38);">
+          <span id="ah-conf-lbl">— confirmed</span>
+          <span id="ah-nf-lbl">— not filed</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex justify-center">
+      <div class="frame-2 w-full p-4">
+        <p class="ah-lbl" style="margin-top:0;">Top Ships by Completion</p>
+        <div id="ah-ships-list">
+          <div class="ah-sk" style="height:10px;width:70%;margin-bottom:8px;display:block;border-radius:4px;"></div>
+          <div class="ah-sk" style="height:10px;width:85%;margin-bottom:8px;display:block;border-radius:4px;"></div>
+          <div class="ah-sk" style="height:10px;width:55%;display:block;border-radius:4px;"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    const TOKEN = localStorage.getItem('token');
+
+    try {
+      const name = (localStorage.getItem('full_name') || 'Admin').trim().split(' ')[0];
+      const h = new Date().getHours();
+      const part = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+      const el = document.getElementById('ah-name');
+      if (el) el.textContent = 'Good ' + part + ', ' + name;
+    } catch (e) { }
+
+    function N(v) { return (v === undefined || v === null) ? '0' : Number(v).toLocaleString(); }
+    function pct(a, b) { return (!b || b === 0) ? 0 : Math.round(a / b * 100); }
+    function sid(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+    function render(data) {
+      const g = data.global || {};
+      const byC = data.byClass || [];
+      const ships = data.topShips || [];
+
+      /* Overall */
+      const total = g.total_personnel || 0;
+      const conf = g.total_confirmed || 0;
+      const p = pct(conf, total);
+      sid('ah-pct', p + '%');
+      sid('ah-of', conf.toLocaleString() + ' / ' + total.toLocaleString() + ' personnel');
+      sid('ah-conf-lbl', conf.toLocaleString() + ' confirmed');
+      sid('ah-nf-lbl', N(g.total_not_filed) + ' not filed');
+      setTimeout(() => { const f = document.getElementById('ah-fill'); if (f) f.style.width = p + '%'; }, 80);
+
+      /* Class rows
+         classes 1=Officers 2=Ratings 3=Training
+         Approved  = cpo_confirmed
+         Awaiting  = submitted + do_reviewed + fo_approved
+         Not Filed = not_filed                              */
+      const pfx = { 1: 's-o', 2: 's-r', 3: 's-t' };
+      byC.forEach(c => {
+        const px = pfx[c.classes]; if (!px) return;
+        const await_ = (c.submitted || 0) + (c.do_reviewed || 0) + (c.fo_approved || 0);
+        sid(px + '-total', N(c.total));
+        sid(px + '-conf', N(c.cpo_confirmed));
+        sid(px + '-pend', N(await_));
+        sid(px + '-nf', N(c.not_filed));
+      });
+
+      /* Top ships */
+      const sl = document.getElementById('ah-ships-list');
+      if (sl && ships.length) {
+        sl.innerHTML = ships.map((s, i) => `
+        <div class="ah-ship-row">
+          <span class="ah-ship-rank">${i + 1}</span>
+          <span class="ah-ship-name">${s.ship}</span>
+          <div class="ah-ship-bar"><div class="ah-ship-fill" style="width:${s.completion_pct || 0}%"></div></div>
+          <span class="ah-ship-pct">${s.completion_pct || 0}%</span>
+        </div>`).join('');
+      } else if (sl) {
+        sl.innerHTML = '<div style="text-align:center;padding:0.75rem 0;font-size:0.75rem;color:rgba(30,64,175,0.3);">No data</div>';
+      }
+
+      /* Cache badge */
+      const dot = document.getElementById('ah-rdot');
+      const lbl = document.getElementById('ah-rlbl');
+      if (dot) dot.className = 'ah-rdot' + (data.cached ? ' stale' : '');
+      if (lbl) lbl.textContent = data.cached ? 'Cached' : 'Live';
+    }
+
+    function fetch_(bust) {
+      if (!TOKEN) return;
+      const spin = document.getElementById('ah-rspin');
+      if (spin) spin.style.animation = 'ah-spin 0.7s linear infinite';
+
+      const go = () =>
+        fetch('/reports/dashboard', { headers: { Authorization: 'Bearer ' + TOKEN } })
+          .then(r => r.ok ? r.json() : null)
+          .then(res => { if (res && res.data) render(res.data); })
+          .catch(() => { })
+          .finally(() => { if (spin) spin.style.animation = ''; });
+
+      if (bust) {
+        fetch('/reports/cache/bust', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scope: 'all' }),
+        }).catch(() => { }).finally(go);
+      } else { go(); }
+    }
+
+    window.ahLoad = function (bust) { fetch_(bust); };
+
+    if (!document.getElementById('ah-spin-kf')) {
+      const s = document.createElement('style');
+      s.id = 'ah-spin-kf';
+      s.textContent = '@keyframes ah-spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    }
+
+    fetch_(false);
+  })();
+</script>

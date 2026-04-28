@@ -1,263 +1,1464 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta charset="utf-8" />
-  <title>NAVY Emolument</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emolument Form — Nigerian Navy CPO</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts: Playfair Display (headings) + IBM Plex Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:    { DEFAULT: '#0B1E3D', light: '#122952', deep: '#07152B' },
+            gold:    { DEFAULT: '#C4932A', light: '#D4A94A', pale: '#F5EDD5' },
+            steel:   { DEFAULT: '#2E5090', light: '#3D6BB5' },
+            smoke:   { DEFAULT: '#F0F3F8', dark: '#DDE3EE' },
+            ink:     { DEFAULT: '#111827' },
+            muted:   { DEFAULT: '#6B7280' },
+            success: { DEFAULT: '#1A6B45', light: '#DCFCE7' },
+            warning: { DEFAULT: '#92400E', light: '#FEF3C7' },
+            danger:  { DEFAULT: '#9B1C1C', light: '#FEE2E2' },
+          },
+          fontFamily: {
+            display: ['Playfair Display', 'Georgia', 'serif'],
+            body:    ['IBM Plex Sans', 'sans-serif'],
+            mono:    ['IBM Plex Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
 
   <style>
-    html { visibility: hidden; }
-    html.ready { visibility: visible; }
-    body { opacity: 0; transition: opacity 0.15s ease; }
-    body.initialized { opacity: 1; }
+    * { box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: #F0F3F8; }
+
+    /* ── Subtle page pattern ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(11,30,61,.04) 39px, rgba(11,30,61,.04) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(11,30,61,.04) 39px, rgba(11,30,61,.04) 40px);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Section reveal animation ── */
+    .section-card { animation: slideUp .35s ease both; }
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .section-card:nth-child(1)  { animation-delay:.05s }
+    .section-card:nth-child(2)  { animation-delay:.10s }
+    .section-card:nth-child(3)  { animation-delay:.15s }
+    .section-card:nth-child(4)  { animation-delay:.20s }
+    .section-card:nth-child(5)  { animation-delay:.25s }
+    .section-card:nth-child(6)  { animation-delay:.30s }
+    .section-card:nth-child(7)  { animation-delay:.35s }
+    .section-card:nth-child(8)  { animation-delay:.40s }
+
+    /* ── Form inputs ── */
+    .field {
+      width: 100%;
+      padding: .5rem .75rem;
+      border: 1.5px solid #C8D3E8;
+      border-radius: .375rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: .875rem;
+      color: #111827;
+      background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .field:focus {
+      border-color: #2E5090;
+      box-shadow: 0 0 0 3px rgba(46,80,144,.12);
+    }
+    .field:disabled {
+      background: #F0F3F8;
+      color: #6B7280;
+      cursor: not-allowed;
+    }
+    .field-label {
+      display: block;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #374151;
+      margin-bottom: .3rem;
+    }
+    .field-label .req { color: #9B1C1C; margin-left:.15rem; }
+
+    /* ── Section heading rule ── */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding-bottom: .6rem;
+      border-bottom: 2px solid #0B1E3D;
+      margin-bottom: 1.25rem;
+    }
+    .section-number {
+      width: 2rem; height: 2rem;
+      border-radius: 50%;
+      background: #0B1E3D;
+      color: #C4932A;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .8rem; font-weight: 500;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      color: #0B1E3D;
+      letter-spacing: .01em;
+    }
+
+    /* ── Toggle checkbox ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .45rem .6rem;
+      border-radius: .3rem;
+      border: 1.5px solid #DDE3EE;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      user-select: none;
+    }
+    .toggle-row:hover { border-color: #2E5090; background: #F0F3F8; }
+    .toggle-row input[type=checkbox] { accent-color: #2E5090; width:1rem; height:1rem; cursor:pointer; }
+    .toggle-row.active { border-color: #2E5090; background: #EBF0FA; }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap:.4rem;
+      padding: .25rem .75rem;
+      border-radius: 9999px;
+      font-size: .7rem; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+
+    /* ── Step indicator ── */
+    .step-dot {
+      width: .5rem; height: .5rem;
+      border-radius: 50%;
+      background: #C8D3E8;
+      transition: background .2s, transform .2s;
+    }
+    .step-dot.active { background: #C4932A; transform: scale(1.3); }
+    .step-dot.done   { background: #0B1E3D; }
+
+    /* ── Photo upload ── */
+    .photo-zone {
+      border: 2px dashed #C8D3E8;
+      border-radius: .5rem;
+      background: #F8FAFD;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: .5rem;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .photo-zone:hover { border-color: #2E5090; background: #EBF0FA; }
+    .photo-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      min-width: 280px; max-width: 380px;
+      padding: .85rem 1.1rem;
+      border-radius: .5rem;
+      display: flex; align-items: center; gap: .7rem;
+      font-size: .875rem; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      z-index: 999;
+      transform: translateY(1rem); opacity: 0;
+      transition: transform .25s ease, opacity .25s ease;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Loader overlay ── */
+    #loader {
+      position: fixed; inset: 0;
+      background: rgba(11,30,61,.65);
+      backdrop-filter: blur(4px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
+      gap: 1rem;
+    }
+    .spinner {
+      width: 2.5rem; height: 2.5rem;
+      border: 3px solid rgba(196,147,42,.3);
+      border-top-color: #C4932A;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Print ── */
+    @media print {
+      body::before { display:none; }
+      #topbar, #action-bar, #toast, #loader { display:none !important; }
+      .section-card { page-break-inside: avoid; }
+    }
   </style>
-
-  <link rel="apple-touch-icon" sizes="180x180" href="photos/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="photos/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="photos/favicon-16x16.png">
-  <link rel="manifest" href="photos/site.webmanifest">
-
-  <link rel="stylesheet" href="styles/output.css">
-  <link rel="stylesheet" href="more-assets/css/boxicons.min.css">
-  <link rel="stylesheet" href="more-assets/css/fontawesome.all.min.css">
-  <link rel="stylesheet" href="offline-assets/css/choices.min.css">
-  <link rel="stylesheet" href="styles/dashboard.css">
-  <script src="offline-assets/js/choices.min.js"></script>
 </head>
 
-<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-dvh antialiased overflow-auto">
-<div class="max-w-layout mx-auto min-h-dvh flex flex-col">
+<body class="min-h-screen relative z-10">
 
-  <!-- ══════════════════════════════════════════════════════
-       HEADER  — identical structure to dashboard.html
-  ══════════════════════════════════════════════════════ -->
-  <header
-    class="max-w-layout fixed top-0 w-full z-30 bg-transparent flex items-center justify-between py-2 px-2 border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
-    id="emol-header">
+  <!-- ═══════════════════════════════════════════
+       LOADER
+  ═══════════════════════════════════════════ -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <p class="text-white/80 text-sm font-body tracking-wide">Loading personnel data…</p>
+  </div>
 
-    <div class="flex items-center gap-4 bg-opacity-50">
-      <!-- Hamburger -->
-      <button id="emol-menu-toggle" class="p-2 rounded focus:outline-none" aria-label="Toggle menu">
-        <div class="menu flex flex-col gap-1.5" aria-hidden="true">
-          <img class="line w-6"   src="photos/line2i199-45p.svg" alt="" />
-          <img class="img w-3"   src="photos/line2i199-45p.svg" alt="" />
-          <img class="line-2 w-6" src="photos/line4i199-83u6.svg" alt="" />
+  <!-- ═══════════════════════════════════════════
+       TOP BAR
+  ═══════════════════════════════════════════ -->
+  <header id="topbar" class="bg-navy sticky top-0 z-50 shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-14">
+
+        <!-- Crest + Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-navy" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 1.5a6.5 6.5 0 110 13 6.5 6.5 0 010-13zm0 2a.75.75 0 00-.75.75v3.5H5.75a.75.75 0 000 1.5h3.5v3.5a.75.75 0 001.5 0v-3.5h3.5a.75.75 0 000-1.5h-3.5v-3.5A.75.75 0 0010 5.5z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-white font-display text-sm leading-tight">Nigerian Navy</p>
+            <p class="text-gold/80 text-[10px] tracking-widest uppercase font-body">Command Pay Office</p>
+          </div>
         </div>
-      </button>
 
-      <div class="text-2xl lg:text-3xl font-black text-navy select-none">NAVY</div>
+        <!-- Form type badge + year -->
+        <div class="flex items-center gap-3">
+          <span id="form-type-badge" class="status-badge bg-gold/20 text-gold border border-gold/30 hidden">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+            <span id="form-type-label">Officer Form</span>
+          </span>
+          <span id="form-year-display" class="font-mono text-xs text-white/50 hidden"></span>
+          <div id="save-status" class="flex items-center gap-1.5 text-xs text-white/40 hidden">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Saved</span>
+          </div>
+        </div>
 
-      <!-- Support -->
-      <div class="relative group">
-        <button
-          class="text-2xl font-black text-navy select-none cursor-pointer"
-          onclick="emolNav.go('support', 'Help & Support')"
-          aria-label="Support">
-          <i class="fa-solid fa-headset mr-2"></i>
-        </button>
-        <span class="absolute top-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
-                     text-navy font-bold px-2 py-1 rounded shadow text-xs whitespace-nowrap">
-          Support
-        </span>
       </div>
-
-      <!-- Profile -->
-      <div class="relative group">
-        <button
-          class="text-2xl font-black text-navy select-none cursor-pointer"
-          onclick="emolNav.go('my-profile', 'My Profile')"
-          aria-label="Profile">
-          <i class="fas fa-user-circle mr-2"></i>
-        </button>
-        <span class="absolute top-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block
-                     text-navy font-bold px-2 py-1 rounded shadow text-xs whitespace-nowrap">
-          Profile
-        </span>
-      </div>
-    </div>
-
-    <!-- Right: year + logo -->
-    <div class="flex flex-wrap items-center gap-6 cursor-default">
-      <p class="text-sm font-bold text-navy text-blue-900">
-        Processing Year:
-        <span class="text-yellow-600 text-md" id="emol-processing-year">Loading…</span>
-      </p>
-      <img src="photos/logo.png" alt="logo"
-           class="hidden sm:block lg:w-[25px] h-[35px] object-contain" />
     </div>
   </header>
 
-  <!-- ══════════════════════════════════════════════════════
-       LAYOUT WRAPPER
-  ══════════════════════════════════════════════════════ -->
-  <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
+  <!-- ═══════════════════════════════════════════
+       FORM BLOCKED MESSAGE (not eligible)
+  ═══════════════════════════════════════════ -->
+  <div id="blocked-msg" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
+    <div class="w-16 h-16 bg-navy/10 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-navy/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+    </div>
+    <h2 class="font-display text-2xl text-navy mb-2">Form Not Available</h2>
+    <p id="blocked-reason" class="text-muted text-sm max-w-md mx-auto"></p>
+  </div>
 
-    <!-- ══════════════════════════════════════════════════
-         SIDEBAR  — same structure/classes as dashboard.html
-    ══════════════════════════════════════════════════ -->
-    <aside id="emol-sidebar"
-      class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-[max(0px,calc(50%-720px))] z-20
-             lg:w-[250px] bg-transparent lg:h-[calc(100vh-1rem)] shadow-lg overflow-y-auto">
+  <!-- ═══════════════════════════════════════════
+       MAIN FORM WRAPPER
+  ═══════════════════════════════════════════ -->
+  <main id="form-wrapper" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-5 pb-36">
 
-      <nav class="px-4">
-        <ul class="flex flex-col gap-[1.1rem]" id="emol-nav-list">
+    <!-- ── FORM HEADER ── -->
+    <div class="section-card bg-navy rounded-xl overflow-hidden shadow-xl">
+      <div class="relative px-6 py-6">
+        <!-- Decorative corner lines -->
+        <div class="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-gold/40 rounded-tl"></div>
+        <div class="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-gold/40 rounded-tr"></div>
+        <div class="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-gold/40 rounded-bl"></div>
+        <div class="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-gold/40 rounded-br"></div>
 
-          <!-- Dashboard (always) -->
-          <li class="relative">
-            <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-               href="#" onclick="emolNav.returnHome(); return false;" title="Dashboard">
-              <span class="flex items-center gap-2">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-              </span>
-            </a>
-          </li>
-
-          <!-- My Form (always) -->
-          <li class="relative">
-            <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-               href="#" onclick="emolNav.go('my-form', 'My Emolument Form'); return false;">
-              <span class="flex items-center gap-2">
-                <i class="fas fa-file-alt"></i>
-                <span>My Form</span>
-              </span>
-            </a>
-          </li>
-
-          <!-- My Ships — injected by JS if ship officer -->
-          <!-- id="emol-ships-nav-item" -->
-
-          <!-- Progress — injected by JS if elevated role -->
-          <!-- id="emol-progress-nav-item" -->
-
-          <!-- Admin Panel — injected by JS if EMOL_ADMIN -->
-          <!-- id="emol-admin-nav-item" -->
-
-          <!-- Dynamic items injected here by emolument-dashboard.js -->
-          <li id="emol-dynamic-nav-items"></li>
-
-          <!-- Logout (always) -->
-          <li class="relative">
-            <button
-              onclick="emolLogout()"
-              class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">
-              Logout
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </aside>
-
-    <!-- ══════════════════════════════════════════════════
-         MAIN CONTENT
-    ══════════════════════════════════════════════════ -->
-    <main class="overlap relative p-6 lg:px-10" id="emol-main">
-
-      <!-- Greeting -->
-      <div class="mt-4">
-        <p id="emol-greeting"
-           class="text-md md:text-xl lg:text-xl font-bold text-navy text-center text-blue-900"></p>
-      </div>
-
-      <!-- Time -->
-      <div class="text-center my-2">
-        <p id="emol-time"
-           class="text-yellow-600 text-base font-semibold lg:text-lg tracking-wide"></p>
-      </div>
-
-      <!-- ── STATS STRIP ────────────────────────────── -->
-      <section class="mt-4 flex justify-center">
-        <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto
-                    bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 h-full rounded-lg overflow-hidden"
-               id="emol-stats-grid">
-
-            <!-- Stat 1 -->
-            <div class="p-6 flex flex-col items-center gap-4">
-              <div class="flex items-center gap-1">
-                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat1-label">—</h3>
-                <i id="emol-stat1-icon" class="fas fa-file-alt text-blue-600" style="font-size:22px"></i>
-              </div>
-              <div id="emol-stat1-value"
-                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning">
-                Loading…
-              </div>
-            </div>
-
-            <!-- Stat 2 -->
-            <div class="p-6 flex flex-col items-center gap-4">
-              <div class="flex items-center gap-1">
-                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat2-label">—</h3>
-                <i id="emol-stat2-icon" class="fas fa-check-circle text-green-600" style="font-size:22px"></i>
-              </div>
-              <div id="emol-stat2-value"
-                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-success">
-                Loading…
-              </div>
-            </div>
-
-            <!-- Stat 3 -->
-            <div class="p-6 flex flex-col items-center gap-4">
-              <div class="flex items-center gap-1">
-                <h3 class="text-navy font-bold text-sm text-center" id="emol-stat3-label">—</h3>
-                <i id="emol-stat3-icon" class="fas fa-users text-yellow-500" style="font-size:22px"></i>
-              </div>
-              <div id="emol-stat3-value"
-                   class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">
-                Loading…
-              </div>
-            </div>
-          </div>
-
-          <!-- SVG separators — same as payroll dashboard -->
-          <img class="hidden lg:block absolute top-[-15px] left-[34%] w-[31px] h-[239px] object-cover"
-               src="photos/line23022-bue8.svg" alt="" />
-          <img class="hidden lg:block absolute top-[-15px] left-[66%] w-[31px] h-[239px] object-cover"
-               src="photos/line23022-bue8.svg" alt="" />
+        <div class="text-center">
+          <p class="text-gold/70 text-[10px] tracking-[.2em] uppercase font-body mb-1">Federal Republic of Nigeria</p>
+          <h1 class="font-display text-2xl sm:text-3xl text-white mb-1">Emolument Form</h1>
+          <p class="text-white/50 text-xs tracking-widest uppercase font-body" id="header-form-type">Annual Personnel Data Collection</p>
         </div>
-      </section>
 
-      <!-- ── QUICK ACCESS + NOTIFICATIONS ─────────── -->
-      <section class="mt-6 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
-
-        <!-- Quick Access -->
-        <div class="frame-3 w-full h-auto sm:w-[416px] bg-white/20 rounded-xl p-6 shadow-lg">
-          <div class="flex items-center justify-between mb-6">
-            <h4 class="text-xl font-bold text-navy">Quick Access</h4>
-            <div class="text-sm text-gray-400" id="emol-quick-meta"></div>
+        <!-- Form number + year strip -->
+        <div class="mt-5 flex items-center justify-center gap-6 flex-wrap">
+          <div class="text-center">
+            <p class="text-gold/60 text-[10px] uppercase tracking-widest">Form No.</p>
+            <p id="header-form-no" class="font-mono text-gold text-lg">—</p>
           </div>
-          <div class="grid grid-cols-2 gap-4" id="emol-quick-grid">
-            <div class="col-span-2 text-center py-8 text-gray-500">
-              <p>Loading…</p>
+          <div class="w-px h-8 bg-white/10"></div>
+          <div class="text-center">
+            <p class="text-gold/60 text-[10px] uppercase tracking-widest">Service No.</p>
+            <p id="header-svc-no" class="font-mono text-white text-lg">—</p>
+          </div>
+          <div class="w-px h-8 bg-white/10"></div>
+          <div class="text-center">
+            <p class="text-gold/60 text-[10px] uppercase tracking-widest">Year</p>
+            <p id="header-year" class="font-mono text-white text-lg">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress steps -->
+      <div class="bg-navy-light/50 border-t border-white/10 px-6 py-3 flex items-center justify-between">
+        <p class="text-white/40 text-xs">Section progress</p>
+        <div class="flex items-center gap-1.5" id="step-dots"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 1 — PASSPORT PHOTOS
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="1">
+      <div class="section-heading">
+        <div class="section-number">01</div>
+        <h2 class="section-title">Passport Photographs</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Personnel Photo -->
+        <div>
+          <p class="field-label mb-2">Personnel <span class="req">*</span></p>
+          <div class="photo-zone h-36" id="zone-passport" onclick="triggerUpload('file-passport')">
+            <input type="file" id="file-passport" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoSelect(event,'preview-passport','zone-passport')">
+            <img id="preview-passport" class="hidden w-full h-full object-cover rounded" alt="Passport">
+            <div id="placeholder-passport" class="flex flex-col items-center gap-1 pointer-events-none">
+              <svg class="w-8 h-8 text-steel/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <p class="text-xs text-muted text-center">Click to upload<br><span class="text-[10px]">JPG/PNG/WEBP · max 5MB</span></p>
             </div>
           </div>
         </div>
 
-        <!-- Ships panel — shows ONLY for ship officers, hidden for pure PERSONNEL -->
-        <aside id="emol-ships-panel"
-          class="hidden w-full sm:w-[192px] h-auto bg-white/20 rounded-xl p-4 pt-5 shadow-lg">
-          <h4 class="text-sm font-bold text-navy mb-3 uppercase tracking-wide">My Ships</h4>
-          <ul class="flex flex-col gap-2" id="emol-ships-list">
-            <!-- populated by JS -->
-          </ul>
-        </aside>
+        <!-- NOK Photo -->
+        <div>
+          <p class="field-label mb-2">Next of Kin</p>
+          <div class="photo-zone h-36" id="zone-nok" onclick="triggerUpload('file-nok')">
+            <input type="file" id="file-nok" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoSelect(event,'preview-nok','zone-nok')">
+            <img id="preview-nok" class="hidden w-full h-full object-cover rounded" alt="NOK Passport">
+            <div id="placeholder-nok" class="flex flex-col items-center gap-1 pointer-events-none">
+              <svg class="w-8 h-8 text-steel/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <p class="text-xs text-muted text-center">NOK Photo<br><span class="text-[10px]">Optional</span></p>
+            </div>
+          </div>
+        </div>
 
-        <!-- Notifications (for pure personnel — no ships panel) -->
-        <aside id="emol-notifications"
-          class="flex-col justify-center w-full sm:w-[192px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
-          <!-- populated by JS -->
-        </aside>
+        <!-- Alt NOK Photo -->
+        <div>
+          <p class="field-label mb-2">Alternate Next of Kin</p>
+          <div class="photo-zone h-36" id="zone-altnok" onclick="triggerUpload('file-altnok')">
+            <input type="file" id="file-altnok" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoSelect(event,'preview-altnok','zone-altnok')">
+            <img id="preview-altnok" class="hidden w-full h-full object-cover rounded" alt="Alt NOK Passport">
+            <div id="placeholder-altnok" class="flex flex-col items-center gap-1 pointer-events-none">
+              <svg class="w-8 h-8 text-steel/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <p class="text-xs text-muted text-center">Alt NOK Photo<br><span class="text-[10px]">Optional</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      </section>
+    <!-- ══════════════════════════════════════
+         SECTION 2 — PERSONAL INFORMATION
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="2">
+      <div class="section-heading">
+        <div class="section-number">02</div>
+        <h2 class="section-title">Personal Information</h2>
+      </div>
 
-    </main>
-  </div><!-- /main-content-wrapper -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-1">
+          <label class="field-label">Surname <span class="req">*</span></label>
+          <input class="field" type="text" id="Surname" name="Surname" placeholder="e.g. ADEYEMI">
+        </div>
+        <div class="lg:col-span-2">
+          <label class="field-label">Other Names <span class="req">*</span></label>
+          <input class="field" type="text" id="OtherName" name="OtherName" placeholder="e.g. Babatunde Kolade">
+        </div>
+        <div>
+          <label class="field-label">Rank / Title <span class="req">*</span></label>
+          <input class="field" type="text" id="Rank" name="Rank" placeholder="e.g. Commander">
+        </div>
+        <div>
+          <label class="field-label">Service Number <span class="req">*</span></label>
+          <input class="field font-mono" type="text" id="serviceNumber" name="serviceNumber" disabled>
+        </div>
+        <div>
+          <label class="field-label">NIN</label>
+          <input class="field font-mono" type="text" id="NIN" name="NIN" placeholder="11-digit NIN" maxlength="11">
+        </div>
+        <div>
+          <label class="field-label">Sex <span class="req">*</span></label>
+          <select class="field" id="Sex" name="Sex">
+            <option value="">— Select —</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Marital Status <span class="req">*</span></label>
+          <select class="field" id="MaritalStatus" name="MaritalStatus">
+            <option value="">— Select —</option>
+            <option>Single</option>
+            <option>Married</option>
+            <option>Divorced</option>
+            <option>Widowed</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Date of Birth <span class="req">*</span></label>
+          <input class="field" type="date" id="Birthdate" name="Birthdate">
+        </div>
+        <div>
+          <label class="field-label">Religion</label>
+          <select class="field" id="religion" name="religion">
+            <option value="">— Select —</option>
+            <option>Christianity</option>
+            <option>Islam</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Phone (Primary) <span class="req">*</span></label>
+          <input class="field" type="tel" id="gsm_number" name="gsm_number" placeholder="+2348012345678">
+        </div>
+        <div>
+          <label class="field-label">Phone (Secondary)</label>
+          <input class="field" type="tel" id="gsm_number2" name="gsm_number2" placeholder="+2348012345678">
+        </div>
+        <div>
+          <label class="field-label">Email Address</label>
+          <input class="field" type="email" id="email" name="email" placeholder="name@navy.mil.ng">
+        </div>
+        <div class="sm:col-span-2 lg:col-span-3">
+          <label class="field-label">Home Address <span class="req">*</span></label>
+          <input class="field" type="text" id="home_address" name="home_address" placeholder="Full residential address">
+        </div>
+        <div>
+          <label class="field-label">State of Origin <span class="req">*</span></label>
+          <select class="field" id="StateofOrigin" name="StateofOrigin">
+            <option value="">— Select State —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">LGA of Origin <span class="req">*</span></label>
+          <select class="field" id="LocalGovt" name="LocalGovt">
+            <option value="">— Select LGA —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Qualification</label>
+          <select class="field" id="qualification" name="qualification">
+            <option value="">— Select —</option>
+            <option>WAEC/NECO</option>
+            <option>OND</option>
+            <option>HND</option>
+            <option>BSc/BA</option>
+            <option>MSc/MA</option>
+            <option>PhD</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-</div><!-- /max-w-layout -->
+    <!-- ══════════════════════════════════════
+         SECTION 3 — SERVICE DETAILS
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="3">
+      <div class="section-heading">
+        <div class="section-number">03</div>
+        <h2 class="section-title">Service Details</h2>
+      </div>
 
-<script src="script/menu-highlighting.js"></script>
-<script src="script/auth.js"></script>
-<script src="script/emolument-dashboard.js"></script>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Date of Enlistment <span class="req">*</span></label>
+          <input class="field" type="date" id="DateEmpl" name="DateEmpl">
+        </div>
+        <div>
+          <label class="field-label">Seniority Date</label>
+          <input class="field" type="date" id="seniorityDate" name="seniorityDate">
+        </div>
+        <div>
+          <label class="field-label">Year of Promotion</label>
+          <input class="field" type="text" id="yearOfPromotion" name="yearOfPromotion" placeholder="e.g. 2022">
+        </div>
+        <div>
+          <label class="field-label">Expiry of Engagement</label>
+          <input class="field" type="date" id="expirationOfEngagementDate" name="expirationOfEngagementDate">
+        </div>
+        <div>
+          <label class="field-label">Command <span class="req">*</span></label>
+          <select class="field" id="command" name="command">
+            <option value="">— Select Command —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Branch</label>
+          <select class="field" id="branch" name="branch">
+            <option value="">— Select Branch —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Ship / Unit <span class="req">*</span></label>
+          <input class="field" type="text" id="ship" name="ship" disabled>
+        </div>
+        <div>
+          <label class="field-label">Specialisation</label>
+          <input class="field" type="text" id="specialisation" name="specialisation" placeholder="e.g. Warfare">
+        </div>
+        <div>
+          <label class="field-label">Entry Mode</label>
+          <select class="field" id="entry_mode" name="entry_mode">
+            <option value="">— Select —</option>
+            <option>Direct</option>
+            <option>DSSC</option>
+            <option>Short Service</option>
+            <option>Regular</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Grade Level</label>
+          <input class="field" type="text" id="gradelevel" name="gradelevel" placeholder="e.g. GL10">
+        </div>
+        <div>
+          <label class="field-label">Tax Code</label>
+          <input class="field" type="text" id="TaxCode" name="TaxCode">
+        </div>
+        <div>
+          <label class="field-label">Taxed</label>
+          <select class="field" id="taxed" name="taxed">
+            <option value="">— Select —</option>
+            <option value="YES">Yes</option>
+            <option value="NO">No</option>
+          </select>
+        </div>
+
+        <!-- Officer-only fields -->
+        <div id="field-entitlement" class="hidden">
+          <label class="field-label">Appointment / Entitlement</label>
+          <input class="field" type="text" id="entitlement" name="entitlement" placeholder="e.g. Executive Officer">
+        </div>
+        <div id="field-division" class="">
+          <label class="field-label">Division</label>
+          <input class="field" type="text" id="division" name="division">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 4 — BANK & FINANCIAL
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4">
+      <div class="section-heading">
+        <div class="section-number">04</div>
+        <h2 class="section-title">Bank &amp; Financial Details</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Account Number <span class="req">*</span></label>
+          <input class="field font-mono" type="text" id="BankACNumber" name="BankACNumber" placeholder="10-digit NUBAN" maxlength="10">
+        </div>
+        <div>
+          <label class="field-label">Bank <span class="req">*</span></label>
+          <select class="field" id="Bankcode" name="Bankcode">
+            <option value="">— Select Bank —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Bank Branch</label>
+          <input class="field" type="text" id="bankbranch" name="bankbranch" placeholder="e.g. Marina Branch">
+        </div>
+        <div>
+          <label class="field-label">Account Name</label>
+          <input class="field" type="text" id="AccountName" name="AccountName" placeholder="Name as on account">
+        </div>
+        <div>
+          <label class="field-label">PFA Code</label>
+          <input class="field" type="text" id="pfacode" name="pfacode">
+        </div>
+        <div>
+          <label class="field-label">NSITF Code</label>
+          <input class="field" type="text" id="NSITFcode" name="NSITFcode">
+        </div>
+        <div>
+          <label class="field-label">NHF Code</label>
+          <input class="field" type="text" id="NHFcode" name="NHFcode">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 5 — ACCOMMODATION
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5">
+      <div class="section-heading">
+        <div class="section-number">05</div>
+        <h2 class="section-title">Accommodation &amp; GBC</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Accommodation Type</label>
+          <select class="field" id="accomm_type" name="accomm_type">
+            <option value="">— Select —</option>
+            <option>Government</option>
+            <option>Private</option>
+            <option>Barracks</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Accommodation Status</label>
+          <select class="field" id="AcommodationStatus" name="AcommodationStatus">
+            <option value="">— Select —</option>
+            <option>Occupied</option>
+            <option>Vacant</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-1">
+          <label class="field-label">Address of Accommodation</label>
+          <input class="field" type="text" id="AddressofAcommodation" name="AddressofAcommodation">
+        </div>
+        <div>
+          <label class="field-label">GBC</label>
+          <select class="field" id="GBC" name="GBC">
+            <option value="">— Select —</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">GBC Number</label>
+          <input class="field" type="text" id="GBC_Number" name="GBC_Number">
+        </div>
+        <div>
+          <label class="field-label">Advance Date</label>
+          <input class="field" type="date" id="advanceDate" name="advanceDate">
+        </div>
+        <div>
+          <label class="field-label">Run-Out Date</label>
+          <input class="field" type="date" id="runoutDate" name="runoutDate">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 6 — ALLOWANCES
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6">
+      <div class="section-heading">
+        <div class="section-number">06</div>
+        <h2 class="section-title">Allowances</h2>
+      </div>
+
+      <p class="text-xs text-muted mb-4">Tick all allowances applicable to your current posting.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="allowances-grid">
+        <!-- Rendered by JS based on form type -->
+      </div>
+
+      <!-- Other allowance specify -->
+      <div class="mt-3" id="other-allow-detail" style="display:none">
+        <label class="field-label">Specify Other Allowance</label>
+        <input class="field mt-1" type="text" id="other_allowspecify" name="other_allowspecify" placeholder="Describe the allowance">
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 7 — LOANS
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7">
+      <div class="section-heading">
+        <div class="section-number">07</div>
+        <h2 class="section-title">Loans</h2>
+      </div>
+
+      <p class="text-xs text-muted mb-4">Enter details for all outstanding loans. Leave blank if not applicable.</p>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[600px]">
+          <thead>
+            <tr class="bg-smoke border-b border-smoke-dark">
+              <th class="text-left py-2 px-3 field-label">Loan Type</th>
+              <th class="text-left py-2 px-3 field-label">Amount (₦)</th>
+              <th class="text-left py-2 px-3 field-label">Year Taken</th>
+              <th class="text-left py-2 px-3 field-label">Tenor (Months)</th>
+              <th class="text-left py-2 px-3 field-label">Balance (₦)</th>
+            </tr>
+          </thead>
+          <tbody id="loans-table-body" class="divide-y divide-smoke-dark">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 8 — NEXT OF KIN
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8">
+      <div class="section-heading">
+        <div class="section-number">08</div>
+        <h2 class="section-title">Next of Kin</h2>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Primary NOK -->
+        <div>
+          <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">Primary NOK <span class="text-danger">*</span></p>
+          <div class="space-y-3">
+            <div>
+              <label class="field-label">Full Name <span class="req">*</span></label>
+              <input class="field" type="text" id="nok_primary_full_name" placeholder="Surname and other names">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Relationship <span class="req">*</span></label>
+                <select class="field" id="nok_primary_relationship">
+                  <option value="">— Select —</option>
+                  <option>Wife</option><option>Husband</option><option>Mother</option>
+                  <option>Father</option><option>Sister</option><option>Brother</option>
+                  <option>Son</option><option>Daughter</option><option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">National ID</label>
+                <input class="field font-mono" type="text" id="nok_primary_national_id" placeholder="NIN">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Phone 1 <span class="req">*</span></label>
+                <input class="field" type="tel" id="nok_primary_phone1">
+              </div>
+              <div>
+                <label class="field-label">Phone 2</label>
+                <input class="field" type="tel" id="nok_primary_phone2">
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Email</label>
+              <input class="field" type="email" id="nok_primary_email">
+            </div>
+            <div>
+              <label class="field-label">Address <span class="req">*</span></label>
+              <input class="field" type="text" id="nok_primary_address">
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternate NOK -->
+        <div>
+          <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">Alternate NOK</p>
+          <div class="space-y-3">
+            <div>
+              <label class="field-label">Full Name</label>
+              <input class="field" type="text" id="nok_alt_full_name" placeholder="Surname and other names">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Relationship</label>
+                <select class="field" id="nok_alt_relationship">
+                  <option value="">— Select —</option>
+                  <option>Wife</option><option>Husband</option><option>Mother</option>
+                  <option>Father</option><option>Sister</option><option>Brother</option>
+                  <option>Son</option><option>Daughter</option><option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">National ID</label>
+                <input class="field font-mono" type="text" id="nok_alt_national_id" placeholder="NIN">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Phone 1</label>
+                <input class="field" type="tel" id="nok_alt_phone1">
+              </div>
+              <div>
+                <label class="field-label">Phone 2</label>
+                <input class="field" type="tel" id="nok_alt_phone2">
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Email</label>
+              <input class="field" type="email" id="nok_alt_email">
+            </div>
+            <div>
+              <label class="field-label">Address</label>
+              <input class="field" type="text" id="nok_alt_address">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 9 — SPOUSE & CHILDREN
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9">
+      <div class="section-heading">
+        <div class="section-number">09</div>
+        <h2 class="section-title">Spouse &amp; Children</h2>
+      </div>
+
+      <!-- Spouse -->
+      <div class="mb-4">
+        <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">Spouse</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="lg:col-span-2">
+            <label class="field-label">Full Name</label>
+            <input class="field" type="text" id="sp_full_name" placeholder="Surname and other names">
+          </div>
+          <div>
+            <label class="field-label">Phone 1</label>
+            <input class="field" type="tel" id="sp_phone1">
+          </div>
+          <div>
+            <label class="field-label">Phone 2</label>
+            <input class="field" type="tel" id="sp_phone2">
+          </div>
+          <div class="lg:col-span-2">
+            <label class="field-label">Email</label>
+            <input class="field" type="email" id="sp_email">
+          </div>
+        </div>
+      </div>
+
+      <!-- Children -->
+      <div>
+        <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">Children (max. 4)</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Child 1</label>
+            <input class="field" type="text" id="child_1" placeholder="Full name">
+          </div>
+          <div>
+            <label class="field-label">Child 2</label>
+            <input class="field" type="text" id="child_2" placeholder="Full name">
+          </div>
+          <div>
+            <label class="field-label">Child 3</label>
+            <input class="field" type="text" id="child_3" placeholder="Full name">
+          </div>
+          <div>
+            <label class="field-label">Child 4</label>
+            <input class="field" type="text" id="child_4" placeholder="Full name">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       FIXED ACTION BAR
+  ═══════════════════════════════════════════ -->
+  <div id="action-bar" class="hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-smoke-dark shadow-2xl z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+
+      <!-- Left: Certification text -->
+      <p class="text-[11px] text-muted flex-1 min-w-0 hidden sm:block leading-relaxed">
+        I certify that the information provided herein is true and correct to the best of my knowledge.
+      </p>
+
+      <!-- Right: Buttons -->
+      <div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+        <button id="btn-save" onclick="saveDraft()"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          Save Draft
+        </button>
+        <button id="btn-submit" onclick="submitForm()"
+          class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-all shadow-md">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Submit Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="bg-white border border-smoke-dark text-ink">
+    <span id="toast-icon"></span>
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════ -->
+  <script>
+  'use strict';
+
+  // ── State ────────────────────────────────────────────────
+  let formData   = null;   // full API response
+  let formType   = null;   // 'OFFICER' | 'RATING' | 'TRAINING'
+  let autoSaveTimer = null;
+
+  // ── Allowances by form type ───────────────────────────────
+  const ALLOWANCES = {
+    OFFICER: [
+      { key:'AIRCREW',        label:'Aircrew Allowance' },
+      { key:'PILOT',          label:'Pilot Allowance' },
+      { key:'SHIFT_DUTY',     label:'Shift Duty Allowance' },
+      { key:'HAZARD',         label:'Hazard Allowance' },
+      { key:'RENT_SUBSIDY',   label:'Rent Subsidy' },
+      { key:'SBC',            label:'SBC Allowance' },
+      { key:'SPECIAL_FORCES', label:'Special Forces Allowance' },
+      { key:'OTHER',          label:'Other Allowance' },
+    ],
+    RATING: [
+      { key:'AIRCREW',        label:'Aircrew Allowance' },
+      { key:'SHIFT_DUTY',     label:'Shift Duty Allowance' },
+      { key:'CALL_DUTY',      label:'Call Duty Allowance' },
+      { key:'HAZARD',         label:'Hazard Allowance' },
+      { key:'RENT_SUBSIDY',   label:'Rent Subsidy' },
+      { key:'SBC',            label:'SBC Allowance' },
+      { key:'SPECIAL_FORCES', label:'Special Forces Allowance' },
+      { key:'OTHER',          label:'Other Allowance' },
+    ],
+    TRAINING: [
+      { key:'AIRCREW',        label:'Aircrew Allowance' },
+      { key:'SHIFT_DUTY',     label:'Shift Duty Allowance' },
+      { key:'HAZARD',         label:'Hazard Allowance' },
+      { key:'RENT_SUBSIDY',   label:'Rent Subsidy' },
+      { key:'SBC',            label:'SBC Allowance' },
+      { key:'OTHER',          label:'Other Allowance' },
+    ],
+  };
+
+  // ── Loans (same across all types) ────────────────────────
+  const LOANS = [
+    { key:'FGSHLS',  label:'FGSHLS Loan' },
+    { key:'CAR',     label:'Car Loan' },
+    { key:'WELFARE', label:'Welfare Loan' },
+    { key:'NNNCS',   label:'NNNCS Loan' },
+    { key:'NNMFBL',  label:'NNMFBL Loan' },
+    { key:'PPCFS',   label:'PPCFS Loan' },
+    { key:'OTHER',   label:'Any Other Loan' },
+  ];
+
+  // ── Init ─────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    loadForm();
+  });
+
+  async function loadForm() {
+    try {
+      const res  = await fetch('/form/load', {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showBlocked(data.error || 'Unable to load form.');
+        return;
+      }
+
+      formData = data;
+      formType = data.formType || 'RATING';
+
+      if (!data.canEdit) {
+        showBlocked(data.editBlocked || 'Form is not available for editing.');
+        return;
+      }
+
+      initForm(data);
+
+    } catch (err) {
+      console.error(err);
+      showBlocked('Network error. Please refresh and try again.');
+    } finally {
+      document.getElementById('loader').style.display = 'none';
+    }
+  }
+
+  function initForm(data) {
+    // Show form
+    document.getElementById('form-wrapper').classList.remove('hidden');
+    document.getElementById('action-bar').classList.remove('hidden');
+
+    // Header metadata
+    document.getElementById('header-svc-no').textContent = data.serviceNumber || '—';
+    document.getElementById('header-form-no').textContent = data.formNumber || 'NEW';
+    document.getElementById('header-year').textContent = data.formYear || new Date().getFullYear();
+    document.getElementById('form-year-display').textContent = data.formYear || '';
+    document.getElementById('form-year-display').classList.remove('hidden');
+
+    // Form type badge
+    const typeLabels = { OFFICER:'Officer Form', RATING:'Ratings Form', TRAINING:'Training Form' };
+    document.getElementById('form-type-label').textContent = typeLabels[formType] || 'Emolument Form';
+    document.getElementById('form-type-badge').classList.remove('hidden');
+    document.getElementById('header-form-type').textContent = typeLabels[formType] || 'Annual Data Collection';
+
+    // Show/hide officer-only fields
+    if (formType === 'OFFICER') {
+      document.getElementById('field-entitlement').classList.remove('hidden');
+    }
+
+    // Prefill all fields
+    prefillFields(data);
+
+    // Render dynamic sections
+    renderAllowances(data.allowances || {});
+    renderLoans(data.loans || {});
+
+    // Step dots
+    renderStepDots(9);
+
+    // Auto-save on input change
+    document.querySelectorAll('.field').forEach(el => {
+      el.addEventListener('input', () => {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(saveDraft, 3000);
+      });
+    });
+
+    // Section scroll observer
+    initScrollObserver();
+  }
+
+  function prefillFields(data) {
+    const core = data;
+
+    // Simple text/select fields
+    const map = {
+      serviceNumber: core.serviceNumber,
+      Surname:       core.Surname,
+      OtherName:     core.OtherName,
+      Rank:          core.Rank,
+      NIN:           core.NIN,
+      Sex:           core.Sex,
+      MaritalStatus: core.MaritalStatus,
+      Birthdate:     core.Birthdate ? core.Birthdate.split('T')[0] : '',
+      religion:      core.religion,
+      gsm_number:    core.gsm_number,
+      gsm_number2:   core.gsm_number2,
+      email:         core.email,
+      home_address:  core.home_address,
+      qualification: core.qualification,
+      DateEmpl:      core.DateEmpl ? core.DateEmpl.split('T')[0] : '',
+      seniorityDate: core.seniorityDate ? core.seniorityDate.split('T')[0] : '',
+      yearOfPromotion: core.yearOfPromotion,
+      expirationOfEngagementDate: core.expirationOfEngagementDate ? core.expirationOfEngagementDate.split('T')[0] : '',
+      ship:          core.ship,
+      specialisation: core.specialisation,
+      entry_mode:    core.entry_mode,
+      gradelevel:    core.gradelevel,
+      TaxCode:       core.TaxCode,
+      taxed:         core.taxed,
+      entitlement:   core.entitlement,
+      division:      core.division,
+      BankACNumber:  core.BankACNumber,
+      bankbranch:    core.bankbranch,
+      AccountName:   core.AccountName,
+      pfacode:       core.pfacode,
+      NSITFcode:     core.NSITFcode,
+      NHFcode:       core.NHFcode,
+      accomm_type:   core.accomm_type,
+      AcommodationStatus: core.AcommodationStatus,
+      AddressofAcommodation: core.AddressofAcommodation,
+      GBC:           core.GBC,
+      GBC_Number:    core.GBC_Number,
+      advanceDate:   core.advanceDate ? core.advanceDate.split('T')[0] : '',
+      runoutDate:    core.runoutDate  ? core.runoutDate.split('T')[0]  : '',
+    };
+
+    Object.entries(map).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el && val != null) el.value = val;
+    });
+
+    // NOK
+    if (data.nok?.primary) {
+      const p = data.nok.primary;
+      setVal('nok_primary_full_name',   p.full_name);
+      setVal('nok_primary_relationship',p.relationship);
+      setVal('nok_primary_national_id', p.national_id);
+      setVal('nok_primary_phone1',      p.phone1);
+      setVal('nok_primary_phone2',      p.phone2);
+      setVal('nok_primary_email',       p.email);
+      setVal('nok_primary_address',     p.address);
+    }
+    if (data.nok?.alternate) {
+      const a = data.nok.alternate;
+      setVal('nok_alt_full_name',   a.full_name);
+      setVal('nok_alt_relationship',a.relationship);
+      setVal('nok_alt_national_id', a.national_id);
+      setVal('nok_alt_phone1',      a.phone1);
+      setVal('nok_alt_phone2',      a.phone2);
+      setVal('nok_alt_email',       a.email);
+      setVal('nok_alt_address',     a.address);
+    }
+
+    // Spouse
+    if (data.spouse) {
+      setVal('sp_full_name', data.spouse.full_name);
+      setVal('sp_phone1',    data.spouse.phone1);
+      setVal('sp_phone2',    data.spouse.phone2);
+      setVal('sp_email',     data.spouse.email);
+    }
+
+    // Children
+    (data.children || []).slice(0,4).forEach((c, i) => {
+      setVal(`child_${i+1}`, c.child_name);
+    });
+
+    // Photo previews
+    if (data.documents?.passport?.url)       showPhotoPreview('preview-passport', 'placeholder-passport', 'zone-passport', data.documents.passport.url);
+    if (data.documents?.nokPassport?.url)    showPhotoPreview('preview-nok',      'placeholder-nok',      'zone-nok',      data.documents.nokPassport.url);
+    if (data.documents?.altNokPassport?.url) showPhotoPreview('preview-altnok',   'placeholder-altnok',   'zone-altnok',   data.documents.altNokPassport.url);
+  }
+
+  // ── Render allowances checkboxes ─────────────────────────
+  function renderAllowances(existing) {
+    const grid  = document.getElementById('allowances-grid');
+    const items = ALLOWANCES[formType] || ALLOWANCES.RATING;
+    grid.innerHTML = '';
+
+    items.forEach(({ key, label }) => {
+      const checked  = existing[key]?.is_active ? true : false;
+      const div      = document.createElement('label');
+      div.className  = `toggle-row${checked ? ' active' : ''}`;
+      div.innerHTML  = `
+        <input type="checkbox" id="allow_${key}" ${checked ? 'checked' : ''}
+               onchange="onAllowanceChange(this,'${key}')">
+        <span class="text-sm text-ink">${label}</span>`;
+      grid.appendChild(div);
+    });
+
+    // Show/hide 'other' specify if already active
+    const otherEl = existing['OTHER'];
+    if (otherEl?.is_active) {
+      document.getElementById('other-allow-detail').style.display = 'block';
+      setVal('other_allowspecify', otherEl.specify);
+    }
+  }
+
+  function onAllowanceChange(cb, key) {
+    cb.closest('label').classList.toggle('active', cb.checked);
+    if (key === 'OTHER') {
+      document.getElementById('other-allow-detail').style.display = cb.checked ? 'block' : 'none';
+    }
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(saveDraft, 2000);
+  }
+
+  // ── Render loans table rows ───────────────────────────────
+  function renderLoans(existing) {
+    const tbody = document.getElementById('loans-table-body');
+    tbody.innerHTML = '';
+
+    LOANS.forEach(({ key, label }) => {
+      const loan = existing[key] || {};
+      const tr   = document.createElement('tr');
+      tr.className = 'hover:bg-smoke/50 transition-colors';
+      tr.innerHTML = `
+        <td class="py-2 px-3 text-sm font-medium text-ink">${label}</td>
+        <td class="py-1 px-3">
+          <input class="field text-right font-mono text-sm" type="number" min="0" step="1000"
+                 id="loan_${key}_amount" value="${loan.amount || ''}" placeholder="0.00">
+        </td>
+        <td class="py-1 px-3">
+          <input class="field font-mono text-sm" type="text" maxlength="4"
+                 id="loan_${key}_year_taken" value="${loan.year_taken || ''}" placeholder="YYYY">
+        </td>
+        <td class="py-1 px-3">
+          <input class="field font-mono text-sm" type="number" min="0"
+                 id="loan_${key}_tenor" value="${loan.tenor || ''}" placeholder="e.g. 24">
+        </td>
+        <td class="py-1 px-3">
+          <input class="field text-right font-mono text-sm" type="number" min="0" step="1000"
+                 id="loan_${key}_balance" value="${loan.balance || ''}" placeholder="0.00">
+        </td>`;
+
+      // OTHER loan — add specify row
+      if (key === 'OTHER') {
+        const trSpec = document.createElement('tr');
+        trSpec.innerHTML = `
+          <td colspan="5" class="px-3 pb-2">
+            <input class="field text-sm" type="text" id="loan_OTHER_specify"
+                   value="${loan.specify || ''}" placeholder="Specify other loan type">
+          </td>`;
+        tbody.appendChild(tr);
+        tbody.appendChild(trSpec);
+        return;
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Build request body ────────────────────────────────────
+  function buildBody() {
+    const core = {
+      Surname: gv('Surname'), OtherName: gv('OtherName'), Rank: gv('Rank'),
+      NIN: gv('NIN'), Sex: gv('Sex'), MaritalStatus: gv('MaritalStatus'),
+      Birthdate: gv('Birthdate'), religion: gv('religion'),
+      gsm_number: gv('gsm_number'), gsm_number2: gv('gsm_number2'),
+      email: gv('email'), home_address: gv('home_address'),
+      qualification: gv('qualification'), DateEmpl: gv('DateEmpl'),
+      seniorityDate: gv('seniorityDate'), yearOfPromotion: gv('yearOfPromotion'),
+      expirationOfEngagementDate: gv('expirationOfEngagementDate'),
+      ship: gv('ship'), specialisation: gv('specialisation'),
+      entry_mode: gv('entry_mode'), gradelevel: gv('gradelevel'),
+      TaxCode: gv('TaxCode'), taxed: gv('taxed'),
+      entitlement: gv('entitlement'), division: gv('division'),
+      BankACNumber: gv('BankACNumber'), Bankcode: gv('Bankcode'),
+      bankbranch: gv('bankbranch'), AccountName: gv('AccountName'),
+      pfacode: gv('pfacode'), NSITFcode: gv('NSITFcode'), NHFcode: gv('NHFcode'),
+      accomm_type: gv('accomm_type'), AcommodationStatus: gv('AcommodationStatus'),
+      AddressofAcommodation: gv('AddressofAcommodation'),
+      GBC: gv('GBC'), GBC_Number: gv('GBC_Number'),
+      advanceDate: gv('advanceDate'), runoutDate: gv('runoutDate'),
+      command: gv('command'), branch: gv('branch'),
+      StateofOrigin: gv('StateofOrigin'), LocalGovt: gv('LocalGovt'),
+    };
+
+    const nok = {
+      primary: {
+        full_name:    gv('nok_primary_full_name'),
+        relationship: gv('nok_primary_relationship'),
+        national_id:  gv('nok_primary_national_id'),
+        phone1:       gv('nok_primary_phone1'),
+        phone2:       gv('nok_primary_phone2'),
+        email:        gv('nok_primary_email'),
+        address:      gv('nok_primary_address'),
+      },
+      alternate: {
+        full_name:    gv('nok_alt_full_name'),
+        relationship: gv('nok_alt_relationship'),
+        national_id:  gv('nok_alt_national_id'),
+        phone1:       gv('nok_alt_phone1'),
+        phone2:       gv('nok_alt_phone2'),
+        email:        gv('nok_alt_email'),
+        address:      gv('nok_alt_address'),
+      },
+    };
+
+    const spouse = {
+      full_name: gv('sp_full_name'),
+      phone1:    gv('sp_phone1'),
+      phone2:    gv('sp_phone2'),
+      email:     gv('sp_email'),
+    };
+
+    const children = [1,2,3,4]
+      .map((n,i) => ({ child_name: gv(`child_${n}`), birth_order: i+1 }))
+      .filter(c => c.child_name?.trim());
+
+    // Allowances
+    const allowances = {};
+    (ALLOWANCES[formType] || ALLOWANCES.RATING).forEach(({ key }) => {
+      const cb = document.getElementById(`allow_${key}`);
+      if (cb) allowances[key] = {
+        is_active: cb.checked,
+        specify:   key === 'OTHER' ? gv('other_allowspecify') : null,
+      };
+    });
+
+    // Loans
+    const loans = {};
+    LOANS.forEach(({ key }) => {
+      const amount     = parseFloat(gv(`loan_${key}_amount`))   || null;
+      const year_taken = gv(`loan_${key}_year_taken`)            || null;
+      const tenor      = parseInt(gv(`loan_${key}_tenor`))       || null;
+      const balance    = parseFloat(gv(`loan_${key}_balance`))   || null;
+      const specify    = key === 'OTHER' ? gv('loan_OTHER_specify') : null;
+      if (amount || year_taken) loans[key] = { amount, year_taken, tenor, balance, specify };
+    });
+
+    return { core, nok, spouse, children, loans, allowances };
+  }
+
+  // ── Save Draft ────────────────────────────────────────────
+  async function saveDraft() {
+    try {
+      const res = await fetch('/form/save', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(buildBody()),
+      });
+
+      if (res.ok) {
+        showSaved();
+        showToast('Draft saved.', 'success');
+      }
+    } catch { /* silent fail — user will see error on submit */ }
+  }
+
+  // ── Submit Form ───────────────────────────────────────────
+  async function submitForm() {
+    // Basic validation
+    const required = ['Surname','OtherName','Sex','Birthdate','gsm_number',
+                      'home_address','BankACNumber','Bankcode',
+                      'nok_primary_full_name','nok_primary_phone1','nok_primary_address'];
+    const missing = required.filter(id => {
+      const el = document.getElementById(id); return !el || !el.value.trim();
+    });
+
+    if (missing.length) {
+      showToast('Please fill all required fields before submitting.', 'error');
+      const firstEl = document.getElementById(missing[0]);
+      if (firstEl) firstEl.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+
+    if (!confirm('Are you sure you want to submit this form? You will not be able to edit it after submission.')) return;
+
+    setBusy(true);
+    try {
+      const res  = await fetch('/form/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(buildBody()),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast(`Form submitted successfully. Form No: ${data.formNumber}`, 'success');
+        document.getElementById('btn-save').disabled   = true;
+        document.getElementById('btn-submit').disabled = true;
+        document.querySelectorAll('.field').forEach(el => el.disabled = true);
+        document.querySelectorAll('.toggle-row input').forEach(el => el.disabled = true);
+      } else {
+        showToast(data.error || 'Submission failed. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Network error. Please check your connection and try again.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ── Step dots ─────────────────────────────────────────────
+  function renderStepDots(n) {
+    const container = document.getElementById('step-dots');
+    for (let i = 1; i <= n; i++) {
+      const d = document.createElement('div');
+      d.className = `step-dot${i === 1 ? ' active' : ''}`;
+      d.id = `dot-${i}`;
+      container.appendChild(d);
+    }
+  }
+
+  function initScrollObserver() {
+    const sections = document.querySelectorAll('[data-section]');
+    const dots     = document.querySelectorAll('.step-dot');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const n = entry.target.dataset.section;
+          dots.forEach((d, i) => {
+            d.classList.toggle('active', String(i+1) === n);
+            d.classList.toggle('done',   i+1 < Number(n));
+          });
+        }
+      });
+    }, { rootMargin:'-40% 0px -40% 0px', threshold: 0 });
+
+    sections.forEach(s => observer.observe(s));
+  }
+
+  // ── Photo handling ────────────────────────────────────────
+  function triggerUpload(id) { document.getElementById(id)?.click(); }
+
+  function handlePhotoSelect(event, previewId, zoneId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File too large. Maximum size is 5MB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => showPhotoPreview(previewId, `placeholder-${previewId.split('-')[1]}`, zoneId, e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  function showPhotoPreview(previewId, placeholderId, zoneId, src) {
+    const preview     = document.getElementById(previewId);
+    const placeholder = document.getElementById(placeholderId);
+    const zone        = document.getElementById(zoneId);
+    if (!preview) return;
+    preview.src = src;
+    preview.classList.remove('hidden');
+    if (placeholder) placeholder.classList.add('hidden');
+    if (zone) zone.classList.add('border-steel');
+  }
+
+  // ── Utility ───────────────────────────────────────────────
+  function gv(id) {
+    const el = document.getElementById(id);
+    return el ? (el.value?.trim() || null) : null;
+  }
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  }
+  function getToken() {
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  }
+
+  function showBlocked(reason) {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('blocked-msg').classList.remove('hidden');
+    document.getElementById('blocked-reason').textContent = reason;
+  }
+
+  function showSaved() {
+    const el = document.getElementById('save-status');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  function setBusy(busy) {
+    document.getElementById('btn-submit').disabled = busy;
+    document.getElementById('btn-save').disabled   = busy;
+    document.getElementById('btn-submit').textContent = busy ? 'Submitting…' : 'Submit Form';
+  }
+
+  // ── Toast ─────────────────────────────────────────────────
+  const TOAST_ICONS = {
+    success: `<svg class="w-4 h-4 text-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`,
+    error:   `<svg class="w-4 h-4 text-danger flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`,
+    info:    `<svg class="w-4 h-4 text-steel flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+  };
+  let toastTimeout;
+  function showToast(msg, type='info') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-icon').innerHTML = TOAST_ICONS[type] || TOAST_ICONS.info;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('show'), 4000);
+  }
+
+  </script>
 </body>
 </html>

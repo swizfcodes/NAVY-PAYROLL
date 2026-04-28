@@ -1,0 +1,143 @@
+<div class="p-2 md:p-4 lg:p-6">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Sync CPO-confirmed emolument data to
+      the payroll system</h3>
+  </div>
+
+  <!-- Sync status -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Last Sync Status</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Last Sync</div>
+        <div class="font-bold text-navy text-sm mt-1" id="lastSyncDate">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Synced By</div>
+        <div class="font-bold text-navy text-sm mt-1" id="lastSyncBy">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Records Synced</div>
+        <div class="font-bold text-green-600 text-sm mt-1" id="lastSyncCount">—</div>
+      </div>
+      <div>
+        <div
+          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
+          Status</div>
+        <div id="lastSyncStatus" class="text-sm font-black mt-1">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready to sync -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Ready to Sync</h3>
+      <button onclick="loadSyncPreview()" class="text-xs font-bold text-blue-600 cursor-pointer border-none bg-none"><i
+          class="fas fa-sync mr-1"></i>Refresh</button>
+    </div>
+    <div id="syncPreview">
+      <div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+    </div>
+  </div>
+
+  <!-- Execute sync -->
+  <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    Syncing will push all CPO-confirmed records to the payroll system. This action cannot be undone. Ensure all records
+    are correct before proceeding.
+  </div>
+
+  <div class="flex gap-3">
+    <button onclick="executeSync()" id="syncBtn"
+      class="flex-1 py-3 bg-navy text-white font-bold text-sm rounded-xl hover:bg-blue-800 transition-colors cursor-pointer border-none">
+      <i class="fas fa-sync mr-2"></i>Execute Payroll Sync
+    </button>
+  </div>
+  <div id="syncMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+</div>
+
+<script>
+  (() => {
+    const token = localStorage.getItem('token');
+
+    (function loadLastSync() {
+      fetch('/admin/payroll/sync-status', { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d) return;
+          document.getElementById('lastSyncDate').textContent = d.last_sync_at ? new Date(d.last_sync_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never';
+          document.getElementById('lastSyncBy').textContent = d.synced_by || '—';
+          document.getElementById('lastSyncCount').textContent = d.records_synced ?? '—';
+          const el = document.getElementById('lastSyncStatus');
+          if (d.status === 'SUCCESS') { el.textContent = 'SUCCESS'; el.className = 'text-sm font-black mt-1 text-green-600'; }
+          else if (d.status === 'FAILED') { el.textContent = 'FAILED'; el.className = 'text-sm font-black mt-1 text-red-500'; }
+          else { el.textContent = d.status || '—'; el.className = 'text-sm font-black mt-1 text-navy'; }
+        }).catch(() => { });
+    })();
+
+    function loadSyncPreview() {
+      const el = document.getElementById('syncPreview');
+      el.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      fetch('/admin/payroll/sync-preview', { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : [])
+        .then(rows => {
+          if (!rows.length) { el.innerHTML = '<div class="text-center py-6 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>All confirmed records already synced</div>'; return; }
+          el.innerHTML = `
+        <div class="flex items-center gap-3 mb-4 p-3 bg-amber-50 rounded-lg">
+          <i class="fas fa-info-circle text-amber-500"></i>
+          <span class="text-sm font-semibold text-amber-700">${rows.length} CPO-confirmed record(s) pending sync</span>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="border-b border-amber-100">
+            <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+            <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+            <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Ship</th>
+            <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Confirmed</th>
+          </tr></thead><tbody>` +
+            rows.map(r => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+            <td class="py-2 font-semibold text-navy">${r.user_id}</td>
+            <td class="py-2 text-blue-900/70">${r.full_name}</td>
+            <td class="py-2 text-blue-900/50 text-xs">${r.ship || '—'}</td>
+            <td class="py-2 text-blue-900/40 text-xs">${r.confirmed_at ? new Date(r.confirmed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+          </tr>`).join('') + `</tbody></table></div>`;
+        }).catch(() => { el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load sync preview</div>'; });
+    }
+
+    function executeSync() {
+      const msg = document.getElementById('syncMsg');
+      if (!confirm('Execute payroll sync now? This will push all confirmed records to payroll.')) return;
+      const btn = document.getElementById('syncBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+
+      fetch('/admin/payroll/sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+      })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
+          msg.textContent = ok ? (d.message || d.records_synced + ' records synced successfully.') : (d.error || 'Sync failed');
+          msg.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
+          if (ok) loadSyncPreview();
+        })
+        .catch(() => {
+          msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+          msg.textContent = 'Server error during sync';
+          msg.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
+        });
+    }
+
+    loadSyncPreview();
+  })();
+</script>

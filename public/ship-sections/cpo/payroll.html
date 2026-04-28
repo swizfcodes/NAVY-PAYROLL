@@ -1,0 +1,42 @@
+<div>
+  <div class="mb-6"><h2 class="text-xl font-black text-navy">CPO Payroll Update</h2><p class="text-sm text-blue-900/50 mt-1">Update payroll with confirmed emolument data for this command</p></div>
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Confirmed — Ready for Payroll</h3>
+      <span id="cpo-payroll-count" class="text-xs text-blue-900/40"></span>
+    </div>
+    <div id="cpo-payroll-list"><div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div></div>
+  </div>
+  <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+    <i class="fas fa-exclamation-triangle mr-2"></i>This sends confirmed records to the payroll system. The Admin will do the final system-wide sync after all CPOs have submitted.
+  </div>
+  <button onclick="cpoPayrollUpdate()" class="w-full py-3 bg-navy text-white font-bold text-sm rounded-xl hover:bg-blue-800 transition-colors cursor-pointer border-none">
+    <i class="fas fa-sync mr-2"></i>Submit to Payroll
+  </button>
+  <div id="cpo-payroll-msg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+</div>
+<script>
+(function(){
+  const token=localStorage.getItem('token'); const ship=sessionStorage.getItem('active_ship');
+  const el=document.getElementById('cpo-payroll-list');
+  fetch('/ship/cpo/confirmed?ship='+encodeURIComponent(ship),{headers:{Authorization:'Bearer '+token}})
+    .then(r=>r.ok?r.json():[])
+    .then(rows=>{
+      document.getElementById('cpo-payroll-count').textContent=rows.length+' record(s)';
+      if(!rows.length){el.innerHTML='<div class="text-center py-6 text-blue-900/30 text-sm">No confirmed records pending payroll update</div>';return;}
+      el.innerHTML='<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-amber-100"><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th><th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Confirmed</th></tr></thead><tbody>'+
+        rows.map(r=>`<tr class="border-b border-amber-50 hover:bg-amber-50/30"><td class="py-2 font-semibold text-navy">${r.user_id}</td><td class="py-2 text-blue-900/70">${r.full_name}</td><td class="py-2 text-blue-900/40 text-xs">${r.confirmed_at?new Date(r.confirmed_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'}</td></tr>`).join('')+
+        '</tbody></table></div>';
+    }).catch(()=>{el.innerHTML='<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';});
+})();
+
+function cpoPayrollUpdate(){
+  const token=localStorage.getItem('token'); const ship=sessionStorage.getItem('active_ship');
+  const msg=document.getElementById('cpo-payroll-msg');
+  if(!confirm('Submit confirmed records to payroll for '+ship+'?'))return;
+  fetch('/ship/cpo/payroll-update',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({ship})})
+    .then(r=>r.json().then(d=>({ok:r.ok,d})))
+    .then(({ok,d})=>{msg.className='mt-3 p-3 rounded-lg text-sm font-semibold '+(ok?'bg-green-50 text-green-700':'bg-red-50 text-red-600');msg.textContent=ok?(d.message||'Records submitted to payroll.'):(d.error||'Failed');msg.classList.remove('hidden');})
+    .catch(()=>{msg.className='mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';msg.textContent='Server error';msg.classList.remove('hidden');});
+}
+</script>

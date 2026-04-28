@@ -2,7 +2,7 @@
  * FILE: modules/emolument/reports/reports.repository.js
  *
  * All SQL for emolument reports and dashboard.
- * 
+ *
  *   getDashboardCounts — correlated subquery in unfiledShips replaced with
  *     a CTE-based approach.
  *     Caching is applied at the service layer, not here.
@@ -95,8 +95,7 @@ async function getShipReport(ship) {
       [ship],
     ),
     pool.query(
-      `SELECT
-         serviceNumber, Surname, OtherName, Rank,
+      `SELECT serviceNumber, Surname, OtherName, \`Rank\`,
          payrollclass, classes, Status, emolumentform,
          formNumber, FormYear, datecreated
        FROM ef_personalinfos

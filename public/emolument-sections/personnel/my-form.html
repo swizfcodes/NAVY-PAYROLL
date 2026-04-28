@@ -1,0 +1,74 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h2 class="text-xl font-black text-navy">My Emolument Form</h2>
+    <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">Review, edit and submit your personal emolument information</p>
+  </div>
+
+  <!-- Form status notice -->
+  <div id="formNotice" class="mb-4 hidden rounded-xl border p-3 text-sm font-semibold"></div>
+
+  <!-- Form tabs -->
+  <div class="flex gap-1 mb-4 bg-white/40 rounded-lg p-1 border border-amber-100">
+    <button onclick="switchTab('core')" class="form-tab active flex-1 py-2 text-xs font-bold rounded-md transition-all" data-tab="core">Personal</button>
+    <button onclick="switchTab('nok')"  class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all" data-tab="nok">Next of Kin</button>
+    <button onclick="switchTab('loans')" class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all" data-tab="loans">Loans</button>
+    <button onclick="switchTab('allowances')" class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all" data-tab="allowances">Allowances</button>
+  </div>
+
+  <!-- Tab panels — content loaded per tab -->
+  <div id="tab-core" class="form-panel">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <p class="text-center text-blue-900/40 py-8 text-sm">
+        <i class="fas fa-file-alt fa-2x mb-3 block text-amber-300"></i>
+        Form loaded from <strong>emolument-form.html</strong> via existing route.<br>
+        <span class="text-xs mt-2 block">The full form is at <code>/form/load</code></span>
+      </p>
+      <div class="mt-4 text-center">
+        <a href="../pages/emolument-form.html" class="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors">
+          <i class="fas fa-external-link-alt"></i> Open Full Form
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-nok" class="form-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <p class="text-center text-blue-900/40 py-8 text-sm">
+        <i class="fas fa-users fa-2x mb-3 block text-amber-300"></i>
+        Next of Kin section — part of the full emolument form.
+      </p>
+    </div>
+  </div>
+
+  <div id="tab-loans" class="form-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <p class="text-center text-blue-900/40 py-8 text-sm">
+        <i class="fas fa-hand-holding-usd fa-2x mb-3 block text-amber-300"></i>
+        Loans section — FGSHLS, CAR, WELFARE, NNNCS, NNMFBL, PPCFS, OTHER.
+      </p>
+    </div>
+  </div>
+
+  <div id="tab-allowances" class="form-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+      <p class="text-center text-blue-900/40 py-8 text-sm">
+        <i class="fas fa-coins fa-2x mb-3 block text-amber-300"></i>
+        Allowances section — AIRCREW, PILOT, HAZARD, RENT_SUBSIDY etc.
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .form-tab { color: rgba(30,64,175,0.4); background: transparent; border: none; cursor: pointer; }
+  .form-tab.active { background: rgb(30 64 175); color: white; }
+</style>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelector('[data-tab="' + name + '"]').classList.add('active');
+    document.getElementById('tab-' + name).classList.remove('hidden');
+  }
+</script>

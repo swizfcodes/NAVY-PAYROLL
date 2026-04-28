@@ -213,6 +213,8 @@ async function loadForm(serviceNo) {
 
 // ─────────────────────────────────────────────────────────────
 // LOAD HISTORICAL FORM
+// Full data comes from ef_emolument_forms.snapshot.
+// ef_personalinfoshist provides index metadata only.
 // ─────────────────────────────────────────────────────────────
 
 async function loadFormHistory(serviceNo, year) {
@@ -221,10 +223,20 @@ async function loadFormHistory(serviceNo, year) {
     return {
       success: false,
       code: 404,
-      message: `No form found for year ${year}.`,
+      message: `No confirmed form found for year ${year}.`,
     };
   }
-  return { success: true, data: formData };
+
+  // If snapshot exists, the frontend gets the full form data.
+  // If not (pre-migration legacy form), the frontend gets index
+  // metadata only and should display a notice.
+  return {
+    success: true,
+    data: formData,
+    notice: formData.hasSnapshot
+      ? null
+      : "Full form data not available for this year. Only confirmation metadata is shown.",
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -312,7 +324,7 @@ async function submitForm(serviceNo, body, performedBy, ip) {
     };
   }
 
-  // Resolve form number column from constants — no magic strings here
+  // Resolve form number column from constants
   const formNoCol = resolveFormNoColumn(person.payrollclass);
   const formNumber = await repo.getCurrentFormNumber(formNoCol);
 

@@ -54,7 +54,7 @@ router.use(verifyToken);
 // READ-ONLY — any elevated emolument role
 // ─────────────────────────────────────────────────────────────
 
-// GET /api/emolument/system/status
+// GET /system/status
 router.get("/status", requireAnyEmolRole, async (req, res) => {
   try {
     const result = await systemService.getStatus();
@@ -67,7 +67,7 @@ router.get("/status", requireAnyEmolRole, async (req, res) => {
   }
 });
 
-// GET /api/emolument/system/ships
+// GET /system/ships
 router.get("/ships", requireAnyEmolRole, async (req, res) => {
   try {
     const result = await systemService.listShips();
@@ -80,7 +80,7 @@ router.get("/ships", requireAnyEmolRole, async (req, res) => {
   }
 });
 
-// GET /api/emolument/system/ships/:commandCode
+// GET /system/ships/:commandCode
 router.get("/ships/:commandCode", requireAnyEmolRole, async (req, res) => {
   try {
     const result = await systemService.listShips(req.params.commandCode);
@@ -93,7 +93,7 @@ router.get("/ships/:commandCode", requireAnyEmolRole, async (req, res) => {
   }
 });
 
-// GET /api/emolument/system/commands
+// GET /system/commands
 router.get("/commands", requireAnyEmolRole, async (req, res) => {
   try {
     const result = await systemService.listCommands();
@@ -110,7 +110,7 @@ router.get("/commands", requireAnyEmolRole, async (req, res) => {
 // GLOBAL OPEN / CLOSE — EMOL_ADMIN only
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/system/open
+// POST /system/open
 // Body: { opendate, closedate }
 router.post("/open", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
   const { opendate, closedate } = req.body;
@@ -135,7 +135,7 @@ router.post("/open", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
   }
 });
 
-// POST /api/emolument/system/close
+// POST /system/close
 router.post("/close", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
   try {
     const result = await systemService.closeGlobal(req.user_id, req.ip);
@@ -154,7 +154,7 @@ router.post("/close", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
 // to prevent Express matching 'open-all' as an :id param.
 // ─────────────────────────────────────────────────────────────
 
-// POST /api/emolument/system/ships/open-all
+// POST /system/ships/open-all
 router.post(
   "/ships/open-all",
   requireEmolRole("EMOL_ADMIN"),
@@ -171,7 +171,7 @@ router.post(
   },
 );
 
-// POST /api/emolument/system/ships/close-all
+// POST /system/ships/close-all
 router.post(
   "/ships/close-all",
   requireEmolRole("EMOL_ADMIN"),
@@ -188,7 +188,7 @@ router.post(
   },
 );
 
-// POST /api/emolument/system/ships/:id/open
+// POST /system/ships/:id/open
 router.post(
   "/ships/:id/open",
   requireEmolRole("EMOL_ADMIN"),
@@ -209,7 +209,7 @@ router.post(
   },
 );
 
-// POST /api/emolument/system/ships/:id/close
+// POST /system/ships/:id/close
 router.post(
   "/ships/:id/close",
   requireEmolRole("EMOL_ADMIN"),
@@ -234,7 +234,7 @@ router.post(
 // PROCESSING YEAR — EMOL_ADMIN only
 // ─────────────────────────────────────────────────────────────
 
-// PUT /api/emolument/system/processing-year
+// PUT /system/processing-year
 // Body: { year: 2025, target: 'all' | 'standard' | 'training' }
 router.put(
   "/processing-year",
@@ -265,7 +265,7 @@ router.put(
 // FORM COUNTERS — EMOL_ADMIN only
 // ─────────────────────────────────────────────────────────────
 
-// PUT /api/emolument/system/form-counters
+// PUT /system/form-counters
 // Body: { officersNo?, ratingsNo?, trainingNo? }
 // All fields optional — omitted fields keep their current value.
 router.put(
