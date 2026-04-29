@@ -263,9 +263,12 @@ async function processClassGroup(
 ) {
   const conn = await pool.getConnection();
   const sessionKey = makeSessionKey();
+  let switchedDb = false;
 
   try {
+    // ── Switch to payroll DB ──────────────────────────────────
     await conn.query(`USE \`${targetDb}\``);
+    switchedDb = true;
 
     // ── BT05: determine current processing period ─────────────
     const [[bt05]] = await conn.query(
@@ -282,9 +285,7 @@ async function processClassGroup(
     const isCurrentPeriod =
       inputYear === parseInt(bt05.ord) && inputMonth === parseInt(bt05.mth);
 
-    // ── Current period: one group readiness check ─────────────
-    // Instead of N individual IPPIS checks, do one IN() query for
-    // the whole group. Employees absent from the result aren't ready.
+    // ── Current period: bulk readiness check ──────────────────
     let notReadyIds = new Set();
     if (isCurrentPeriod) {
       const [readyRows] = await conn.query(
@@ -311,8 +312,6 @@ async function processClassGroup(
     }
 
     // ── Single SP call for the whole group ────────────────────
-    // The SP processes all employees in the range [fromId, toId]
-    // belonging to p_payrollclass, writing under p_username (sessionKey).
     const sortedIds = [...processable].sort();
     const fromId = sortedIds[0];
     const toId = sortedIds[sortedIds.length - 1];
@@ -361,13 +360,31 @@ async function processClassGroup(
 
     return [...skippedEarly, ...groupResults];
   } catch (err) {
-    // Best-effort cleanup on error
+    // Best-effort cleanup of any written rows
     conn
       .query(`DELETE FROM py_webpayslip WHERE work_station = ?`, [sessionKey])
       .catch(() => {});
     throw err;
   } finally {
-    conn.release();
+    // ── Safe connection return ────────────────────────────────
+    // If we switched DB, we must either reset the connection back
+    // to the master DB before releasing, or destroy it entirely.
+    // Never release a connection still pointing at a non-master DB —
+    // it will contaminate subsequent unrelated requests from the pool.
+    if (switchedDb) {
+      try {
+        await conn.query(`USE \`hicaddata\``);
+        conn.release();
+      } catch (_) {
+        // Reset failed — destroy so the dirty connection
+        // never goes back into the pool.
+        console.warn("⚠️ Failed to reset DB context — destroying connection.");
+        conn.destroy();
+      }
+    } else {
+      // Never switched — safe to release as-is
+      conn.release();
+    }
   }
 }
 

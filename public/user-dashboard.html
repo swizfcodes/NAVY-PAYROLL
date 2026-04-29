@@ -39,12 +39,13 @@
     /* ── Header background transition ──────────────────────── */
     header {
       transition: background 0.35s ease, backdrop-filter 0.35s ease,
-                  border-color 0.35s ease, box-shadow 0.35s ease;
+        border-color 0.35s ease, box-shadow 0.35s ease;
     }
 
     header.emol-mode {
       background: transparent !important;
       border-bottom-color: rgba(251, 191, 36, 0.1) !important;
+      padding: 0 25px;
     }
 
     header.emol-mode nav a {
@@ -98,18 +99,17 @@
     </div>
 
     <nav>
-      <a class="active" id="nav-home"      data-page="home">Home</a>
-      <a id="nav-payroll"                  data-page="payroll">Payroll</a>
-      <a id="nav-payslip"                  data-page="payslip">Payslip</a>
-      <a id="nav-email"                    data-page="email">
+      <a class="active" id="nav-home" data-page="home">Home</a>
+      <a id="nav-payroll" data-page="payroll">Payroll</a>
+      <a id="nav-payslip" data-page="payslip">Payslip</a>
+      <a id="nav-email" data-page="email">
         Email
-        <span id="nav-mail-badge"
-          style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;
+        <span id="nav-mail-badge" style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;
                  padding:2px 6px;border-radius:20px;margin-left:2px;
                  vertical-align:middle;display:none"></span>
       </a>
-      <a id="nav-emolument"                data-page="emolument">Emolument</a>
-      <a id="nav-logout"                   data-page="logout">
+      <a id="nav-emolument" data-page="emolument">Emolument</a>
+      <a id="nav-logout" data-page="logout">
         <i class="fas fa-sign-out-alt"></i>
       </a>
     </nav>
@@ -129,7 +129,7 @@
       <div class="divider"></div>
       <div class="quick-actions">
         <button class="btn btn-primary" data-page="email">My Email</button>
-        <button class="btn btn-ghost"   data-page="payslip">My Payslip</button>
+        <button class="btn btn-ghost" data-page="payslip">My Payslip</button>
       </div>
     </div>
   </div>
@@ -163,7 +163,7 @@
           <button class="att-preview-btn att-preview-download" id="attPreviewDownloadBtn">
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Download
           </button>
@@ -179,7 +179,8 @@
     </div>
   </div>
 
-  <div id="ship-dashboard-overlay" style="display:none;position:fixed;inset:0;z-index:150;background:#f7f5f1;overflow-y:auto;"></div>
+  <div id="ship-dashboard-overlay"
+    style="display:none;position:fixed;inset:0;z-index:150;background:#f7f5f1;overflow-y:auto;"></div>
 </body>
 
 </html>

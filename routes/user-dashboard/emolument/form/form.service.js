@@ -21,7 +21,7 @@
 
 "use strict";
 
-const pool = require("../../../config/db");
+const pool = require("../../../../config/db");
 const repo = require("./form.repository");
 const {
   FORM_STATUS,

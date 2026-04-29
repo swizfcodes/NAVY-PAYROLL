@@ -10,12 +10,14 @@
     <button onclick="window.pTab('search')"
       class="ptab active flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="search">Search /
       Update</button>
-    <button onclick="window.pTab('upload')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
-      data-ptab="upload">Batch Upload</button>
-    <button onclick="window.pTab('svcno')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
-      data-ptab="svcno">Change SVC No</button>
-    <button onclick="window.pTab('commission')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
-      data-ptab="commission">Commission</button>
+    <button onclick="window.pTab('upload')"
+      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="upload">Batch
+      Upload</button>
+    <button onclick="window.pTab('svcno')"
+      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="svcno">Change SVC
+      No</button>
+    <button onclick="window.pTab('list')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="list">List</button>
   </div>
 
   <!-- Search / Update -->
@@ -26,6 +28,10 @@
         <input id="searchSvcNo" type="text" placeholder="Service number or name..."
           class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
           onkeydown="if(event.key==='Enter')window.searchPersonnel()" />
+        <button onclick="window.clearSearch()"
+          class="px-4 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
         <button onclick="window.searchPersonnel()"
           class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"><i
             class="fas fa-search"></i></button>
@@ -49,10 +55,16 @@
         <input type="file" id="persFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewFile(this)" />
       </div>
       <div id="filePreview" class="hidden text-sm text-navy/60 mb-3"></div>
-      <button onclick="window.uploadPers()"
-        class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-        <i class="fas fa-upload mr-2"></i>Upload & Process
-      </button>
+      <div class="flex gap-2">
+        <button onclick="window.clearUpload()"
+          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+          <i class="fas fa-times mr-2"></i>Clear
+        </button>
+        <button onclick="window.uploadPers()"
+          class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+          <i class="fas fa-upload mr-2"></i>Upload & Process
+        </button>
+      </div>
       <div id="uploadMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
     </div>
   </div>
@@ -60,7 +72,13 @@
   <!-- Change SVC No -->
   <div id="ptab-svcno" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Change Service Number</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Change Service Number</h3>
+        <button onclick="window.openCommissionModal()"
+          class="px-3 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none flex items-center gap-1.5">
+          <i class="fas fa-star"></i>Commission Upload
+        </button>
+      </div>
       <div class="space-y-3">
         <div>
           <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Current Service
@@ -78,36 +96,96 @@
           <input id="svcNoReason" type="text" placeholder="e.g. Commissioned from rating"
             class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
         </div>
-        <button onclick="window.changeSvcNo()"
-          class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-          <i class="fas fa-exchange-alt mr-2"></i>Change Service Number
-        </button>
+        <div class="flex gap-2">
+          <button onclick="window.clearSvcNo()"
+            class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+            <i class="fas fa-times mr-2"></i>Clear
+          </button>
+          <button onclick="window.changeSvcNo()"
+            class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+            <i class="fas fa-exchange-alt mr-2"></i>Change Service Number
+          </button>
+        </div>
         <div id="svcNoMsg" class="hidden p-3 rounded-lg text-sm font-semibold"></div>
       </div>
     </div>
   </div>
 
-  <!-- Commission -->
-  <div id="ptab-commission" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Commission Personnel Upload</h3>
-      <p class="text-sm text-blue-900/50 mb-4">Upload commissioned personnel data file to update records system-wide.
-      </p>
-      <div
-        class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
-        onclick="document.getElementById('commFile').click()">
-        <i class="fas fa-star text-amber-400 fa-2x mb-2 block"></i>
-        <p class="font-bold text-navy text-sm">Click to select commissioned personnel file</p>
-        <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
-        <input type="file" id="commFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewCommFile(this)" />
+  <!-- List Tab -->
+  <div id="ptab-list" class="max-w-2xl mr-auto ml-auto ptab-panel hidden">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Personnel List</h3>
+        <span class="text-xs text-blue-900/40" id="rptCount"></span>
       </div>
-      <div id="commFilePreview" class="hidden text-sm text-navy/60 mb-3"></div>
+
+      <!-- Filters row -->
+      <div class="flex gap-2 mb-3">
+        <input id="rptSearch" type="text" placeholder="Search name or service no..."
+          class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+          oninput="window.rptSearchFilter()" />
+        <select id="rptCommandFilter" onchange="window.loadPersonnelList(1)"
+          class="border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer">
+          <option value="">All Commands</option>
+        </select>
+        <button onclick="window.clearRptSearch()"
+          class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div id="rptTable">
+        <div class="flex items-center justify-center py-8 text-navy/30">
+          <i class="fas fa-spinner fa-spin mr-2"></i>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="rptPagination" class="flex items-center justify-between mt-3 hidden">
+        <button id="rptPrevBtn" onclick="window.rptChangePage(-1)"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+          <i class="fas fa-chevron-left mr-1"></i>Prev
+        </button>
+        <span class="text-xs text-navy/50" id="rptPageInfo"></span>
+        <button id="rptNextBtn" onclick="window.rptChangePage(1)"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+          Next<i class="fas fa-chevron-right ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Commission Modal -->
+<div id="commissionModal" class="fixed inset-0 z-50 hidden flex items-center justify-center"
+  style="background:rgba(0,0,0,0.4)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative">
+    <button onclick="window.closeCommissionModal()"
+      class="absolute top-4 right-4 text-navy/40 hover:text-navy text-lg cursor-pointer border-none bg-transparent">
+      <i class="fas fa-times"></i>
+    </button>
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Commission Personnel Upload</h3>
+    <p class="text-sm text-blue-900/50 mb-4">Upload commissioned personnel data file to update records system-wide.</p>
+    <div
+      class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
+      onclick="document.getElementById('commFile').click()">
+      <i class="fas fa-star text-amber-400 fa-2x mb-2 block"></i>
+      <p class="font-bold text-navy text-sm">Click to select commissioned personnel file</p>
+      <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
+      <input type="file" id="commFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewCommFile(this)" />
+    </div>
+    <div id="commFilePreview" class="hidden text-sm text-navy/60 mb-3"></div>
+    <div class="flex gap-2">
+      <button onclick="window.clearCommission()"
+        class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+        <i class="fas fa-times mr-2"></i>Clear
+      </button>
       <button onclick="window.uploadCommission()"
-        class="w-full py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
+        class="flex-1 py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
         <i class="fas fa-upload mr-2"></i>Upload Commission Data
       </button>
-      <div id="commMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
     </div>
+    <div id="commMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
   </div>
 </div>
 
@@ -128,15 +206,74 @@
 <script>
   (() => {
     const token = localStorage.getItem('token');
+    const TOKEN = token;
+    const PAGE_SIZE = 20;
+    let _page = 1, _allRows = [], _filtered = [];
 
-    window.pTab = function(name) {
+    window.pTab = function (name) {
       document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.ptab-panel').forEach(p => p.classList.add('hidden'));
       document.querySelector('[data-ptab="' + name + '"]').classList.add('active');
       document.getElementById('ptab-' + name).classList.remove('hidden');
+      if (name === 'list') window.loadPersonnelList(1);
     }
 
-    window.searchPersonnel = function() {
+    window.openCommissionModal = function () {
+      document.getElementById('commissionModal').classList.remove('hidden');
+      document.getElementById('commissionModal').classList.add('flex');
+    };
+
+    window.closeCommissionModal = function () {
+      document.getElementById('commissionModal').classList.add('hidden');
+      document.getElementById('commissionModal').classList.remove('flex');
+    };
+
+    document.getElementById('commissionModal').addEventListener('click', function (e) {
+      if (e.target === this) window.closeCommissionModal();
+    });
+
+    // ── Clear functions ───────────────────────────────────────
+    window.clearSearch = function () {
+      document.getElementById('searchSvcNo').value = '';
+      document.getElementById('searchResults').innerHTML = '';
+    };
+
+    window.clearUpload = function () {
+      document.getElementById('persFile').value = '';
+      const fp = document.getElementById('filePreview');
+      fp.textContent = '';
+      fp.classList.add('hidden');
+      const msg = document.getElementById('uploadMsg');
+      msg.textContent = '';
+      msg.classList.add('hidden');
+    };
+
+    window.clearSvcNo = function () {
+      document.getElementById('oldSvcNo').value = '';
+      document.getElementById('newSvcNo').value = '';
+      document.getElementById('svcNoReason').value = '';
+      const msg = document.getElementById('svcNoMsg');
+      msg.textContent = '';
+      msg.classList.add('hidden');
+    };
+
+    window.clearCommission = function () {
+      document.getElementById('commFile').value = '';
+      const fp = document.getElementById('commFilePreview');
+      fp.textContent = '';
+      fp.classList.add('hidden');
+      const msg = document.getElementById('commMsg');
+      msg.textContent = '';
+      msg.classList.add('hidden');
+    };
+
+    window.clearRptSearch = function () {
+      document.getElementById('rptSearch').value = '';
+      renderTable(_allRows);
+    };
+
+    // ── Core functions ────────────────────────────────────────
+    window.searchPersonnel = function () {
       const q = document.getElementById('searchSvcNo').value.trim();
       if (!q) return;
       const el = document.getElementById('searchResults');
@@ -161,17 +298,16 @@
         .catch(() => { el.innerHTML = '<div class="text-sm text-red-400 py-2">Search failed</div>'; });
     }
 
-    window.openEditModal = function(userId) {
-      // Placeholder — full edit modal would load from emolument form routes
+    window.openEditModal = function (userId) {
       alert('Edit record for ' + userId + '\n(Full record editor loads here via /admin/personnel/' + userId + ')');
     }
 
-    window.previewFile = function(input) {
+    window.previewFile = function (input) {
       const f = input.files[0];
       if (f) { document.getElementById('filePreview').textContent = 'Selected: ' + f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)'; document.getElementById('filePreview').classList.remove('hidden'); }
     };
 
-    window.uploadPers = function() {
+    window.uploadPers = function () {
       const file = document.getElementById('persFile').files[0];
       const msg = document.getElementById('uploadMsg');
       if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
@@ -183,12 +319,12 @@
         .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
     }
 
-    window.previewCommFile = function(input) {
+    window.previewCommFile = function (input) {
       const f = input.files[0];
       if (f) { document.getElementById('commFilePreview').textContent = 'Selected: ' + f.name; document.getElementById('commFilePreview').classList.remove('hidden'); }
     };
 
-    window.uploadCommission = function() {
+    window.uploadCommission = function () {
       const file = document.getElementById('commFile').files[0];
       const msg = document.getElementById('commMsg');
       if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
@@ -200,7 +336,7 @@
         .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
     }
 
-    window.changeSvcNo = function() {
+    window.changeSvcNo = function () {
       const oldNo = document.getElementById('oldSvcNo').value.trim();
       const newNo = document.getElementById('newSvcNo').value.trim();
       const reason = document.getElementById('svcNoReason').value.trim();
@@ -215,5 +351,102 @@
         .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Service number changed.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
         .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
     }
+
+    // ── Personnel list with pagination ───────────────────────
+    window.loadPersonnelList = function (page) {
+      _page = page;
+      const tableEl = document.getElementById('rptTable');
+      const countEl = document.getElementById('rptCount');
+      tableEl.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+      const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
+      const command = document.getElementById('rptCommandFilter').value;
+      if (command) params.set('command', command);
+
+      fetch('/admin/personnel?' + params, { headers: { Authorization: 'Bearer ' + TOKEN } })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          const rows = data.rows || [];
+          const pagination = data.pagination || {};
+          _allRows = rows;
+          _filtered = rows;
+
+          if (countEl) countEl.textContent = (pagination.total || 0).toLocaleString() + ' record(s)';
+          renderTable(rows);
+          renderPagination(pagination);
+        })
+        .catch(() => {
+          tableEl.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load personnel</div>';
+        });
+    };
+
+    function renderTable(rows) {
+      const tableEl = document.getElementById('rptTable');
+      if (!rows.length) {
+        tableEl.innerHTML = '<div class="text-center py-8 text-blue-900/30 text-sm">No records found</div>';
+        return;
+      }
+      const STATUS_CLS = {
+        Filled: 'bg-amber-50 text-amber-600',
+        FO: 'bg-blue-50 text-blue-600',
+        CPO: 'bg-purple-50 text-purple-600',
+        Verified: 'bg-green-50 text-green-600',
+      };
+      const STATUS_LBL = {
+        Filled: 'Submitted',
+        FO: 'DO Reviewed',
+        CPO: 'FO Approved',
+        Verified: 'Confirmed',
+      };
+      tableEl.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="border-b border-amber-100">
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Ship</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
+        </tr></thead>
+        <tbody>` +
+        rows.map(r => {
+          const cls = STATUS_CLS[r.Status] || 'bg-gray-100 text-gray-500';
+          const lbl = STATUS_LBL[r.Status] || (r.emolumentform === 'Yes' ? 'Completed' : 'Not Filed');
+          const badgeCls = r.Status
+            ? cls
+            : r.emolumentform === 'Yes'
+              ? 'bg-green-50 text-green-600'
+              : 'bg-red-50 text-red-400';
+          return `<tr class="border-b border-amber-50 hover:bg-amber-50/30 cursor-pointer" onclick="window.rptOpenShip('${r.ship || ''}')">
+            <td class="py-2 font-semibold text-navy text-xs">${r.serviceNumber}</td>
+            <td class="py-2 text-blue-900/70 text-xs">${r.Surname} ${r.OtherName || ''}</td>
+            <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${r.ship || '—'}</td>
+            <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${badgeCls}">${lbl}</span></td>
+          </tr>`;
+        }).join('') +
+        `</tbody></table></div>`;
+    }
+
+    function renderPagination(p) {
+      const el = document.getElementById('rptPagination');
+      const info = document.getElementById('rptPageInfo');
+      const prev = document.getElementById('rptPrevBtn');
+      const next = document.getElementById('rptNextBtn');
+      if (!el || !p.totalPages) return;
+      el.classList.remove('hidden');
+      if (info) info.textContent = `Page ${p.page} of ${p.totalPages}`;
+      if (prev) prev.disabled = p.page <= 1;
+      if (next) next.disabled = p.page >= p.totalPages;
+    }
+
+    window.rptSearchFilter = function () {
+      const q = document.getElementById('rptSearch').value.toLowerCase();
+      const filtered = _allRows.filter(r =>
+        ((r.Surname || '') + ' ' + (r.OtherName || '')).toLowerCase().includes(q) ||
+        (r.serviceNumber || '').toLowerCase().includes(q)
+      );
+      renderTable(filtered);
+    };
+
+    window.rptChangePage = function (dir) {
+      window.loadPersonnelList(_page + dir);
+    };
   })();
 </script>

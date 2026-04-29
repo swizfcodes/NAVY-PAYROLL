@@ -19,7 +19,7 @@ async function getPayrollClassDb(classcode) {
      FROM py_payrollclass
      WHERE classcode = ? AND status = 'active'
      LIMIT 1`,
-    [classcode]
+    [classcode],
   );
 
   return row ? row.db_name : null;
@@ -163,8 +163,10 @@ router.post("/generate", verifyToken, async (req, res) => {
     });
   }
 
-  const period = buildPeriod(inputYear, inputMonth); // e.g. "202503"
+  const period = buildPeriod(inputYear, inputMonth);
 
+  // ── Fetch payrollclass from master DB (pool is still on hicaddata here) ──
+  let payrollclass, targetDb;
   try {
     // ── 3. Fetch employee payrollclass from master DB ──
     // hr_employees lives in hicaddata (officers / master DB)
@@ -179,18 +181,28 @@ router.post("/generate", verifyToken, async (req, res) => {
       });
     }
 
-    const payrollclass = String(empRows[0].payrollclass);
-    const targetDb = await getPayrollClassDb(payrollclass);
+    payrollclass = String(empRows[0].payrollclass);
+    targetDb = await getPayrollClassDb(payrollclass);
 
     if (!targetDb) {
       return res.status(400).json({
         error: `Unsupported payroll class: ${payrollclass}.`,
       });
     }
+  } catch (err) {
+    console.error("❌ Payslip lookup error:", err);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while generating your payslip." });
+  }
 
-    // ── 4. Switch DB context to employee's payroll DB ──
-    const storeKey = pool._getSessionContext().getStore() || "default";
-    pool.useDatabase(targetDb, storeKey);
+  // ── 4. All payroll DB work on a dedicated connection ──────────
+  const conn = await pool.getConnection();
+  let switchedDb = false;
+
+  try {
+    await conn.query(`USE \`${targetDb}\``);
+    switchedDb = true;
 
     // ── 5. Fetch BT05 (current processing period) ──────
     const [[bt05]] = await pool.query(
@@ -255,7 +267,8 @@ router.post("/generate", verifyToken, async (req, res) => {
 
     const monthdesc = monthData[0].mthdesc;
 
-    const [rawRows] = await pool.query(
+    // ── Fetch generated rows ──────────────────────────────────
+    const [rawRows] = await conn.query(
       `SELECT * FROM py_webpayslip
        WHERE work_station = ? AND ord = ? AND desc1 = ?
        ORDER BY source DESC, bpc, bp`,
@@ -271,16 +284,25 @@ router.post("/generate", verifyToken, async (req, res) => {
 
     // ── 9. Map and return ──────────────────────────────
     const mapped = mapPayslipRows(rawRows);
-
-    return res.json({
-      success: true,
-      data: mapped,
-    });
+    return res.json({ success: true, data: mapped });
   } catch (err) {
     console.error("❌ Payslip generate error:", err);
     return res
       .status(500)
       .json({ error: "An error occurred while generating your payslip." });
+  } finally {
+    // ── Safe connection return — same pattern as adminPayslip ──
+    if (switchedDb) {
+      try {
+        await conn.query(`USE \`hicaddata\``);
+        conn.release();
+      } catch (_) {
+        console.warn("⚠️ Failed to reset DB context — destroying connection.");
+        conn.destroy();
+      }
+    } else {
+      conn.release();
+    }
   }
 });
 
