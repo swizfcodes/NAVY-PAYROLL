@@ -728,6 +728,10 @@ video {
   left: 0.75rem;
 }
 
+.left-6 {
+  left: 1.5rem;
+}
+
 .left-\[34\%\] {
   left: 34%;
 }
@@ -788,20 +792,16 @@ video {
   top: 1rem;
 }
 
+.top-6 {
+  top: 1.5rem;
+}
+
 .top-\[-15px\] {
   top: -15px;
 }
 
 .top-full {
   top: 100%;
-}
-
-.left-6 {
-  left: 1.5rem;
-}
-
-.top-6 {
-  top: 1.5rem;
 }
 
 .z-10 {
