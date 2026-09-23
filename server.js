@@ -157,7 +157,7 @@ function attachSocketIO(server) {
 // ── Start server ───────────────────────────────────────────
 async function startServer() {
   await seamlessWrapper.initialize();
-  await emailService.startup();
+  // await emailService.startup();
   require("./routes")(app);
 
   const ssl = getSSLOptions();

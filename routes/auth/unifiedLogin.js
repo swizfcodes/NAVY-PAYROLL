@@ -51,6 +51,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../../config/db");
 const config = require("../../config");
 const EmailProvider = require("../../providers/email");
+const TermiiEmailProvider = require("../../providers/email.api");
 const { applyReplacements } = require("../../utils/email_helper");
 const {
   detectFormat,
@@ -432,12 +433,10 @@ router.post("/verify-identity", async (req, res) => {
       emp.force_change === 0 ||
       (emp.password && emp.password.trim() !== "")
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "password has been set. if you forgot your password, use the forgot password link",
-        });
+      return res.status(400).json({
+        error:
+          "password has been set. if you forgot your password, use the forgot password link",
+      });
     }
 
     return res.json({
@@ -581,32 +580,38 @@ router.post("/forgot-password-otp", async (req, res) => {
       [tokenHash, expiresAt, emp.Empl_ID],
     );
 
-    // Build email
-    const RESET_URL = `${process.env.BASE_URL}/reset-password.html`;
+    // // Build email
+    // const RESET_URL = `${process.env.BASE_URL}/reset-password.html`;
 
-    const templateHtml = fs.readFileSync(
-      path.join(__dirname, "../../templates/password-reset-otp.html"),
-      "utf-8",
-    );
+    // const templateHtml = fs.readFileSync(
+    //   path.join(__dirname, "../../templates/password-reset-otp.html"),
+    //   "utf-8",
+    // );
 
-    const html = applyReplacements(templateHtml, {
-      OTP_CODE: rawToken,
-      OTP_PAGE_URL: RESET_URL,
+    // const html = applyReplacements(templateHtml, {
+    //   OTP_CODE: rawToken,
+    //   OTP_PAGE_URL: RESET_URL,
+    // });
+
+    // await EmailProvider.sendMessage({
+    //   to: emp.email,
+    //   subject: "Password Reset",
+    //   html,
+    //   text: "",
+    //   from: "NNCPO",
+    // });
+
+    // using termii api otp
+
+    await TermiiEmailProvider.sendOTP({
+      email_address: emp.email,
+      code: rawToken,
     });
-
-    await EmailProvider.sendMessage({
-      to: emp.email,
-      subject: "Password Reset",
-      html,
-      text: "",
-      from: "NNCPO",
-    });
-
     console.log(`✅ Password reset link sent for ${user_id}`);
     return res.json(genericRes);
   } catch (err) {
     console.error("❌ Forgot reset-password error:", err);
-    return res.json(genericRes); // still generic — no distinguishable error path
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

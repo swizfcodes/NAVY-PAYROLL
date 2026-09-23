@@ -54,6 +54,10 @@ const config = {
     secure: process.env.SMTP_SECURE,
     from: process.env.SMTP_FROM,
   },
+  termii:{
+    api_key: process.env.TERMII_API_KEY,
+    email_config_id: process.env.TERMII_EMAIL_CONFIG_ID,
+  }
 };
 
 module.exports = config;
