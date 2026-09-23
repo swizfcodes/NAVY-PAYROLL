@@ -23,6 +23,7 @@ const FORM_STATUS = Object.freeze({
   DO_REVIEWED:   'DO_REVIEWED',
   FO_APPROVED:   'FO_APPROVED',
   CPO_CONFIRMED: 'CPO_CONFIRMED',
+  SYNCED:        'SYNCED',
   REJECTED:      'REJECTED',
 });
 
@@ -39,6 +40,7 @@ const LEGACY_STATUS = Object.freeze({
   DO_REVIEWED:   'FO',        // DO reviewed → waiting for FO   (old SP set 'FO' after DO action)
   FO_APPROVED:   'CPO',       // FO approved → waiting for CPO  (old SP set 'CPO' after FO action)
   CPO_CONFIRMED: 'Verified',  // CPO confirmed → complete
+  SYNCED: 'Updated',          // Beyond CPO
   REJECTED:      null,        // Rejected → reset to NULL (re-fill required)
 });
 

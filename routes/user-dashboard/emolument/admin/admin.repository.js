@@ -594,16 +594,7 @@ async function getConfirmedForSync(payrollclass) {
      WHERE p.emolumentform = 'Yes'
        AND p.payrollclass  = ?
        AND p.Status IN ('Verified', 'Updated')
-       AND EXISTS (
-         SELECT 1 FROM ef_form_approvals fa
-         WHERE fa.form_id = f.id
-           AND fa.action  = 'ADMIN_ACCEPTED'
-       )
-       AND NOT EXISTS (
-         SELECT 1 FROM ef_form_approvals fa
-         WHERE fa.form_id = f.id
-           AND fa.action  = 'SYNCED'
-       )`,
+       `,
     [payrollclass],
   );
   return rows; // return full objects, not just serviceNumber
@@ -622,16 +613,7 @@ async function getFormIdMapForSync(payrollclass) {
        AND p.payrollclass  = ?
        AND p.Status       IN ('Verified', 'Updated')
        AND f.status        = 'CPO_CONFIRMED'
-       AND EXISTS (
-         SELECT 1 FROM ef_form_approvals fa
-         WHERE fa.form_id = f.id
-           AND fa.action  = 'ADMIN_ACCEPTED'
-       )
-       AND NOT EXISTS (
-         SELECT 1 FROM ef_form_approvals fa
-         WHERE fa.form_id = f.id
-           AND fa.action  = 'SYNCED'
-       )`,
+       `,
     [payrollclass],
   );
   return Object.fromEntries(rows.map((r) => [r.serviceNo, r.formId]));

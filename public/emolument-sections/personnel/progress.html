@@ -22,12 +22,12 @@
         action: "Form Submitted",
         icon: "fa-paper-plane",
       },
-      {
-        key: "DO_REVIEWED",
-        role: "DO",
-        action: "Reviewed by DO",
-        icon: "fa-eye",
-      },
+      // {
+      //   key: "DO_REVIEWED",
+      //   role: "DO",
+      //   action: "Reviewed by DO",
+      //   icon: "fa-eye",
+      // },
       {
         key: "FO_APPROVED",
         role: "FO",
@@ -44,15 +44,22 @@
     const ORDER = [
       "DRAFT",
       "SUBMITTED",
-      "DO_REVIEWED",
+      // "DO_REVIEWED",
       "FO_APPROVED",
       "CPO_CONFIRMED",
     ];
 
     function render(data) {
-      const status = data?.formStatus || "DRAFT";
+      let status = data?.formStatus || "DRAFT";
+      // Any status beyond CPO_CONFIRMED that isn't explicitly tracked here
+      // (and isn't a rejection) is simply shown as fully confirmed — the
+      // user doesn't need to know the exact downstream stage.
+      if ((status !== "REJECTED" && !ORDER.includes(status)) || status === 'SYNCED') {
+        status = "CPO_CONFIRMED";
+      }
+
       const shipName = data?.ship || "—";
-      const formNo = data?.formNumber || "—";
+      const FormYear = data?.FormYear || "—";
       const currentIdx = ORDER.indexOf(status);
 
       const el = document.getElementById("progressContent");
@@ -64,8 +71,8 @@
       <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Form No</div>
-            <div class="font-bold text-navy mt-0.5">${formNo}</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Form Year</div>
+            <div class="font-bold text-navy mt-0.5">${FormYear}</div>
           </div>
           <div>
             <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Ship</div>
@@ -89,7 +96,7 @@
       STEPS.forEach((step, i) => {
         let state = "pending";
         if (!rejected && currentIdx > ORDER.indexOf(step.key)) state = "done";
-        else if (!rejected && currentIdx === ORDER.indexOf(step.key)) state = "current";
+        else if (!rejected && currentIdx === ORDER.indexOf(step.key)) state = "done";
         else if (!rejected && ORDER.indexOf(step.key) === currentIdx + 1) state = "next";
 
         const colors = {

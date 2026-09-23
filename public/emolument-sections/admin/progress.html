@@ -464,7 +464,7 @@
         '<th>Command</th>' +
         '<th style="text-align:right">Total</th>' +
         '<th style="text-align:right">Filled</th>' +
-        '<th style="text-align:right">DO Reviewed</th>' +
+        // '<th style="text-align:right">DO Reviewed</th>' +
         '<th style="text-align:right">FO Approved</th>' +
         '<th style="text-align:right">Confirmed</th>' +
         '<th style="text-align:right">Not Filed</th>' +
@@ -481,7 +481,7 @@
             '<td style="color:rgba(30,64,175,0.45);font-size:0.65rem;">' + (s.commandName || '—') + '</td>' +
             '<td class="num">' + N(s.total) + '</td>' +
             '<td class="num-muted">' + N(s.submitted) + '</td>' +
-            '<td class="num-muted">' + N(s.do_reviewed) + '</td>' +
+            // '<td class="num-muted">' + N(s.do_reviewed) + '</td>' +
             '<td class="num-muted">' + N(s.fo_approved) + '</td>' +
             '<td class="num" style="color:#166534;">' + N(s.cpo_confirmed) + '</td>' +
             '<td class="num"><span class="pr-nf">' + N(s.not_filed) + '</span></td>' +
@@ -533,7 +533,7 @@
 
       var totTotal = rows.reduce(function (a, s) { return a + Number(s.total || 0); }, 0);
       var totSubmitted = rows.reduce(function (a, s) { return a + Number(s.submitted || 0); }, 0);
-      var totDO = rows.reduce(function (a, s) { return a + Number(s.do_reviewed || 0); }, 0);
+      // var totDO = rows.reduce(function (a, s) { return a + Number(s.do_reviewed || 0); }, 0);
       var totFO = rows.reduce(function (a, s) { return a + Number(s.fo_approved || 0); }, 0);
       var totConf = rows.reduce(function (a, s) { return a + Number(s.cpo_confirmed || 0); }, 0);
       var totCompleted = rows.reduce(function (a, s) { return a + Number(s.completed || 0); }, 0);
@@ -570,7 +570,7 @@
         '<td colspan="2">TOTAL — ' + rows.length + ' ship(s)</td>' +
         '<td class="r">' + NP(totTotal) + '</td>' +
         '<td class="r">' + NP(totSubmitted) + '</td>' +
-        '<td class="r">' + NP(totDO) + '</td>' +
+        // '<td class="r">' + NP(totDO) + '</td>' +
         '<td class="r">' + NP(totFO) + '</td>' +
         '<td class="r" style="color:#166534;">' + NP(totConf) + '</td>' +
         '<td class="r" style="color:#991b1b;">' + NP(totNotFiled) + '</td>' +
@@ -650,7 +650,7 @@
         '<th>Command</th>' +
         '<th style="text-align:right">Total</th>' +
         '<th style="text-align:right">Filled</th>' +
-        '<th style="text-align:right">DO Reviewed</th>' +
+        // '<th style="text-align:right">DO Reviewed</th>' +
         '<th style="text-align:right">FO Approved</th>' +
         '<th style="text-align:right">CPO Confirmed</th>' +
         '<th style="text-align:right">Not Filed</th>' +

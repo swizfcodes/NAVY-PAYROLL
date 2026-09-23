@@ -309,7 +309,7 @@ const QUICK_CONFIG = {
   ],
   PERSONNEL: [
     { icon: 'fa-file-alt',     label: 'Fill My Form',          section: 'my-form',         name: 'My Emolument Form'  },
-    { icon: 'fa-history',      label: 'Form History',          section: 'form-history',    name: 'Form History'       },
+    // { icon: 'fa-history',      label: 'Form History',          section: 'form-history',    name: 'Form History'       },
     { icon: 'fa-user',         label: 'My Profile',            section: 'my-profile',      name: 'My Profile'         },
   ],
 };

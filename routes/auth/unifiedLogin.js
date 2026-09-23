@@ -64,6 +64,10 @@ const OFFICERS_DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
 if (!SECRET) throw new Error("JWT_SECRET not set");
 
+function generateOtp() {
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
 // ─────────────────────────────────────────────────────────────
 // POST /auth/pre-login
 // Replaces: POST /users/pre-login
@@ -98,7 +102,6 @@ router.post("/pre-login", async (req, res) => {
     );
 
     if (!empRows.length) {
-
       return res
         .status(401)
         .json({ error: "Invalid Service Number or password" });
@@ -107,21 +110,18 @@ router.post("/pre-login", async (req, res) => {
     const emp = empRows[0];
 
     if (emp.exittype && emp.exittype.trim() !== "") {
-
       return res
         .status(403)
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
     if (emp.force_change || emp.force_change === 1) {
-
       return res.status(401).json({
         error: "Use the 'First Time?' option to change your password.",
       });
     }
 
     if (!emp.password) {
-
       return res
         .status(401)
         .json({ error: "Invalid Service Number or password" });
@@ -132,9 +132,7 @@ router.post("/pre-login", async (req, res) => {
     // plaintext -> untrusted, push the user into the first-time change flow.
     const storedFormat = detectFormat(emp.password);
 
-
     if (storedFormat === "plaintext") {
-   
       // Flag it so the existing force_change gate catches them next time too.
       await pool.query(
         "UPDATE hr_employees SET force_change = 1 WHERE Empl_ID = ?",
@@ -148,8 +146,7 @@ router.post("/pre-login", async (req, res) => {
     // ── DEBUG: recompute the typed password with the SAME technique as the
     //    stored value and print both, so you can compare/contrast directly.
     try {
-     await recomputeLikeStored(password, emp.password);
-    
+      await recomputeLikeStored(password, emp.password);
     } catch (dbgErr) {
       console.error(`[pre-login] ${user_id}: compare-debug failed:`, dbgErr);
     }
@@ -168,13 +165,10 @@ router.post("/pre-login", async (req, res) => {
     }
 
     if (!passwordValid) {
-     
       return res
         .status(401)
         .json({ error: "Invalid Service Number or Password" });
     }
-
-  
 
     // ── Verify-and-rehash: upgrade a verified legacy (md5/PBKDF2) hash to
     //    argon2 in place. Transparent to the user; runs once per account.
@@ -185,7 +179,6 @@ router.post("/pre-login", async (req, res) => {
           "UPDATE hr_employees SET password = ?, password_changed_at = NOW() WHERE Empl_ID = ?",
           [upgraded, user_id],
         );
-
       } catch (err) {
         // Non-fatal: the user still authenticated. Log and continue.
         console.error(`Rehash failed for ${user_id}:`, err);
@@ -383,21 +376,22 @@ router.post("/change-password", async (req, res) => {
 // No class required — checks hr_employees directly.
 // ─────────────────────────────────────────────────────────────
 router.post("/verify-identity", async (req, res) => {
-  const { user_id, full_name } = req.body;
+  const { user_id, ac_number } = req.body;
 
-  if (!user_id || !full_name) {
+  if (!user_id || !ac_number) {
     return res
       .status(400)
-      .json({ error: "Service Number and Full Name are required" });
+      .json({ error: "Service Number and Account Number are required" });
   }
 
   try {
     pool.useDatabase(OFFICERS_DB());
 
     const [rows] = await pool.query(
-      `SELECT Empl_ID, Surname, OtherName, Title, exittype
-       FROM hr_employees WHERE Empl_ID = ? LIMIT 1`,
-      [user_id],
+      `SELECT Empl_ID, Surname, OtherName, Title, exittype, BankACNumber,
+        force_change, password 
+       FROM hr_employees WHERE Empl_ID = ? AND BankACNumber = ? LIMIT 1`,
+      [user_id, ac_number],
     );
 
     if (!rows.length) {
@@ -414,24 +408,36 @@ router.post("/verify-identity", async (req, res) => {
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
-    const storedName = [emp.Title, emp.Surname, emp.OtherName]
-      .filter(Boolean)
-      .map((s) => s.trim())
-      .join(" ")
-      .toLowerCase();
-    const inputName = full_name.trim().toLowerCase();
+    // const storedName = [emp.Title, emp.Surname, emp.OtherName]
+    //   .filter(Boolean)
+    //   .map((s) => s.trim())
+    //   .join(" ")
+    //   .toLowerCase();
+    // const inputName = full_name.trim().toLowerCase();
 
-    // Accept full title+name match OR surname+othername match
-    const nameOk =
-      storedName === inputName ||
-      `${emp.Surname} ${emp.OtherName}`.trim().toLowerCase() === inputName ||
-      emp.Surname?.trim().toLowerCase() === inputName;
+    // // Accept full title+name match OR surname+othername match
+    // const nameOk =
+    //   storedName === inputName ||
+    //   `${emp.Surname} ${emp.OtherName}`.trim().toLowerCase() === inputName ||
+    //   emp.Surname?.trim().toLowerCase() === inputName;
 
-    if (!nameOk) {
-      return res.status(401).json({
-        error:
-          "Identity verification failed. Incorrect: Full Name. Please check and try again.",
-      });
+    // if (!nameOk) {
+    //   return res.status(401).json({
+    //     error:
+    //       "Identity verification failed. Incorrect: Full Name. Please check and try again.",
+    //   });
+    // }
+
+    if (
+      emp.force_change === 0 ||
+      (emp.password && emp.password.trim() !== "")
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "password has been set. if you forgot your password, use the forgot password link",
+        });
     }
 
     return res.json({
@@ -523,6 +529,87 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// NEW!!!
+// POST /auth/forgot/forgot-password-otp
+// Resets in hr_employees, syncs to users if payroll user.
+// Sends OTP instead of Magic Link
+// ─────────────────────────────────────────────────────────────
+router.post("/forgot-password-otp", async (req, res) => {
+  const { user_id, email } = req.body;
+
+  if (!user_id || !email) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const genericRes = {
+    message:
+      "If an account matching that information exists, a link will be sent to the associated email to set your password.",
+    user_id,
+  };
+
+  try {
+    pool.useDatabase(OFFICERS_DB());
+
+    const [rows] = await pool.query(
+      `SELECT Empl_ID, email, exittype
+       FROM hr_employees WHERE Empl_ID = ? AND email = ? LIMIT 1`,
+      [user_id, email],
+    );
+
+    // No match, OR account deactivated — identical response either way.
+    if (!rows.length || (rows[0].exittype && rows[0].exittype.trim() !== "")) {
+      console.warn(`[forgot-password] no match or inactive: ${user_id}`);
+      return res.json(genericRes);
+    }
+
+    const emp = rows[0];
+
+    // Generate token + hash
+    const rawToken = generateOtp();
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(`${user_id}:${rawToken}`)
+      .digest("hex");
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+    // Persist — overwrites any prior pending token for this user
+    await pool.query(
+      `UPDATE hr_employees
+       SET reset_hash = ?, reset_expires_at = ?
+       WHERE Empl_ID = ?`,
+      [tokenHash, expiresAt, emp.Empl_ID],
+    );
+
+    // Build email
+    const RESET_URL = `${process.env.BASE_URL}/reset-password.html`;
+
+    const templateHtml = fs.readFileSync(
+      path.join(__dirname, "../../templates/password-reset-otp.html"),
+      "utf-8",
+    );
+
+    const html = applyReplacements(templateHtml, {
+      OTP_CODE: rawToken,
+      OTP_PAGE_URL: RESET_URL,
+    });
+
+    await EmailProvider.sendMessage({
+      to: emp.email,
+      subject: "Password Reset",
+      html,
+      text: "",
+      from: "NNCPO",
+    });
+
+    console.log(`✅ Password reset link sent for ${user_id}`);
+    return res.json(genericRes);
+  } catch (err) {
+    console.error("❌ Forgot reset-password error:", err);
+    return res.json(genericRes); // still generic — no distinguishable error path
+  }
+});
+
 // ---------------------------------------------------------------------------
 // GET /auth/verify-reset-token?token=...
 // Called by the frontend reset page on load to check validity BEFORE
@@ -539,6 +626,49 @@ router.get("/verify-reset-token", async (req, res) => {
     pool.useDatabase(OFFICERS_DB());
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const [rows] = await pool.query(
+      `SELECT Empl_ID, reset_expires_at
+       FROM hr_employees WHERE reset_hash = ? LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ valid: false, reason: "invalid" });
+    }
+
+    const emp = rows[0];
+
+    if (new Date(emp.reset_expires_at) < new Date()) {
+      return res.status(400).json({ valid: false, reason: "expired" });
+    }
+
+    return res.json({ valid: true });
+  } catch (err) {
+    console.error("❌ verify-reset-token error:", err);
+    return res.status(500).json({ valid: false, reason: "server_error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /auth/verify-reset-otp?token=...
+// Called by the frontend otp page on load to check validity BEFORE REDIRECTING
+// showing the new-password form.
+// ---------------------------------------------------------------------------
+router.patch("/verify-reset-otp", async (req, res) => {
+  const { user_id, otp } = req.body || {};
+
+  if (!otp || !user_id) {
+    return res.status(400).json({ valid: false, reason: "missing" });
+  }
+
+  try {
+    pool.useDatabase(OFFICERS_DB());
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(`${user_id}:${otp}`)
+      .digest("hex");
 
     const [rows] = await pool.query(
       `SELECT Empl_ID, reset_expires_at
@@ -608,6 +738,66 @@ router.post("/reset-password", async (req, res) => {
 
     if (new Date(emp.reset_expires_at) < new Date()) {
       return res.status(400).json({ error: "expired" });
+    }
+
+    const passwordHash = await argon.hash(new_password);
+
+    // Update password AND clear the reset token in the same statement —
+    // this makes the token single-use; it can't be replayed after success.
+    await pool.query(
+      `UPDATE hr_employees
+       SET password = ?, reset_hash = NULL, reset_expires_at = NULL, force_change = 0, password_changed_at = NOW()
+       WHERE Empl_ID = ?`,
+      [passwordHash, emp.Empl_ID],
+    );
+
+    console.log(`✅ Password reset completed for ${emp.Empl_ID}`);
+    return res.json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("❌ reset-password error:", err);
+    return res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// NEW !!!
+// POST /auth/forgot/set-password
+// Resets in hr_employees, syncs to users if payroll user.
+// ─────────────────────────────────────────────────────────────
+router.post("/set-password", async (req, res) => {
+  const { user_id, new_password } = req.body;
+
+  if (!user_id || !new_password) {
+    return res
+      .status(400)
+      .json({ error: "Service Number and New password are required" });
+  }
+
+  if (new_password.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    pool.useDatabase(OFFICERS_DB());
+
+    const [rows] = await pool.query(
+      `SELECT Empl_ID, Surname, OtherName, Title, exittype
+       FROM hr_employees WHERE Empl_ID = ? LIMIT 1`,
+      [user_id],
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ error: "invalid" });
+    }
+
+    const emp = rows[0];
+
+    if (emp.exittype && emp.exittype.trim() !== "") {
+      return res
+        .status(403)
+        .json({ error: "Account deactivated. Contact administrator." });
     }
 
     const passwordHash = await argon.hash(new_password);

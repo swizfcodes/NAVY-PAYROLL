@@ -275,7 +275,7 @@ const ForgotPasswordManager = {
     };
 
     try {
-      const res = await fetch(`/auth/users/forgot-password`, {
+      const res = await fetch(`/auth/users/forgot-password-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -288,11 +288,10 @@ const ForgotPasswordManager = {
       if (res.ok) {
         this.close();
 
-        document.getElementById("resetSentMessage").textContent =
-          "If an account matching that information exists, a reset link has been sent to the associated email.";
-
-        this.sentModal.classList.remove("hidden");
+        localStorage.setItem("reset_identifier",payload.user_id)
         document.body.style.overflow = "hidden";
+        window.location.href = "otp-verify.html";
+
       } else {
         await AlertModal.show({
           type: "error",
@@ -326,7 +325,7 @@ const SetPasswordManager = {
 
     document
       .getElementById("set-password-form")
-      ?.addEventListener("submit", (e) => this.sendResetLink(e));
+      ?.addEventListener("submit", (e) => this.sendSetLink(e));
 
     document
       .getElementById("close-set-modal")
@@ -358,7 +357,7 @@ const SetPasswordManager = {
     document.body.style.overflow = "";
   },
 
-  async sendResetLink(e) {
+  async sendSetLink(e) {
     e.preventDefault();
 
     const btn = document.getElementById("set-submit-btn");
@@ -370,11 +369,11 @@ const SetPasswordManager = {
 
     const payload = {
       user_id: form.get("user_id"),
-      email: form.get("email"),
+      ac_number: form.get("ac_number"),
     };
 
     try {
-      const res = await fetch(`/auth/users/forgot-password`, {
+      const res = await fetch(`/auth/users/verify-identity`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,12 +384,11 @@ const SetPasswordManager = {
       const result = await res.json();
 
       if (res.ok) {
+        localStorage.setItem('user_id', payload.user_id)
         this.close();
-
-        document.getElementById("resetSentMessage").textContent =
-          "If an account matching that information exists, a link will be sent to the associated email to set your password.";
-
-        this.sentModal.classList.remove("hidden");
+        
+        window.location.href = "set-password.html";
+        
         document.body.style.overflow = "hidden";
       } else {
         await AlertModal.show({

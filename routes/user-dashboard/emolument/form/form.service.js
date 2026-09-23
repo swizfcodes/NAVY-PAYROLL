@@ -168,7 +168,7 @@ async function loadForm(serviceNo) {
       person.command,
     );
   }
-
+console.log(currentFormStatus, person.Status)
   return {
     success: true,
     data: {
@@ -332,10 +332,10 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   const formNumber = await repo.getCurrentFormNumber(formNoCol);
 
   // Legacy status string for ef_personalinfos
-  const legacyStatus = toLegacyStatus(FORM_STATUS.SUBMITTED); // → 'Filled'
+  const legacyStatus = toLegacyStatus(FORM_STATUS.DO_REVIEWED); // → 'Filled'
 
   // Clean enum status for ef_emolument_forms
-  const formStatus = FORM_STATUS.SUBMITTED;
+  const formStatus = FORM_STATUS.DO_REVIEWED;
 
   // ── Atomic write — all 7 tables in one transaction ────────
   let affectedRows;

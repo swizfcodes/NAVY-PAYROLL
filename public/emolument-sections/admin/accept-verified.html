@@ -5,7 +5,7 @@
         <h3
           class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
         >
-          CPO-Verified Forms Awaiting Admin Acceptance
+          CPO-Verified Forms
         </h3>
         <span
           class="text-xl text-blue-900/40 font-bold"
@@ -49,26 +49,17 @@
       </div>
     </div>
     <p class="text-sm text-blue-900/50">
-      Review and accept CPO-confirmed forms before syncing to payroll
+      Review CPO-confirmed forms before syncing to payroll
     </p>
   </div>
 
-  <!-- Batch Actions -->
+  <!--
+  Batch Actions bar — commented out, no actions on this page
   <div
     class="bg-white/60 rounded-xl border border-amber-100 shadow p-3 mb-4 hidden"
     id="batchActionsBar"
   >
     <div class="flex items-center justify-between gap-2 flex-wrap">
-      <!-- <label class="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          id="selectAllCheckbox"
-          onchange="toggleSelectAll(this.checked)"
-          class="w-4 h-4 rounded accent-navy"
-        />
-        <span class="text-sm font-semibold text-navy">Select All</span>
-      </label> -->
-
       <span class="text-sm text-navy/50" id="selectedCount">0 selected</span>
       <div class="flex gap-2">
         <button
@@ -80,6 +71,7 @@
       </div>
     </div>
   </div>
+  -->
 
   <!-- Table -->
   <div
@@ -88,14 +80,7 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="border-b border-amber-100 bg-amber-50/50">
-          <th class="px-3 py-3 text-left w-8">
-            <input
-              type="checkbox"
-              id="selectAllCheckbox"
-              onchange="toggleSelectAll(this.checked)"
-              class="w-4 h-4 rounded accent-navy"
-            />
-          </th>
+          <!-- Selection checkbox column removed -->
           <th
             class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
           >
@@ -121,16 +106,18 @@
           >
             Status
           </th>
+          <!-- Actions column commented out — no actions on this page
           <th
             class="px-3 py-3 text-right font-bold text-navy text-xs uppercase tracking-wide"
           >
             Actions
           </th>
+          -->
         </tr>
       </thead>
       <tbody id="verifiedTableBody">
         <tr>
-          <td colspan="7" class="text-center py-12 text-navy/30">
+          <td colspan="5" class="text-center py-12 text-navy/30">
             <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
           </td>
         </tr>
@@ -160,7 +147,8 @@
     </button>
   </div>
 
-  <!-- Detail Modal -->
+  <!--
+  Detail Modal — commented out, no actions on this page
   <div
     id="detailModal"
     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
@@ -241,8 +229,10 @@
       </div>
     </div>
   </div>
+  -->
 
-  <!-- Reject Modal -->
+  <!--
+  Reject Modal — commented out, no actions on this page
   <div
     id="rejectModal"
     class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
@@ -285,6 +275,7 @@
       ></div>
     </div>
   </div>
+  -->
 
   <script>
     const ITEMS_PER_PAGE = 50;
@@ -359,7 +350,7 @@
       const tbody = document.getElementById("verifiedTableBody");
 
       tbody.innerHTML =
-        '<tr><td colspan="7" class="text-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></td></tr>';
+        '<tr><td colspan="5" class="text-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></td></tr>';
 
       fetch(`/admin/verified?${params}`, {
         headers: { Authorization: "Bearer " + token },
@@ -375,24 +366,24 @@
 
           renderTable();
           updatePagination();
-          showBatchActionsIfNeeded();
+          // showBatchActionsIfNeeded(); // batch actions disabled
         })
         .catch((err) => {
           console.error("Error loading verified forms:", err);
           tbody.innerHTML =
-            '<tr><td colspan="7" class="text-center py-12 text-navy/40">Failed to load forms. Please try again.</td></tr>';
+            '<tr><td colspan="5" class="text-center py-12 text-navy/40">Failed to load forms. Please try again.</td></tr>';
         });
     }
 
     // ── Render table ──
     function renderTable() {
       const tbody = document.getElementById("verifiedTableBody");
-      const { data, selected } = verifiedState;
+      const { data } = verifiedState;
 
       if (!data.length) {
         tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center py-16 text-blue-900/30">
+        <td colspan="5" class="text-center py-16 text-blue-900/30">
           <i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i>
           <p class="font-semibold">No CPO-confirmed forms pending</p>
         </td>
@@ -403,15 +394,9 @@
       tbody.innerHTML = data
         .map((row) => {
           const name = `${row.Surname || ""} ${row.OtherName || ""}`.trim();
-          const isSelected = selected.has(row.serviceNumber);
 
           return `
         <tr class="border-b border-amber-50 hover:bg-amber-50/40 transition-colors">
-          <td class="px-3 py-3">
-            <input type="checkbox" class="w-4 h-4 rounded accent-navy"
-              ${isSelected ? "checked" : ""}
-              onchange="toggleSelect('${row.serviceNumber}', this.checked)" />
-          </td>
           <td class="px-3 py-3 font-bold text-navy">${name}</td>
           <td class="px-3 py-3 font-mono text-xs text-blue-900/60">${row.serviceNumber}</td>
           <td class="px-3 py-3 text-navy/70">${row.Rank}</td>
@@ -421,6 +406,7 @@
               <i class="fas fa-check-circle mr-1"></i>CPO Verified
             </span>
           </td>
+          <!-- Actions column commented out — no actions on this page
           <td class="px-3 py-3">
             <div class="flex justify-end gap-2">
               <button onclick="viewForm('${row.form_id}', '${row.serviceNumber}')"
@@ -433,12 +419,14 @@
               </button>
             </div>
           </td>
+          -->
         </tr>
       `;
         })
         .join("");
     }
-    // ── Selection ──
+
+    /* ── Selection / batch actions — disabled, no actions on this page ──
     function toggleSelect(svcno, checked) {
       checked
         ? verifiedState.selected.add(svcno)
@@ -472,7 +460,6 @@
       }
     }
 
-    // ── Batch accept ──
     function batchAccept(e) {
       if (verifiedState.selected.size === 0) return;
       if (!confirm(`Accept ${verifiedState.selected.size} form(s)?`)) return;
@@ -506,8 +493,9 @@
           btn.innerHTML = '<i class="fas fa-check mr-1"></i>Accept Selected';
         });
     }
+    */
 
-    // ── Reject modal ──
+    /* ── Reject modal — disabled, no actions on this page ──
     function openRejectModal(svcno, name) {
       verifiedState.pendingReject = svcno;
       document.getElementById("rejectModalMeta").textContent =
@@ -515,7 +503,7 @@
       document.getElementById("rejectRemarks").value = "";
 
       const modal = document.getElementById("rejectModal");
-      document.body.appendChild(modal); // teleport to body
+      document.body.appendChild(modal);
       modal.classList.remove("hidden");
     }
 
@@ -562,15 +550,15 @@
           btn.innerHTML = '<i class="fas fa-times mr-1"></i>Reject';
         });
     }
+    */
 
-    // ── Detail modal ──
-    // ── Detail modal ──
+    /* ── Detail modal — disabled, no actions on this page ──
     function viewForm(formId, svcno) {
       verifiedState.currentDetail = svcno;
       verifiedState.currentDetailTab = "form";
 
       const modal = document.getElementById("detailModal");
-      document.body.appendChild(modal); // teleport to body
+      document.body.appendChild(modal);
       modal.classList.remove("hidden");
 
       document.getElementById("detailTitle").textContent =
@@ -584,7 +572,7 @@
     function closeDetailModal() {
       const modal = document.getElementById("detailModal");
       modal.classList.add("hidden");
-      document.body.appendChild(modal); // keep it on body for next time
+      document.body.appendChild(modal);
       verifiedState.currentDetail = null;
     }
 
@@ -635,8 +623,6 @@
     }
 
     function renderFormDetails(data) {
-      const snapshot = data.snapshot || {};
-
       let html = `
         <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
           <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
@@ -668,36 +654,6 @@
           </div>
         </div>
       `;
-
-      // if (Object.keys(snapshot).length > 0) {
-      //   const entries = Object.entries(snapshot).slice(0, 30);
-      //   const overflow = Object.keys(snapshot).length - 30;
-
-      //   html += `
-      //     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-      //       <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
-      //         <i class="fas fa-clipboard text-gray-600"></i> Form Data Snapshot
-      //       </h4>
-      //       <div class="space-y-2 text-sm max-h-96 overflow-y-auto">
-      //         ${entries
-      //           .map(([key, value]) => {
-      //             const displayValue =
-      //               typeof value === "object"
-      //                 ? JSON.stringify(value).substring(0, 50) + "..."
-      //                 : String(value).substring(0, 100);
-      //             return `
-      //             <div class="flex justify-between items-start gap-2 pb-2 border-b border-gray-200">
-      //               <span class="text-navy/60 font-mono text-xs flex-shrink-0">${key}:</span>
-      //               <span class="font-semibold text-right max-w-xs text-xs break-words">${displayValue}</span>
-      //             </div>
-      //           `;
-      //           })
-      //           .join("")}
-      //         ${overflow > 0 ? `<div class="text-center py-2 text-navy/40 text-xs">+ ${overflow} more fields</div>` : ""}
-      //       </div>
-      //     </div>
-      //   `;
-      // }
 
       document.getElementById("detailContent").innerHTML = html;
     }
@@ -767,7 +723,6 @@
       `;
     }
 
-    // ── Detail modal actions ──
     function detailAccept(e) {
       const svcno = verifiedState.currentDetail;
       if (!svcno) return;
@@ -816,6 +771,7 @@
       closeDetailModal();
       document.getElementById("rejectModal").classList.remove("hidden");
     }
+    */
 
     // ── Pagination ──
     function updatePagination() {
@@ -843,8 +799,8 @@
     // ── Init ──
     loadVerifiedForms(1);
 
-    // Hoist modal to body on load so overlay covers full viewport
-    const modal = document.getElementById("detailModal");
-    document.body.appendChild(modal);
+    // Modal hoist removed — detail modal is disabled, no longer in the DOM
+    // const modal = document.getElementById("detailModal");
+    // document.body.appendChild(modal);
   </script>
 </div>
