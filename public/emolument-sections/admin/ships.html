@@ -306,7 +306,13 @@
             class="fas fa-times"></i></button>
       </div>
       <div class="p-5">
-        <p class="text-xs text-slate-500 mb-2">Bulk assign DO / FO / CPO roles. Required CSV columns:</p>
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <p class="text-xs text-slate-500">Bulk assign DO / FO / CPO roles. Required columns:</p>
+          <button onclick="downloadUploadTemplate()"
+            class="flex items-center gap-1 h-7 px-2.5 text-[11px] font-semibold text-gold border border-gold/30 bg-gold-light hover:bg-gold/10 rounded-md transition-colors shrink-0">
+            <i class="fas fa-file-arrow-down"></i> Template
+          </button>
+        </div>
         <div class="flex flex-wrap gap-1 mb-4">
           <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">user_id <span
               class="text-red-400">*</span></span>
@@ -315,14 +321,14 @@
           <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">scope_type
             <span class="text-red-400">*</span> (SHIP/COMMAND)</span>
           <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">scope_value
-            <span class="text-red-400">*</span> (ship or command name)</span>
+            <span class="text-red-400">*</span> (ship name or command code)</span>
         </div>
         <div onclick="document.getElementById('uploadFile').click()"
           class="border-2 border-dashed border-slate-200 hover:border-gold hover:bg-gold-light rounded-xl p-8 text-center cursor-pointer transition-all mb-3">
           <i class="fas fa-file-csv text-gold text-3xl block mb-2"></i>
-          <p class="text-xs font-semibold text-slate-700">Click to select CSV file</p>
+          <p class="text-xs font-semibold text-slate-700">Click to select a CSV or Excel file</p>
           <p class="text-[11px] text-slate-400 mt-1">or drag and drop here</p>
-          <input type="file" id="uploadFile" accept=".csv" class="hidden" onchange="previewUpload(this)" />
+          <input type="file" id="uploadFile" accept=".csv,.xlsx,.xls" class="hidden" onchange="previewUpload(this)" />
         </div>
         <div id="uploadFileInfo" class="hidden text-xs text-center text-slate-500 mb-1"></div>
         <div id="uploadPreviewCount" class="hidden text-xs text-center font-bold text-green-700 mb-3"></div>
@@ -679,27 +685,6 @@ function submitShip() {
     })
     .catch(() => { btn.disabled = false; toast('Server error.', false); });
 }
-    function submitShip() {
-      const name = document.getElementById('shipName').value.trim();
-      const cmdVal = document.getElementById('shipCommand').value;
-      const status = document.getElementById('shipStatus').value;
-      if (!name) { toast('Ship name is required.', false); return; }
-      if (!cmdVal) { toast('Please select a command.', false); return; }
-      const btn = document.getElementById('shipSubmitBtn');
-      btn.disabled = true;
-      const isEdit = !!_editingShipId;
-      const url = isEdit ? `/system/ships/${_editingShipId}` : '/system/ships';
-      const method = isEdit ? 'PUT' : 'POST';
-      fetch(url, { method, headers: H, body: JSON.stringify({ shipName: name, commandid: Number(cmdVal), openship: Number(status) }) })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => {
-          btn.disabled = false;
-          toast(ok ? (d.message || (isEdit ? 'Ship updated.' : 'Ship created.')) : (d.error || 'Failed.'), ok);
-          if (ok) { closeModal('shipModal'); loadShips(); }
-        })
-        .catch(() => { btn.disabled = false; toast('Server error.', false); });
-    }
-
     function deleteShip(id, name) {
       confirm_('Delete Ship', `Delete "${name}"? This cannot be undone.`, () => {
         fetch(`/system/ships/${id}`, { method: 'DELETE', headers: H })
@@ -928,53 +913,60 @@ async function submitUser() {
       openModal('uploadModal');
     }
 
+    // File is just held here; the backend (/admin/roles/bulk-upload) does all
+    // the CSV/XLSX parsing — no need to duplicate that logic client-side.
     function previewUpload(input) {
       const file = input.files[0]; if (!file) return;
+      _uploadRecords = file; // holds the File object
       const info = document.getElementById('uploadFileInfo');
       info.textContent = file.name + ' · ' + (file.size / 1024).toFixed(1) + ' KB';
       info.classList.remove('hidden');
-      const reader = new FileReader();
-      reader.onload = e => {
-        const lines = e.target.result.split('\n').filter(l => l.trim());
-        if (lines.length < 2) { toast('File empty or no data rows.', false); return; }
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-        _uploadRecords = lines.slice(1).map(line => {
-          const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-          const obj = {}; headers.forEach((h, i) => { if (vals[i]) obj[h] = vals[i]; }); return obj;
-        }).filter(r => r.user_id && r.role && r.scope_type && r.scope_value);
-        const cnt = document.getElementById('uploadPreviewCount');
-        cnt.textContent = _uploadRecords.length + ' valid records found';
-        cnt.classList.remove('hidden');
-      };
-      reader.readAsText(file);
+      document.getElementById('uploadPreviewCount').classList.add('hidden');
     }
 
     async function submitUpload() {
-      if (!_uploadRecords?.length) { toast('Select a valid CSV first.', false); return; }
+      if (!_uploadRecords) { toast('Select a CSV or Excel file first.', false); return; }
       const btn = document.getElementById('uploadSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
 
-      let done = 0, failed = 0;
-      for (const rec of _uploadRecords) {
-        try {
-          const r = await fetch('/admin/roles/assign', {
-            method: 'POST', headers: H,
-            body: JSON.stringify({
-              user_id: rec.user_id,
-              role: rec.role,
-              scope_type: rec.scope_type,
-              scope_value: rec.scope_value,
-            }),
-          });
-          if (r.ok) done++; else failed++;
-        } catch { failed++; }
+      try {
+        const fd = new FormData();
+        fd.append('file', _uploadRecords);
+        const r = await fetch('/admin/roles/bulk-upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + T }, // no Content-Type — browser sets multipart boundary
+          body: fd,
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error || 'Upload failed.', false); return; }
+        const { assigned = 0, failed = [] } = d.data || {};
+        toast(d.message || `Done — ${assigned} assigned, ${failed.length} failed.`, failed.length === 0);
+        if (assigned > 0) { closeModal('uploadModal'); loadUsers(); }
+      } catch {
+        toast('Server error.', false);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload"></i> Upload Users';
       }
+    }
 
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-upload"></i> Upload Users';
-      toast(`Done — ${done} assigned, ${failed} failed.`, failed === 0);
-      if (done > 0) { closeModal('uploadModal'); loadUsers(); }
+    // Template is built by the backend (styled .xlsx) — GET /admin/roles/template
+    async function downloadUploadTemplate() {
+      try {
+        const r = await fetch('/admin/roles/template', {
+          headers: { 'Authorization': 'Bearer ' + T },
+        });
+        if (!r.ok) throw new Error();
+        const blob = await r.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ship-users-upload-template.xlsx';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch {
+        toast('Could not download template.', false);
+      }
     }
 
     /* ══ UTILS ══ */

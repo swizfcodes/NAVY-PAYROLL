@@ -10,6 +10,8 @@
  *  GET    /admin/roles                        → list active role assignments
  *  POST   /admin/roles/assign                 → assign a role
  *  DELETE /admin/roles/:role_id/revoke        → revoke a role
+ *  GET    /admin/roles/template               → download bulk-upload template (.xlsx)
+ *  POST   /admin/roles/bulk-upload            → bulk assign roles from .csv/.xlsx (multipart "file")
  *
  *  Role menus:
  *  GET    /admin/menus                        → list all menus (grouped by MenuGroup)
@@ -55,6 +57,8 @@
 
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const XLSX = require("xlsx");
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
 const verifyToken = require("../../../../middware/authentication");
@@ -62,8 +66,14 @@ const { requireEmolRole } = require("../../../../middware/emolumentAuth");
 const adminService = require("./admin.service");
 const shipsRepo = require("../system/ships.repository");
 const adminRepo = require("./admin.repository");
+const { buildShipUsersTemplate } = require("./ship-users-template");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+});
 
 router.use((req, res, next) => {
   pool.useDatabase(DB());
@@ -101,6 +111,180 @@ router.post("/roles/assign", async (req, res) => {
     console.error("❌ POST /admin/roles/assign:", err);
     return res.status(500).json({ error: "Server error" });
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// BULK ROLE UPLOAD — accepts a .csv or .xlsx file (multipart/form-data,
+// field name "file") and assigns a role per row.
+//
+// Expected columns (case-insensitive; the styled .xlsx template's
+// display headers are also recognised — see HEADER_ALIASES below):
+//   user_id | role (DO/FO/CPO) | scope_type (SHIP/COMMAND) | scope_value
+// ─────────────────────────────────────────────────────────────
+
+const HEADER_ALIASES = {
+  user_id: [
+    "user_id",
+    "userid",
+    "svc_no",
+    "service_no",
+    "svcno",
+    "service_number",
+  ],
+  role: ["role"],
+  scope_type: ["scope_type", "scopetype"],
+  scope_value: ["scope_value", "scopevalue"],
+};
+
+function normalizeHeader(h) {
+  return String(h || "")
+    .toLowerCase()
+    .replace(/\(.*?\)/g, "") // strip "(DO/FO/CPO)" style hints
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function mapHeaderKey(h) {
+  const n = normalizeHeader(h);
+  for (const key of Object.keys(HEADER_ALIASES)) {
+    if (HEADER_ALIASES[key].includes(n)) return key;
+  }
+  return null;
+}
+
+/**
+ * Parses a raw CSV string into an array of row objects using the first
+ * line as headers. Minimal quoted-field support (matches the format the
+ * frontend export/upload already produces).
+ */
+function parseCsvBuffer(buf) {
+  const text = buf.toString("utf8");
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  if (lines.length < 2) return [];
+  const headers = lines[0]
+    .split(",")
+    .map((h) => h.trim().replace(/^"|"$/g, ""));
+  const keyMap = headers.map(mapHeaderKey);
+  return lines.slice(1).map((line) => {
+    const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+    const obj = {};
+    keyMap.forEach((k, i) => {
+      if (k && vals[i] !== undefined && vals[i] !== "") obj[k] = vals[i];
+    });
+    return obj;
+  });
+}
+
+/**
+ * Parses an .xlsx/.xls buffer. Scans the first few rows of the first
+ * sheet to find the real header row (skipping title/subtitle banner
+ * rows like the "NIGERIAN NAVY E-EMOLUMENT" template), then maps every
+ * row after it into { user_id, role, scope_type, scope_value }.
+ */
+function parseXlsxBuffer(buf) {
+  const wb = XLSX.read(buf, { type: "buffer" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: "",
+    raw: false,
+  });
+
+  let headerRowIdx = -1;
+  let keyMap = [];
+  for (let i = 0; i < Math.min(raw.length, 10); i++) {
+    const mapped = (raw[i] || []).map(mapHeaderKey);
+    if (mapped.filter(Boolean).length >= 2) {
+      headerRowIdx = i;
+      keyMap = mapped;
+      break;
+    }
+  }
+  if (headerRowIdx === -1) return [];
+
+  return raw
+    .slice(headerRowIdx + 1)
+    .filter((r) => r.some((c) => String(c).trim() !== ""))
+    .map((r) => {
+      const obj = {};
+      keyMap.forEach((k, i) => {
+        if (k && r[i] !== undefined && String(r[i]).trim() !== "")
+          obj[k] = String(r[i]).trim();
+      });
+      return obj;
+    });
+}
+
+function parseBulkUploadFile(file) {
+  const name = (file.originalname || "").toLowerCase();
+  const ext = name.slice(name.lastIndexOf(".") + 1);
+
+  let rows;
+  if (ext === "csv") {
+    rows = parseCsvBuffer(file.buffer);
+  } else if (ext === "xlsx" || ext === "xls") {
+    rows = parseXlsxBuffer(file.buffer);
+  } else {
+    throw new Error("Unsupported file type. Use .csv or .xlsx.");
+  }
+
+  return rows.filter(
+    (r) => r.user_id && r.role && r.scope_type && r.scope_value,
+  );
+}
+
+// GET /admin/roles/template
+// Styled .xlsx template for bulk role upload, built on the fly (exceljs).
+router.get("/roles/template", async (req, res) => {
+  try {
+    const buf = await buildShipUsersTemplate();
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="ship-users-upload-template.xlsx"',
+    );
+    return res.send(Buffer.from(buf));
+  } catch (err) {
+    console.error("❌ GET /admin/roles/template:", err);
+    return res.status(500).json({ error: "Could not build template." });
+  }
+});
+
+// POST /admin/roles/bulk-upload
+// multipart/form-data, field "file" — .csv or .xlsx
+router.post("/roles/bulk-upload", upload.single("file"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+
+  let records;
+  try {
+    records = parseBulkUploadFile(req.file);
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ error: err.message || "Could not parse file." });
+  }
+
+  if (!records.length)
+    return res.status(400).json({ error: "No valid records found in file." });
+
+  const results = { assigned: 0, failed: [] };
+  for (const rec of records) {
+    try {
+      const result = await adminService.assignRole(rec, req.user_id, req.ip);
+      if (result.success) results.assigned++;
+      else results.failed.push({ record: rec.user_id, reason: result.message });
+    } catch (err) {
+      results.failed.push({ record: rec.user_id, reason: err.message });
+    }
+  }
+
+  return res.json({
+    message: `Bulk upload complete. ${results.assigned} assigned, ${results.failed.length} failed.`,
+    data: results,
+  });
 });
 
 router.delete("/roles/:role_id/revoke", async (req, res) => {
