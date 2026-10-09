@@ -79,6 +79,8 @@ const corsOrigins = [
   LOCAL_IP ? `http://${LOCAL_IP}` : null,
   LOCAL_IP ? `http://${LOCAL_IP}:${HTTP_PORT}` : null,
   "https://hicad.ng",
+  "staging.nncpo.ng",
+  "app.nncpo.ng",
 ].filter(Boolean);
 
 app.use(
@@ -185,7 +187,9 @@ async function startServer() {
       // "::" = dual-stack: accepts IPv6 and IPv4 (Coolify networks are dual-stack)
       server.listen(PORT || 5500, "::", () => {
         attachSocketIO(server);
-        console.log(`🐳 HTTP server  → http://[::]:${PORT || 5500} (IPv4 + IPv6)`);
+        console.log(
+          `🐳 HTTP server  → http://[::]:${PORT || 5500} (IPv4 + IPv6)`,
+        );
       });
       break;
     }
