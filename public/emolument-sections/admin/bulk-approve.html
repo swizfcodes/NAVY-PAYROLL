@@ -385,14 +385,6 @@
     const PAGE_SIZE = 25;
     const OVERLAY_KEY = "fr_form_svcno";
 
-    const CLASS_LABEL = {
-      1: "Officers",
-      2: "Warrant Officers",
-      3: "Ratings A",
-      4: "Ratings B",
-      5: "Ratings C",
-      6: "Trainees",
-    };
     const STAGE_CLS = {
       NOT_FILLED: "bg-red-50 text-red-400",
       SUBMITTED: "bg-amber-50 text-amber-600",
@@ -642,7 +634,6 @@
               <div class="text-blue-900/40 md:hidden">${esc(r.ship || "—")}</div>
             </td>
             <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${esc(r.ship || "—")}</td>
-            <td class="py-2 text-blue-900/50 text-xs hidden lg:table-cell">${esc(CLASS_LABEL[r.payrollclass] || r.payrollclass || "—")}</td>
             <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STAGE_CLS[r.stage] || STAGE_CLS.OTHER}">${esc(r.stageLabel)}</span></td>
             <td class="py-2">
               <div class="flex items-center justify-end gap-1">
@@ -662,7 +653,6 @@
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Ship</th>
-          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell">Class</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
           <th class="py-2 text-xs font-bold text-navy/50 uppercase tracking-wide text-right">Actions</th>
         </tr></thead>
