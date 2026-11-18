@@ -4,7 +4,8 @@
  * Routes for document/photo management.
  *
  * Uses multer for multipart file handling.
- * Files are streamed directly to Cloudinary — not stored on disk.
+ * Photos are saved to the local storage folder (documents.storage.js);
+ * ef_documents keeps only their hex file key.
  *
  * ─── ROUTE MAP ───────────────────────────────────────────────
  *
@@ -12,16 +13,19 @@
  *  GET    /documents/my                        → get own documents
  *  POST   /documents/upload/:doc_type          → upload own document
  *  DELETE /documents/:doc_type                 → delete own document
- *  GET    /documents/view/:doc_type            → get signed URL for own doc
+ *  GET    /documents/view/:doc_type            → URL of own photo
  *
  *  Officers (ship-scoped):
  *  GET    /documents/ship/:ship                → all docs for a ship
  *  GET    /documents/ship/:ship/missing/:type  → who is missing a doc type
  *
+ *  Any logged-in user:
+ *  GET    /documents/file/:file_key            → the stored photo itself
+ *
  *  Admin (any service number):
  *  POST   /documents/admin/:svcno/upload/:doc_type → upload for any personnel
  *  DELETE /documents/admin/:svcno/:doc_type        → delete for any personnel
- *  GET    /documents/admin/:svcno/view/:doc_type   → signed URL for any person
+ *  GET    /documents/admin/:svcno/view/:doc_type   → photo URL for any person
  *
  * File upload shape (multipart/form-data):
  *   field name: 'document'
@@ -56,7 +60,7 @@ router.use((req, res, next) => {
 router.use(verifyToken);
 
 // ─────────────────────────────────────────────────────────────
-// MULTER — memory storage, stream to Cloudinary as base64
+// MULTER — memory storage; the service checks, resizes and saves the bytes
 // ─────────────────────────────────────────────────────────────
 
 const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -73,11 +77,6 @@ const upload = multer({
     }
   },
 });
-
-// Convert multer buffer → base64 data URI for Cloudinary upload
-function toBase64DataUri(file) {
-  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
-}
 
 // Multer error handler — catches size + type errors
 function handleMulterError(err, req, res, next) {
@@ -124,13 +123,12 @@ router.post(
         .json({ error: 'No file uploaded. Use field name "document".' });
     }
     const { doc_type } = req.params;
-    const fileData = toBase64DataUri(req.file);
 
     try {
       const result = await documentsService.uploadDocument(
         req.user_id, // target = self
         doc_type,
-        fileData,
+        req.file.buffer,
         req.user_id,
         false, // isAdmin = false
         req.ip,
@@ -168,11 +166,11 @@ router.delete("/:doc_type", requirePersonnel, async (req, res) => {
 });
 
 // GET /documents/view/:doc_type
-// Returns a signed Cloudinary URL valid for 1 hour
+// Returns the URL the photo is served from
 router.get("/view/:doc_type", requirePersonnel, async (req, res) => {
   const { doc_type } = req.params;
   try {
-    const result = await documentsService.getSignedUrl(
+    const result = await documentsService.getViewUrl(
       req.user_id,
       doc_type,
       req.user_id,
@@ -183,6 +181,37 @@ router.get("/view/:doc_type", requirePersonnel, async (req, res) => {
     return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /documents/view/:doc_type:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// FILES — any logged-in user
+// Keys are random and only handed out by endpoints that already check who may
+// see the form. A new upload gets a new key, so a key's bytes never change and
+// the browser may keep its copy.
+// ─────────────────────────────────────────────────────────────
+
+// GET /documents/file/:file_key
+router.get("/file/:file_key", async (req, res) => {
+  try {
+    const result = await documentsService.getFile(req.params.file_key);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+
+    res.set({
+      "Cache-Control": "private, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+    res.type(result.data.mime);
+    return res.sendFile(result.data.path, { cacheControl: false }, (err) => {
+      if (err && !res.headersSent) {
+        console.error("❌ GET /documents/file/:file_key:", err.message);
+        res.status(404).json({ error: "Photo not found." });
+      }
+    });
+  } catch (err) {
+    console.error("❌ GET /documents/file/:file_key:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -243,13 +272,12 @@ router.post(
         .json({ error: 'No file uploaded. Use field name "document".' });
     }
     const { svcno, doc_type } = req.params;
-    const fileData = toBase64DataUri(req.file);
 
     try {
       const result = await documentsService.uploadDocument(
         svcno,
         doc_type,
-        fileData,
+        req.file.buffer,
         req.user_id,
         true, // isAdmin = true
         req.ip,
@@ -297,7 +325,7 @@ router.get(
   async (req, res) => {
     const { svcno, doc_type } = req.params;
     try {
-      const result = await documentsService.getSignedUrl(
+      const result = await documentsService.getViewUrl(
         svcno,
         doc_type,
         req.user_id,

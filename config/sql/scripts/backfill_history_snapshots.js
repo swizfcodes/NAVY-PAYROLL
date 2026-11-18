@@ -21,7 +21,7 @@
  *   ✅ Children data  — from ef_children    (if already migrated)
  *   ✅ Loans data     — from ef_loans       (if already migrated)
  *   ✅ Allowances     — from ef_allowances  (if already migrated)
- *   ✅ Documents      — from ef_documents   (Cloudinary URLs)
+ *   ✅ Documents      — from ef_documents   (stored photo file keys)
  *   ⚠️  Child tables may be empty for older years — snapshot will note this.
  *
  * SAFETY:
@@ -363,7 +363,7 @@ async function run() {
         allowRows.forEach(r => { allowsFromChildTable[r.allow_type] = r; });
 
         const [docRows] = await q(conn,
-          `SELECT doc_type, url, cloudinary_id
+          `SELECT doc_type, file_key, file_ext
            FROM ef_documents WHERE service_no = ?`,
           [row.serviceNumber],
         );

@@ -3129,7 +3129,7 @@
           }
 
           if (result.data?.url) {
-            document.getElementById(previewId).src = result.data.url;
+            setPhotoSrc(document.getElementById(previewId), result.data.url);
           }
           showToast("Photo uploaded.", "success");
         } catch (err) {
@@ -3143,10 +3143,39 @@
       function showPhotoPreview(previewId, placeholderId, zoneId, src) {
         const preview = document.getElementById(previewId);
         if (!preview) return;
-        preview.src = src;
+        setPhotoSrc(preview, src);
         preview.classList.remove("hidden");
         document.getElementById(placeholderId)?.classList.add("hidden");
         document.getElementById(zoneId)?.classList.add("border-steel");
+      }
+
+      // Photos stored on this server (/documents/file/<key>) need the login
+      // token, which an <img src> cannot send: fetch them and show a blob URL.
+      // Anything else (data: previews, older Cloudinary links) is set directly.
+      async function setPhotoSrc(img, src) {
+        if (!img) return;
+        img.dataset.photoSrc = src || "";
+        if (img.dataset.blobUrl) {
+          URL.revokeObjectURL(img.dataset.blobUrl);
+          delete img.dataset.blobUrl;
+        }
+        if (!src || !src.startsWith("/documents/file/")) {
+          img.src = src || "";
+          return;
+        }
+        try {
+          const res = await fetch(src, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          // A newer photo may have been chosen while this one was loading.
+          if (img.dataset.photoSrc !== src) return;
+          img.dataset.blobUrl = URL.createObjectURL(blob);
+          img.src = img.dataset.blobUrl;
+        } catch (err) {
+          console.warn("Could not load photo", src, err);
+        }
       }
 
       // ── Back navigation ───────────────────────────────────────

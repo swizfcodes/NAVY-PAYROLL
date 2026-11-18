@@ -3,25 +3,23 @@
  *
  * Business logic for document/photo management.
  *
+ * Photos are files in the local storage folder (see documents.storage.js);
+ * ef_documents keeps only a 32-character hex file_key and the file extension.
+ *
  * Upload flow:
- *   1. Frontend sends file as base64 or multipart to POST /documents/upload
- *   2. Service uploads to Cloudinary via v2 SDK
- *   3. On success, upsert URL + cloudinary_id into ef_documents
- *   4. Return URL to frontend
+ *   1. Frontend sends the file as multipart to POST /documents/upload/:doc_type
+ *   2. The bytes are checked (JPEG, PNG or WebP), turned upright, scaled to fit
+ *      600×800 and saved as JPEG under a new file key
+ *   3. ef_documents is upserted with the new key
+ *   4. The file of the replaced photo, if any, is removed
  *
  * Delete flow:
- *   1. Fetch existing cloudinary_id from ef_documents
- *   2. Delete from Cloudinary
- *   3. Delete DB record
+ *   1. Delete the DB record
+ *   2. Remove the stored file
  *
- * Cloudinary config comes from environment:
- *   CLOUDINARY_CLOUD_NAME
- *   CLOUDINARY_API_KEY
- *   CLOUDINARY_API_SECRET
- *
- * Upload folder structure on Cloudinary:
- *   public_id    emolument/{doc_type}/{serviceNumber}   e.g. emolument/passport/nn_12345
- *   asset_folder emolument/{doc_type}                   (Media Library folder)
+ * Viewing: GET /documents/file/:file_key streams the photo to any logged-in
+ * user. Keys are random, and only reach the browser through endpoints that
+ * already check who may see the form.
  *
  * Personnel can only upload their own documents.
  * EMOL_ADMIN can upload for any service number.
@@ -29,45 +27,13 @@
 
 "use strict";
 
-const cloudinary = require("cloudinary").v2;
 const repo = require("./documents.repository");
+const storage = require("./documents.storage");
 const { VALID_DOC_TYPES } = require("../emolument.constants");
-
-// ─────────────────────────────────────────────────────────────
-// CLOUDINARY CONFIG
-// Configured once at module load — throws early if missing.
-// ─────────────────────────────────────────────────────────────
-
-if (
-  !process.env.CLOUDINARY_CLOUD_NAME ||
-  !process.env.CLOUDINARY_API_KEY ||
-  !process.env.CLOUDINARY_API_SECRET
-) {
-  console.warn("⚠️  Cloudinary env vars not set — document upload will fail.");
-}
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
-
-function buildPublicId(serviceNo, docType) {
-  // Cloudinary public_id — no extension, lowercase, underscores
-  const safeService = serviceNo.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-  const safeType = docType.toLowerCase();
-  return `emolument/${safeType}/${safeService}`;
-}
-
-function assetFolder(docType) {
-  // e.g. emolument/passport — same path as the public_id prefix
-  return `emolument/${docType.toLowerCase()}`;
-}
 
 function validateDocType(docType) {
   if (!VALID_DOC_TYPES.includes(docType)) {
@@ -79,39 +45,56 @@ function validateDocType(docType) {
   return { valid: true };
 }
 
+// What the audit log records about a stored photo. `url` only appears for rows
+// that still pointed at Cloudinary.
+function auditValues(row) {
+  if (!row) return null;
+  const values = { file_key: row.file_key || null, file_ext: row.file_ext || null };
+  if (!row.file_key && row.url) values.url = row.url;
+  return values;
+}
+
+async function removeStoredFile(row, context) {
+  try {
+    await storage.removeFile(row);
+  } catch (err) {
+    console.error(`⚠️  Could not remove stored photo (${context}):`, err.message);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // GET DOCUMENTS — fetch all docs for own service number
 // ─────────────────────────────────────────────────────────────
 
 async function getMyDocuments(serviceNo) {
-  const rows = await repo.getDocuments(serviceNo);
+  const docs = await repo.getDocuments(serviceNo);
 
   // Structure as { PASSPORT: {...}, NOK_PASSPORT: {...}, ALT_NOK_PASSPORT: {...} }
   const out = {};
   VALID_DOC_TYPES.forEach((t) => {
     out[t] = null;
   });
-  rows.forEach((r) => {
-    out[r.doc_type] = r;
+  docs.forEach((d) => {
+    out[d.doc_type] = d;
   });
 
   return { success: true, data: out };
 }
 
 // ─────────────────────────────────────────────────────────────
-// UPLOAD — upload a document to Cloudinary and save URL to DB
+// UPLOAD — save a photo to the storage folder and record its key
 //
 // targetServiceNo: the personnel whose document this is
 //   - must equal performedBy unless performer is EMOL_ADMIN
 //
-// fileData: base64 string or file path (depends on multer setup)
-// docType:  one of VALID_DOC_TYPES
+// fileBuffer: the uploaded file's bytes (multer memory storage)
+// docType:    one of VALID_DOC_TYPES
 // ─────────────────────────────────────────────────────────────
 
 async function uploadDocument(
   targetServiceNo,
   docType,
-  fileData,
+  fileBuffer,
   performedBy,
   isAdmin,
   ip,
@@ -130,70 +113,101 @@ async function uploadDocument(
     return { success: false, code: 400, message: typeCheck.message };
   }
 
-  if (!fileData) {
+  if (!Buffer.isBuffer(fileBuffer) || fileBuffer.length === 0) {
     return { success: false, code: 400, message: "No file data provided." };
   }
 
-  // Fetch existing cloudinary_id so we can overwrite it on Cloudinary
-  // (overwriting uses the same public_id — avoids orphaned files)
-  const publicId = buildPublicId(targetServiceNo, docType);
-
-  let uploadResult;
+  let prepared;
   try {
-    uploadResult = await cloudinary.uploader.upload(fileData, {
-      public_id: publicId,
-      // Media Library folder. Accounts on Cloudinary's "dynamic folders" mode do not
-      // turn the slashes in public_id into folders, so name the folder explicitly
-      // (fixed-folder accounts ignore this and use the public_id path).
-      asset_folder: assetFolder(docType),
-      overwrite: true,
-      invalidate: true, // drop the CDN copy of the replaced image
-      resource_type: "image",
-      transformation: [
-        { width: 600, height: 800, crop: "limit" },
-        { quality: "auto", fetch_format: "auto" },
-      ],
-    });
+    prepared = await storage.prepareUpload(fileBuffer);
   } catch (err) {
-    console.error("❌ Cloudinary upload error:", err.message);
+    console.warn(`⚠️  Unreadable image for ${targetServiceNo}:${docType}:`, err.message);
     return {
       success: false,
-      code: 502,
-      message: `Cloudinary upload failed: ${err.message}`,
+      code: 400,
+      message: "The file could not be read as an image.",
+    };
+  }
+  if (!prepared) {
+    return {
+      success: false,
+      code: 400,
+      message: "Only JPEG, PNG or WebP images are accepted.",
     };
   }
 
-  // Save to DB
-  const saved = await repo.upsertDocument(
-    targetServiceNo,
-    docType,
-    uploadResult.secure_url,
-    uploadResult.public_id,
-    performedBy,
-  );
+  const existing = await repo.getDocumentRow(targetServiceNo, docType);
 
-  if (!saved) {
-    // Upload succeeded but DB write failed — log and return partial success
+  let saved;
+  try {
+    saved = await storage.saveFile({
+      serviceNo: targetServiceNo,
+      docType,
+      buffer: prepared.buffer,
+      ext: prepared.ext,
+    });
+  } catch (err) {
+    console.error("❌ Photo storage error:", err.message);
+    return {
+      success: false,
+      code: 500,
+      message: "The photo could not be saved on the server.",
+    };
+  }
+
+  const savedRow = {
+    service_no: targetServiceNo,
+    doc_type: docType,
+    file_key: saved.fileKey,
+    file_ext: saved.ext,
+  };
+
+  let recorded = false;
+  let dbError = null;
+  try {
+    recorded = await repo.upsertDocument(
+      targetServiceNo,
+      docType,
+      saved.fileKey,
+      saved.ext,
+      performedBy,
+    );
+  } catch (err) {
+    dbError = err;
+  }
+
+  if (!recorded) {
+    await removeStoredFile(savedRow, "upload not recorded");
+    if (dbError?.code === "ER_NO_REFERENCED_ROW_2") {
+      return {
+        success: false,
+        code: 404,
+        message: `No personnel record found for ${targetServiceNo}.`,
+      };
+    }
     console.error(
-      `⚠️  Cloudinary upload succeeded but DB write failed for ${targetServiceNo}:${docType}`,
+      `⚠️  Photo saved but DB write failed for ${targetServiceNo}:${docType}`,
+      dbError?.message || "",
     );
     return {
       success: false,
       code: 500,
       message:
-        "File uploaded to Cloudinary but database record could not be saved. Contact administrator.",
+        "The photo could not be recorded in the database. Contact administrator.",
     };
+  }
+
+  // The row now points at the new file; the replaced one is no longer used.
+  if (existing?.file_key) {
+    await removeStoredFile(existing, `replaced ${targetServiceNo}:${docType}`);
   }
 
   await repo.insertAuditLog({
     tableName: "ef_documents",
     action: "INSERT",
     recordKey: `${targetServiceNo}:${docType}`,
-    oldValues: null,
-    newValues: {
-      url: uploadResult.secure_url,
-      cloudinary_id: uploadResult.public_id,
-    },
+    oldValues: auditValues(existing),
+    newValues: auditValues(savedRow),
     performedBy,
     ipAddress: ip,
   });
@@ -204,18 +218,16 @@ async function uploadDocument(
     data: {
       serviceNo: targetServiceNo,
       docType,
-      url: uploadResult.secure_url,
-      cloudinaryId: uploadResult.public_id,
-      width: uploadResult.width,
-      height: uploadResult.height,
-      format: uploadResult.format,
-      bytes: uploadResult.bytes,
+      fileKey: saved.fileKey,
+      url: storage.publicUrl(saved.fileKey),
+      format: saved.ext,
+      bytes: saved.bytes,
     },
   };
 }
 
 // ─────────────────────────────────────────────────────────────
-// DELETE — delete from Cloudinary then remove DB record
+// DELETE — remove DB record then the stored file
 // ─────────────────────────────────────────────────────────────
 
 async function deleteDocument(
@@ -238,30 +250,23 @@ async function deleteDocument(
     return { success: false, code: 400, message: typeCheck.message };
   }
 
-  const existing = await repo.getDocument(targetServiceNo, docType);
+  const existing = await repo.getDocumentRow(targetServiceNo, docType);
   if (!existing) {
     return { success: false, code: 404, message: "Document not found." };
   }
 
-  // Delete from Cloudinary first
-  try {
-    await cloudinary.uploader.destroy(existing.cloudinary_id, {
-      resource_type: "image",
-    });
-  } catch (err) {
-    console.error("❌ Cloudinary delete error:", err.message);
-    // Continue to DB cleanup even if Cloudinary delete fails —
-    // the public_id can be manually cleaned up in Cloudinary console.
-  }
-
-  // Remove DB record
   const removed = await repo.deleteDocument(targetServiceNo, docType);
+
+  // Only drop the file once no row points at it.
+  if (removed && existing.file_key) {
+    await removeStoredFile(existing, `deleted ${targetServiceNo}:${docType}`);
+  }
 
   await repo.insertAuditLog({
     tableName: "ef_documents",
     action: "DELETE",
     recordKey: `${targetServiceNo}:${docType}`,
-    oldValues: { url: existing.url, cloudinary_id: existing.cloudinary_id },
+    oldValues: auditValues(existing),
     newValues: null,
     performedBy,
     ipAddress: ip,
@@ -300,7 +305,7 @@ async function getShipDocuments(ship) {
     }
     byPerson[row.service_no].documents[row.doc_type] = {
       url: row.url,
-      cloudinaryId: row.cloudinary_id,
+      fileKey: row.file_key,
       uploadedAt: row.uploaded_at,
     };
   }
@@ -336,11 +341,10 @@ async function getMissingDocuments(ship, docType) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// SIGN URL — generate a short-lived signed Cloudinary URL
-// Use for secure document viewing without exposing raw URLs.
+// VIEW URL — where the browser loads one photo from
 // ─────────────────────────────────────────────────────────────
 
-async function getSignedUrl(targetServiceNo, docType, performedBy, isAdmin) {
+async function getViewUrl(targetServiceNo, docType, performedBy, isAdmin) {
   if (!isAdmin && targetServiceNo !== performedBy) {
     return { success: false, code: 403, message: "Access denied." };
   }
@@ -349,35 +353,48 @@ async function getSignedUrl(targetServiceNo, docType, performedBy, isAdmin) {
   if (!typeCheck.valid)
     return { success: false, code: 400, message: typeCheck.message };
 
-  const existing = await repo.getDocument(targetServiceNo, docType);
-  if (!existing)
+  const doc = repo.toDocument(await repo.getDocumentRow(targetServiceNo, docType));
+  if (!doc?.url)
     return { success: false, code: 404, message: "Document not found." };
 
-  const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+  return { success: true, data: { url: doc.url, docType } };
+}
 
+// ─────────────────────────────────────────────────────────────
+// FILE — the stored photo for a file key
+// ─────────────────────────────────────────────────────────────
+
+async function getFile(fileKey) {
+  const notFound = { success: false, code: 404, message: "Photo not found." };
+  if (!storage.isFileKey(fileKey)) return notFound;
+
+  const row = await repo.getDocumentByKey(fileKey);
+  if (!row) return notFound;
+
+  const filePath = await storage.resolveFile(row);
+  if (!filePath) {
+    console.error(
+      `⚠️  Photo file missing on disk for ${row.service_no}:${row.doc_type} (${fileKey}) under ${storage.STORAGE_ROOT}`,
+    );
+    return notFound;
+  }
+
+  return {
+    success: true,
+    data: { path: filePath, ext: row.file_ext, mime: storage.mimeFor(row.file_ext) },
+  };
+}
+
+// data: URL of a stored photo, for PDF rendering. null when there is none.
+async function readAsDataUrl(doc) {
+  if (!doc?.file_key) return null;
   try {
-    const signedUrl = cloudinary.url(existing.cloudinary_id, {
-      sign_url: true,
-      expires_at: expiresAt,
-      resource_type: "image",
-      secure: true,
-    });
-
-    return {
-      success: true,
-      data: {
-        url: signedUrl,
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        docType,
-      },
-    };
+    const file = await getFile(doc.file_key);
+    if (!file.success) return null;
+    return await storage.readAsDataUrl(file.data.path, file.data.ext);
   } catch (err) {
-    console.error("❌ Cloudinary sign URL error:", err.message);
-    return {
-      success: false,
-      code: 500,
-      message: "Could not generate signed URL.",
-    };
+    console.error("⚠️  Could not read stored photo:", err.message);
+    return null;
   }
 }
 
@@ -387,5 +404,7 @@ module.exports = {
   deleteDocument,
   getShipDocuments,
   getMissingDocuments,
-  getSignedUrl,
+  getViewUrl,
+  getFile,
+  readAsDataUrl,
 };

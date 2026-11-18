@@ -11,6 +11,7 @@
 
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
+const documentsRepo = require("../documents/documents.repository");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -284,18 +285,10 @@ async function loadAllowances(serviceNo) {
   return out;
 }
 
+// Photos keyed by doc_type — shared with the documents module, which knows
+// where they are stored.
 async function loadDocuments(serviceNo) {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT doc_type, url, cloudinary_id
-     FROM ef_documents WHERE service_no = ?`,
-    [serviceNo],
-  );
-  const out = {};
-  rows.forEach((r) => {
-    out[r.doc_type] = r;
-  });
-  return out;
+  return documentsRepo.getDocumentMap(serviceNo);
 }
 
 // ─────────────────────────────────────────────────────────────
