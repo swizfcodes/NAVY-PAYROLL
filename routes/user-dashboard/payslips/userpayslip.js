@@ -327,8 +327,11 @@ router.post("/generate", verifyToken, async (req, res) => {
     ]);
 
     // ── 8. Fetch generated rows ────────────────────────
+    // ac_months exists only in the master DB, and `conn` is now on the
+    // payroll class DB (raw connections are not auto-qualified), so name
+    // the master DB explicitly.
     const [monthData] = await conn.query(
-      `SELECT mthdesc FROM ac_months WHERE cmonth = ? LIMIT 1`,
+      `SELECT mthdesc FROM ${pool.qualify("ac_months")} WHERE cmonth = ? LIMIT 1`,
       [inputMonth],
     );
 
@@ -376,7 +379,7 @@ router.post("/generate", verifyToken, async (req, res) => {
     // ── Safe connection return — same pattern as adminPayslip ──
     if (switchedDb) {
       try {
-        await conn.query(`USE \`hicaddata\``);
+        await conn.query(`USE \`${pool.getMasterDb()}\``);
         conn.release();
       } catch (_) {
         console.warn("⚠️ Failed to reset DB context — destroying connection.");
