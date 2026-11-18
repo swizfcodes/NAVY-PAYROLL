@@ -3,6 +3,8 @@
 //
 //   node scripts/migrate-documents-to-local.js            dry run: what would be copied
 //   node scripts/migrate-documents-to-local.js --apply    copy the photos
+//   node scripts/migrate-documents-to-local.js --snapshots           dry run for confirmed-form snapshots
+//   node scripts/migrate-documents-to-local.js --snapshots --apply   point snapshot photos at the stored files
 //   node scripts/migrate-documents-to-local.js --verify   check the files, and say whether
 //                                                         the Cloudinary columns can be dropped
 //
@@ -18,14 +20,21 @@
 //                       the Cloudinary columns can be dropped. Each one is written
 //                       to ef_audit_logs.
 //
+// Snapshots: ef_emolument_forms.snapshot keeps each confirmed form's photos as
+// Cloudinary links. --snapshots replaces every such link with the person's stored
+// photo of that type (file_key + /documents/file/<key>) — the image Cloudinary was
+// serving at that address, since uploads overwrote it in place. Links for people
+// with no stored photo of that type are left as they are and listed in the CSV.
+// updated_at of the form rows is not changed.
+//
 // Photos are downloaded from their public addresses exactly as stored (JPEG, PNG,
 // WebP and GIF are kept byte for byte), so no Cloudinary keys are needed.
 // Reads the usual MYSQL_* settings (officers database) and DOCUMENT_STORAGE_DIR.
 // Safe to stop (Ctrl+C) and run again: rows that already have a file_key are skipped.
 // Every photo that was not copied is listed in a CSV under logs/.
 //
-// Order: npm run migrate:up officers → deploy the app → this script → --verify
-//        → config/sql/pending/ef_documents_drop_cloudinary_columns.sql
+// Order: npm run migrate:up officers → deploy the app → --apply → --snapshots --apply
+//        → --verify → config/sql/pending/ef_documents_drop_cloudinary_columns.sql
 
 "use strict";
 
@@ -48,13 +57,27 @@ const option = (name, fallback) => {
   return n;
 };
 
-const MODE = flag("--verify") ? "verify" : flag("--apply") ? "apply" : "dry-run";
+const APPLY = flag("--apply");
+const MODE = flag("--verify")
+  ? "verify"
+  : flag("--snapshots")
+    ? APPLY ? "snapshots" : "snapshots dry-run"
+    : APPLY ? "apply" : "dry-run";
 const LIMIT = option("--limit", null);
 const CONCURRENCY = option("--concurrency", 4);
 const INCLUDE_LEGACY = flag("--include-legacy");
 const FORGET_MISSING = flag("--forget-missing");
 
 const DOC_TYPES = ["PASSPORT", "NOK_PASSPORT", "ALT_NOK_PASSPORT"];
+// Keys a snapshot's documents object may use for each photo type.
+const SNAPSHOT_TYPE_KEYS = {
+  PASSPORT: "PASSPORT",
+  NOK_PASSPORT: "NOK_PASSPORT",
+  ALT_NOK_PASSPORT: "ALT_NOK_PASSPORT",
+  passport: "PASSPORT",
+  nokPassport: "NOK_PASSPORT",
+  altNokPassport: "ALT_NOK_PASSPORT",
+};
 const LEGACY_COLUMNS = {
   mypassporturl: "PASSPORT",
   mynokpassporturl: "NOK_PASSPORT",
@@ -372,6 +395,135 @@ async function apply(db, hasUrlColumn) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// SNAPSHOTS — confirmed forms' photo links → stored files
+// ─────────────────────────────────────────────────────────────
+
+// ef_documents and ef_emolument_forms both follow ef_personalinfos (case-
+// insensitive collation), so compare service numbers the way MySQL does.
+const personKey = (serviceNo, docType) => `${String(serviceNo).trim().toUpperCase()}|${docType}`;
+
+async function storedPhotos(db) {
+  const [rows] = await db.query(
+    `SELECT service_no, doc_type, file_key, uploaded_at, uploaded_by
+     FROM ef_documents WHERE file_key IS NOT NULL`,
+  );
+  return new Map(rows.map((r) => [personKey(r.service_no, r.doc_type), r]));
+}
+
+// JSON columns arrive parsed from MySQL and as text from MariaDB.
+// undefined means the stored text is not valid JSON.
+function parseSnapshot(value) {
+  if (value == null || typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
+// Points each old-style photo entry at the person's stored photo of that type.
+// Entries that are null or already have a file_key are left alone.
+function relinkSnapshot(snapshot, serviceNo, photos) {
+  const result = { relinked: 0, unmatched: [] };
+  const docs = snapshot?.documents;
+  if (!docs || typeof docs !== "object") return result;
+
+  for (const [key, entry] of Object.entries(docs)) {
+    if (!entry || typeof entry !== "object" || entry.file_key) continue;
+    if (!entry.url && !entry.cloudinary_id) continue;
+    const docType = SNAPSHOT_TYPE_KEYS[entry.doc_type] || SNAPSHOT_TYPE_KEYS[key];
+    const photo = docType && photos.get(personKey(serviceNo, docType));
+    if (!photo) {
+      result.unmatched.push({ doc_type: docType || key, detail: entry.url || entry.cloudinary_id });
+      continue;
+    }
+    docs[key] = {
+      doc_type: docType,
+      file_key: photo.file_key,
+      url: storage.publicUrl(photo.file_key),
+      uploaded_at: photo.uploaded_at,
+      uploaded_by: photo.uploaded_by,
+    };
+    result.relinked++;
+  }
+  return result;
+}
+
+// Walks every snapshot in id order. With write = true each changed snapshot is
+// saved, unless the form row changed since it was read.
+async function scanSnapshots(db, write) {
+  const photos = await storedPhotos(db);
+  const stats = { forms: 0, formsToChange: 0, entries: 0, saved: 0, skipped: 0, malformed: [], unmatched: [] };
+  let lastId = 0;
+
+  while (!stopping) {
+    const [rows] = await db.query(
+      `SELECT id, service_no, status, updated_at, snapshot
+       FROM ef_emolument_forms
+       WHERE snapshot IS NOT NULL AND id > ?
+       ORDER BY id
+       LIMIT 200`,
+      [lastId],
+    );
+    if (!rows.length) break;
+    lastId = rows[rows.length - 1].id;
+
+    for (const row of rows) {
+      if (stopping || (write && LIMIT && stats.saved >= LIMIT)) break;
+      stats.forms++;
+      const snapshot = parseSnapshot(row.snapshot);
+      if (snapshot === undefined) {
+        stats.malformed.push({ form_id: row.id, service_no: row.service_no });
+        continue;
+      }
+      const r = relinkSnapshot(snapshot, row.service_no, photos);
+      r.unmatched.forEach((u) => stats.unmatched.push({ form_id: row.id, service_no: row.service_no, ...u }));
+      if (!r.relinked) continue;
+
+      stats.formsToChange++;
+      stats.entries += r.relinked;
+      if (!write) continue;
+
+      const [res] = await db.query(
+        `UPDATE ef_emolument_forms
+         SET snapshot = ?, updated_at = updated_at
+         WHERE id = ? AND status = ? AND updated_at <=> ?`,
+        [JSON.stringify(snapshot), row.id, row.status, row.updated_at],
+      );
+      if (res.affectedRows) stats.saved++;
+      else stats.skipped++;
+    }
+    if (write && LIMIT && stats.saved >= LIMIT) break;
+  }
+  return stats;
+}
+
+async function snapshots(db, write) {
+  const stats = await scanSnapshots(db, write);
+  console.log(`Snapshots read:                       ${stats.forms}`);
+  console.log(`  with old photo links to replace:    ${stats.formsToChange}  (${stats.entries} photo link(s))`);
+  console.log(`  links with no stored photo to use:  ${stats.unmatched.length}`);
+  if (stats.malformed.length) console.log(`  not valid JSON (left alone):        ${stats.malformed.length}`);
+  if (write) {
+    console.log(`  saved:                              ${stats.saved}`);
+    if (stats.skipped) console.log(`  skipped (form changed meanwhile):   ${stats.skipped}  (run again)`);
+  }
+  if (stopping) console.log("  stopped early; run again to continue");
+
+  const csv = writeCsv(
+    "document-snapshots",
+    ["problem", "form_id", "service_no", "doc_type", "detail"],
+    [
+      ...stats.unmatched.map((u) => ({ problem: "no stored photo", ...u })),
+      ...stats.malformed.map((m) => ({ problem: "snapshot is not valid JSON", ...m })),
+    ],
+  );
+  if (csv) console.log(`\nDetails: ${csv}`);
+  if (!write) console.log("\nNothing was changed. Run with --snapshots --apply to save.");
+  return stats.skipped ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────
 // VERIFY
 // ─────────────────────────────────────────────────────────────
 
@@ -390,6 +542,7 @@ async function verify(db, hasUrlColumn) {
   const orphans = onDisk.filter((f) => !dbKeys.has(f.fileKey));
   const pending = await pendingRows(db, hasUrlColumn);
   const legacy = (await legacyColumnsPresent(db)).length ? await legacyOnlyRows(db) : [];
+  const snaps = await scanSnapshots(db, false);
 
   console.log(`Folder: ${storage.STORAGE_ROOT}`);
   console.log(`Rows with a file key:                 ${rows.length}`);
@@ -397,6 +550,8 @@ async function verify(db, hasUrlColumn) {
   console.log(`Files no row points at:               ${orphans.length}`);
   console.log(`Rows still only on Cloudinary/old URL: ${pending.length}`);
   console.log(`Photos only in old ef_personalinfos:  ${legacy.length}`);
+  console.log(`Snapshot photo links to replace:      ${snaps.entries}  (in ${snaps.formsToChange} confirmed form(s))`);
+  console.log(`Snapshot links with no stored photo:  ${snaps.unmatched.length}`);
 
   missingFiles.slice(0, 10).forEach((r) => console.log(`  missing file: ${r.service_no} ${r.doc_type} ${r.file_key}.${r.file_ext}`));
   pending.slice(0, 10).forEach((r) => console.log(`  not copied:   ${r.service_no} ${r.doc_type} ${r.url}`));
@@ -409,14 +564,17 @@ async function verify(db, hasUrlColumn) {
       ...orphans.map((f) => ({ problem: "file without row", service_no: "", doc_type: f.docType, detail: f.path })),
       ...pending.map((r) => ({ problem: "not copied", service_no: r.service_no, doc_type: r.doc_type, detail: r.url })),
       ...legacy.map((r) => ({ problem: "only in ef_personalinfos", service_no: r.service_no, doc_type: r.doc_type, detail: r.url })),
+      ...snaps.unmatched.map((u) => ({ problem: `snapshot of form ${u.form_id}: no stored photo`, service_no: u.service_no, doc_type: u.doc_type, detail: u.detail })),
     ],
   );
   if (csv) console.log(`\nDetails: ${csv}`);
 
-  const ready = missingFiles.length === 0 && pending.length === 0 && legacy.length === 0;
+  const ready =
+    missingFiles.length === 0 && pending.length === 0 && legacy.length === 0 && snaps.entries === 0;
   if (!hasUrlColumn) {
     console.log(`\nThe Cloudinary columns have been dropped.${missingFiles.length ? " Some rows point at files that are not in the folder." : ""}`);
-    return missingFiles.length ? 1 : 0;
+    if (snaps.entries) console.log("Snapshots still have old photo links: run --snapshots --apply.");
+    return missingFiles.length || snaps.entries ? 1 : 0;
   }
   console.log(
     `\nThe Cloudinary columns can be dropped: ${ready ? "YES" : "NO"}` +
@@ -426,7 +584,9 @@ async function verify(db, hasUrlColumn) {
           ? " (copy the remaining photos first: --apply, then --apply --forget-missing for ones that are gone)"
           : legacy.length
             ? " (photos only in ef_personalinfos: --apply --include-legacy)"
-            : " (some rows point at files that are not in the folder)"),
+            : missingFiles.length
+              ? " (some rows point at files that are not in the folder)"
+              : " (point the snapshots at the stored photos first: --snapshots --apply)"),
   );
   return ready ? 0 : 1;
 }
@@ -458,6 +618,7 @@ async function main() {
     const hasUrlColumn = await columnExists(db, "ef_documents", "url");
 
     if (MODE === "verify") return await verify(db, hasUrlColumn);
+    if (MODE.startsWith("snapshots")) return await snapshots(db, APPLY);
     if (MODE === "apply") return await apply(db, hasUrlColumn);
     await dryRun(db, hasUrlColumn);
     return 0;
