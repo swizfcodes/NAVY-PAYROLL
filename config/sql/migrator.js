@@ -272,6 +272,56 @@ class Migrator {
     }
   }
 
+  /**
+   * Record every pending migration up to and including `throughFile` as
+   * executed WITHOUT running it — for a database whose schema already has
+   * those changes but whose migrations table does not say so.
+   * Rows go in batch 0, which rollback never touches.
+   * Without `apply` it only lists what would be recorded.
+   */
+  async baseline(database, throughFile, apply = false) {
+    try {
+      await this.connect(database);
+      await this.ensureMigrationsTable();
+
+      const pending = await this.getPendingMigrations();
+      const through = pending.indexOf(throughFile);
+      if (through === -1) {
+        throw new Error(
+          `${throughFile} is not a pending migration on ${this.targetDatabase}. ` +
+            "Check the name with: npm run migrate:status",
+        );
+      }
+
+      const toRecord = pending.slice(0, through + 1);
+      console.log(
+        `📋 ${apply ? "Recording" : "Would record"} ${toRecord.length} migration(s) on ${this.targetDatabase} as already executed (not run):`,
+      );
+      toRecord.forEach((m) => console.log(`  ✓ ${m}`));
+      const left = pending.slice(through + 1);
+      console.log(`\n⧗ Still pending afterwards (${left.length}):`);
+      left.forEach((m) => console.log(`  - ${m}`));
+
+      if (!apply) {
+        console.log("\nDry run — nothing recorded. Add --apply to record them.");
+        return;
+      }
+
+      for (const name of toRecord) {
+        await this.connection.query(
+          "INSERT IGNORE INTO migrations (name, batch) VALUES (?, 0)",
+          [name],
+        );
+      }
+      console.log(`\n✅ Recorded ${toRecord.length} migration(s) in batch 0`);
+    } catch (error) {
+      console.error("❌ Baseline failed:", error.message);
+      throw error;
+    } finally {
+      await this.disconnect();
+    }
+  }
+
   async runOnAllDatabases() {
     console.log("🚀 Running migrations on all databases...\n");
 
@@ -342,6 +392,12 @@ class Migrator {
       }
 
       const lastBatch = await this.getLastBatch();
+      // Batch 0 holds migrations recorded by `baseline`: they were never run
+      // by this tool, so their DOWN sections must not run either.
+      if (lastBatch < 1) {
+        console.log("✅ No migrations to rollback (only baseline-recorded ones remain)");
+        return;
+      }
       const migrationsToRollback = executed
         .filter((m) => m.batch === lastBatch)
         .reverse();
@@ -391,7 +447,9 @@ class Migrator {
         });
 
         Object.entries(batches).forEach(([batch, migrations]) => {
-          console.log(`\n  Batch ${batch}:`);
+          console.log(
+            `\n  Batch ${batch}${batch === "0" ? " (recorded by baseline, not run here)" : ""}:`,
+          );
           migrations.forEach((m) => console.log(`    ✓ ${m}`));
         });
       }

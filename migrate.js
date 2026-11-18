@@ -54,6 +54,22 @@ async function run() {
         await migrator.rollback(dbName, steps);
         break;
 
+      case "baseline": {
+        // Record already-applied migrations without running them.
+        if (!arg1 || !arg2) {
+          console.log(
+            "Usage: node migrate.js baseline <database> <last_applied_migration.sql> [--apply]",
+          );
+          console.log(
+            "Example: node migrate.js baseline officers 20261111_120000_ef_settings_init.sql",
+          );
+          process.exit(1);
+        }
+        const baselineDb = config.databases[arg1] || arg1;
+        await migrator.baseline(baselineDb, arg2, process.argv.includes("--apply"));
+        break;
+      }
+
       case "status":
         if (arg1 === "all" || !arg1) {
           await migrator.statusAll();
@@ -77,6 +93,12 @@ async function run() {
         );
         console.log(
           "  npm run migrate:status [all]       - Check migration status",
+        );
+        console.log(
+          "  npm run migrate:baseline -- <database> <file> [--apply]",
+        );
+        console.log(
+          "                                     - Record migrations up to <file> as already run",
         );
         console.log("");
         console.log("Examples:");

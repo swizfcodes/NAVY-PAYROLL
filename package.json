@@ -56,6 +56,7 @@
     "migrate:up": "node migrate.js up",
     "migrate:down": "node migrate.js down",
     "migrate:status": "node migrate.js status",
+    "migrate:baseline": "node migrate.js baseline",
     "test:sync": "node --test --test-concurrency=1 test/sync/e2e.test.js"
   },
   "repository": {
