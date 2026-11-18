@@ -373,7 +373,7 @@ async function processClassGroup(
     // it will contaminate subsequent unrelated requests from the pool.
     if (switchedDb) {
       try {
-        await conn.query(`USE \`hicaddata\``);
+        await conn.query(`USE \`${pool.getMasterDb()}\``);
         conn.release();
       } catch (_) {
         // Reset failed — destroy so the dirty connection
